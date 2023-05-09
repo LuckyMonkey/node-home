@@ -1,0 +1,10 @@
+body {background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(135,234,249,1) 100%);margin:0;}
+h1 {float:right;padding-right:1em;font-family: 'Courier New', Courier, monospace;}
+h3 {font-size:1em;}
+ul {list-style:none;width:25vw;overflow-x:hidden;padding-top:1em;}
+ul {background-color:#222222ac;border:3px solid #FFF;}
+li:hover a, button:hover {text-shadow:2px 2px 10px #222;color:#FFF;margin-left:1em;cursor:pointer;opacity:1;}
+li > a > * {margin:0;display:inline-block;}
+button {background-color: #09F;border:2px solid white;border-radius:100px;color:white;line-height:0.9em;opacity:0.1;}
+a, a:link, a:visited, button {font-family:Tahoma;text-decoration:none;color:#AAA;transition:.3s;cursor:pointer;}
+a > img {margin:3px;width:1em;height:1em;border-radius:40px;vertical-align:middle;}

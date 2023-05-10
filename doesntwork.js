@@ -107,12 +107,12 @@ app.get('/', async (req, res) => {
         <body>
           <h1>${msg}</h1>
           ${createList(jsonData)}
-          <div>${setViewer(req)};</div>
+          <div>${setViewer(req)}</div>
         </body>
       </html>
       `;
       res.send(html);
-  );
+    });
 
 } catch (error) {
   console.error(error);

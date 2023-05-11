@@ -5,6 +5,7 @@ const fs = require('fs');
 const app = express();
 app.use(express.static(__dirname));
 app.use(express.urlencoded({ extended: true }));
+
 // Read links from links.json file
 app.get('/', async (req, res) => {
   try {
@@ -98,6 +99,7 @@ app.get('/', async (req, res) => {
     res.send('Error getting links');
   }
 });
+
 app.listen(80, '0.0.0.0', () => {
   console.log('Server listening on port 80');
 });

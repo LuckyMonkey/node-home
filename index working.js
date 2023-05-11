@@ -5,7 +5,6 @@ const fs = require('fs');
 const app = express();
 app.use(express.static(__dirname));
 app.use(express.urlencoded({ extended: true }));
-
 // Read links from links.json file
 app.get('/', async (req, res) => {
   try {
@@ -30,7 +29,6 @@ app.get('/', async (req, res) => {
             </a>
           </li>
         `);
-
         // Add link form function
         listItems.push(`
           <li>
@@ -41,10 +39,8 @@ app.get('/', async (req, res) => {
             </form>
           </li>
         `);
-      
         return `<ul>${listItems.join('')}</ul>`;
       }
-      
     // Delete link function
     app.post('/delete-link', (req, res) => {
       try {
@@ -62,16 +58,13 @@ app.get('/', async (req, res) => {
         res.send('Error deleting link');
       }
     });
-
-      app.post('/add-link', (req, res) => {
-        try {
-          // Read existing links from links.json file
-          const jsonData = JSON.parse(fs.readFileSync('links.json', 'utf8'));
-      
-          // Add new link to jsonData object using form data
+    app.post('/add-link', (req, res) => {
+      try {
+        // Read existing links from links.json file
+        const jsonData = JSON.parse(fs.readFileSync('links.json', 'utf8'));
+        // Add new link to jsonData object using form data
           const { name, link } = req.body;
           jsonData[name] = link;
-      
           // Write updated jsonData object back to links.json file
           fs.writeFileSync('links.json', JSON.stringify(jsonData, null, 2));
           // Redirect to home page after adding link
@@ -80,14 +73,11 @@ app.get('/', async (req, res) => {
           console.error(error);
           res.send('Error adding link');
         }
-      });
-      
-  
+    });
     // Create HTML page
     // Display today's date and greeting
       const today = moment().format('ddd, MMM D');
-    // varaible for the user
-      const msg = `Hello today is ${today}.`;
+      const msg = `Hello YOU today is ${today}.`;
       const html = `
         <!DOCTYPE html>
         <html>
@@ -108,8 +98,6 @@ app.get('/', async (req, res) => {
     res.send('Error getting links');
   }
 });
-
-// node stuff
 app.listen(80, '0.0.0.0', () => {
   console.log('Server listening on port 80');
 });

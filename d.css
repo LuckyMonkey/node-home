@@ -100,6 +100,43 @@ body {
   font-size: 0.88rem;
 }
 
+.name-form {
+  margin-top: 0.55rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
+}
+
+.name-form label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: lowercase;
+}
+
+.name-form input,
+.name-form button {
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  min-height: 32px;
+  font: inherit;
+  font-size: 0.82rem;
+}
+
+.name-form input {
+  padding: 0.25rem 0.45rem;
+  min-width: 140px;
+}
+
+.name-form button {
+  padding: 0.25rem 0.55rem;
+  font-weight: 800;
+  background: var(--bus-yellow);
+  cursor: pointer;
+}
+
 .settings-nav {
   margin: 0.5rem 0 0;
 }
@@ -149,6 +186,7 @@ body {
 
 .bookmark-card {
   background: var(--paper);
+  --icon-accent: rgba(0, 95, 115, 0.18);
   padding: 0.7rem;
   min-height: 0;
   transition: transform 130ms ease, box-shadow 130ms ease, background 180ms ease;
@@ -161,7 +199,7 @@ body {
   inset: 0;
   pointer-events: none;
   opacity: 0;
-  background: linear-gradient(112deg, rgba(255, 47, 146, 0.16), rgba(0, 217, 255, 0.16));
+  background: linear-gradient(112deg, var(--icon-accent), rgba(255, 47, 146, 0.16), rgba(0, 217, 255, 0.16));
   transition: opacity 130ms ease;
 }
 

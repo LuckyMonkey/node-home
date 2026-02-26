@@ -11,6 +11,7 @@ const execFileAsync = promisify(execFile);
 
 const app = express();
 const LINKS_FILE = path.join(__dirname, 'links.json');
+const DEFAULT_LINKS_FILE = path.join(__dirname, 'links.defaults.json');
 const DELETED_FILE = path.join(__dirname, 'deleted.json');
 const HOSTNAMES_FILE = process.env.HOSTNAMES_FILE || path.join(__dirname, 'hostnames.json');
 const HOSTNAMES_LOCK_FILE = `${HOSTNAMES_FILE}.lock`;
@@ -172,9 +173,19 @@ const QUERY_REDIRECT_ALIASES = Object.freeze({
 
 const readLinks = () => {
   try {
+    const defaults = fs.existsSync(DEFAULT_LINKS_FILE)
+      ? JSON.parse(fs.readFileSync(DEFAULT_LINKS_FILE, 'utf8'))
+      : [];
     const raw = JSON.parse(fs.readFileSync(LINKS_FILE, 'utf8'));
     if (Array.isArray(raw)) {
-      return raw;
+      const byName = new Map();
+      for (const entry of defaults) {
+        if (entry && entry.name) byName.set(String(entry.name).toLowerCase(), entry);
+      }
+      for (const entry of raw) {
+        if (entry && entry.name) byName.set(String(entry.name).toLowerCase(), entry);
+      }
+      return Array.from(byName.values());
     }
     if (raw && typeof raw === 'object') {
       const converted = Object.entries(raw).map(([name, link]) => ({ name, link }));
@@ -568,7 +579,9 @@ const iconFor = (link) => {
   const encoded = encodeURIComponent(target);
   const fallback = `https://www.google.com/s2/favicons?sz=256&domain_url=${encoded}`;
   const apple = domain ? `https://${domain}/apple-touch-icon.png` : fallback;
-  return { primary: apple, fallback };
+  const webManifest = domain ? `https://${domain}/android-chrome-192x192.png` : fallback;
+  const favicon = domain ? `https://${domain}/favicon.ico` : fallback;
+  return { primary: apple, secondary: webManifest, tertiary: favicon, fallback };
 };
 
 const escapeHtml = (value) => {
@@ -591,6 +604,16 @@ const runCommand = async (command, args, options = {}) => {
   } catch (err) {
     const details = [err.message, err.stdout, err.stderr].filter(Boolean).join('\n');
     throw new Error(details || 'Command failed');
+  }
+};
+
+const parseUrlForProxy = (raw) => {
+  try {
+    const parsed = new URL(String(raw || '').trim());
+    if (!['http:', 'https:'].includes(parsed.protocol)) return null;
+    return parsed;
+  } catch {
+    return null;
   }
 };
 
@@ -871,7 +894,7 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects) => {
       <article class="bookmark-card" data-href="${href}" tabindex="0" role="link" aria-label="${escapeHtml(entry.name)}">
         <div class="bookmark-content">
           <header>
-            <img src="${icon.primary}" data-fallback="${icon.fallback}" alt="${escapeHtml(entry.name)} icon" loading="lazy" width="48" height="48" onerror="this.onerror=null; this.src=this.dataset.fallback;" />
+            <img src="${icon.primary}" data-primary="${icon.primary}" data-secondary="${icon.secondary}" data-tertiary="${icon.tertiary}" data-fallback="${icon.fallback}" data-domain="${escapeHtml(domainLabel.toLowerCase())}" alt="${escapeHtml(entry.name)} icon" loading="lazy" width="48" height="48" onerror="this.onerror=null; this.src=this.dataset.fallback;" />
             <div class="bookmark-meta">
               <p class="bookmark-name">${escapeHtml(entry.name)}</p>
               <p class="bookmark-url">${escapeHtml(domainLabel)}</p>
@@ -948,8 +971,13 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects) => {
         <main class="page">
           <section class="hero">
             <p class="tag">fridge.local</p>
-            <h1>${msg}</h1>
+            <h1><span id="greeting-name">YOU</span>, ${msg.replace('Hello YOU ', '')}</h1>
             <p class="subtitle">Links, tools, and query redirects for local services (example: <code>?go=notes</code>).</p>
+            <form class="name-form" data-no-card-nav>
+              <label for="displayName">name</label>
+              <input id="displayName" type="text" maxlength="24" placeholder="type your name">
+              <button type="button" id="saveDisplayName">save</button>
+            </form>
             <p class="settings-nav"><a href="/settings">Settings</a></p>
             ${serviceMessage ? `<p class="service-message">${escapeHtml(serviceMessage)}</p>` : ''}
           </section>
@@ -980,6 +1008,112 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects) => {
       </main>
       <script>
         (function() {
+          const PROFILE_KEY = 'nodehome-profile-v1';
+          const LINKS_BACKUP_KEY = 'nodehome-links-backup-v1';
+          const ICON_CACHE_KEY = 'nodehome-icon-cache-v1';
+          const ICON_TTL_MS = 14 * 24 * 60 * 60 * 1000;
+          const allLinks = ${JSON.stringify(links)};
+
+          try {
+            localStorage.setItem(LINKS_BACKUP_KEY, JSON.stringify({
+              savedAt: Date.now(),
+              links: allLinks
+            }));
+          } catch {}
+
+          const greetingEl = document.getElementById('greeting-name');
+          const nameInput = document.getElementById('displayName');
+          const saveBtn = document.getElementById('saveDisplayName');
+          const safeName = (raw) => String(raw || '').trim().replace(/[^\\w\\s-]/g, '').slice(0, 24);
+          const applyName = (name) => {
+            greetingEl.textContent = name || 'YOU';
+            nameInput.value = name || '';
+          };
+          try {
+            const profile = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
+            applyName(safeName(profile.name));
+          } catch {
+            applyName('');
+          }
+          saveBtn.addEventListener('click', () => {
+            const name = safeName(nameInput.value);
+            applyName(name);
+            try {
+              localStorage.setItem(PROFILE_KEY, JSON.stringify({ name, updatedAt: Date.now() }));
+            } catch {}
+          });
+
+          const iconCache = (() => {
+            try {
+              return JSON.parse(localStorage.getItem(ICON_CACHE_KEY) || '{}');
+            } catch {
+              return {};
+            }
+          })();
+          const persistIconCache = () => {
+            try {
+              localStorage.setItem(ICON_CACHE_KEY, JSON.stringify(iconCache));
+            } catch {}
+          };
+          const proxy = (url) => '/api/icon-proxy?url=' + encodeURIComponent(url);
+          const averageColor = (img) => {
+            const c = document.createElement('canvas');
+            c.width = 24; c.height = 24;
+            const ctx = c.getContext('2d', { willReadFrequently: true });
+            if (!ctx) return '';
+            ctx.drawImage(img, 0, 0, 24, 24);
+            const data = ctx.getImageData(0, 0, 24, 24).data;
+            let r = 0, g = 0, b = 0, n = 0;
+            for (let i = 0; i < data.length; i += 4) {
+              if (data[i + 3] < 20) continue;
+              r += data[i]; g += data[i + 1]; b += data[i + 2]; n++;
+            }
+            if (!n) return '';
+            return 'rgb(' + Math.round(r / n) + ', ' + Math.round(g / n) + ', ' + Math.round(b / n) + ')';
+          };
+          const loadIcon = (img) => {
+            const card = img.closest('.bookmark-card');
+            const key = (img.dataset.domain || '').toLowerCase();
+            const cached = iconCache[key];
+            const fresh = cached && (Date.now() - cached.updatedAt) < ICON_TTL_MS;
+            if (fresh && cached.dataUrl) {
+              img.src = cached.dataUrl;
+              if (cached.color && card) card.style.setProperty('--icon-accent', cached.color);
+              return;
+            }
+            const primary = img.dataset.primary;
+            const secondary = img.dataset.secondary;
+            const tertiary = img.dataset.tertiary;
+            const fallback = img.dataset.fallback;
+            const chain = [primary, secondary, tertiary, fallback].filter(Boolean).map(proxy);
+            let idx = 0;
+            const next = () => {
+              if (idx >= chain.length) return;
+              img.src = chain[idx++];
+            };
+            img.crossOrigin = 'anonymous';
+            img.onerror = next;
+            img.onload = () => {
+              const color = averageColor(img);
+              if (color && card) card.style.setProperty('--icon-accent', color);
+              try {
+                const c = document.createElement('canvas');
+                c.width = 48; c.height = 48;
+                const ctx = c.getContext('2d');
+                if (ctx) {
+                  ctx.drawImage(img, 0, 0, 48, 48);
+                  iconCache[key] = {
+                    dataUrl: c.toDataURL('image/png'),
+                    color,
+                    updatedAt: Date.now()
+                  };
+                  persistIconCache();
+                }
+              } catch {}
+            };
+            next();
+          };
+
           const activateCard = (card) => {
             const href = card.dataset.href;
             if (!href) return;
@@ -1004,6 +1138,8 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects) => {
               }
             });
           });
+
+          document.querySelectorAll('.bookmark-card img[data-primary]').forEach(loadIcon);
         })();
       </script>
     </body>
@@ -1331,6 +1467,35 @@ app.get('/api/health', (req, res) => {
     ok: true,
     version: APP_VERSION
   });
+});
+
+app.get('/api/icon-proxy', async (req, res) => {
+  const parsed = parseUrlForProxy(req.query.url);
+  if (!parsed) {
+    return res.status(400).send('Invalid icon url');
+  }
+
+  try {
+    const response = await fetch(parsed.toString(), {
+      method: 'GET',
+      redirect: 'follow',
+      headers: { 'User-Agent': 'node-home-icon-proxy/1.0' }
+    });
+    if (!response.ok) {
+      return res.status(404).send('Icon not found');
+    }
+    const contentType = response.headers.get('content-type') || 'image/png';
+    if (!contentType.startsWith('image/')) {
+      return res.status(415).send('Not an image');
+    }
+    const arrayBuffer = await response.arrayBuffer();
+    res.set('content-type', contentType);
+    res.set('cache-control', 'public, max-age=1209600, immutable');
+    return res.send(Buffer.from(arrayBuffer));
+  } catch (err) {
+    console.error('Icon proxy error', err);
+    return res.status(500).send('Icon fetch failed');
+  }
 });
 
 app.get('/api/hostnames', async (req, res) => {

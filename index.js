@@ -18,6 +18,14 @@ const HOSTNAMES_LOCK_FILE = `${HOSTNAMES_FILE}.lock`;
 const HOMEPAGE_BASE_URL = process.env.HOMEPAGE_BASE_URL || 'http://fridge.local';
 const APP_VERSION = process.env.APP_VERSION || '1.1.0';
 const PORT = Number(process.env.PORT) || 8088;
+const MBTA_API_BASE = process.env.MBTA_API_BASE || 'http://mbta-api:4000';
+const ICON_CACHE_DIR = path.join(__dirname, 'data', 'icon-cache');
+const ICON_CACHE_TTL_MS = 14 * 24 * 60 * 60 * 1000;
+const SOUND_FILES = Object.freeze({
+  hover1: '/home/fridge/docker/mbta-tracker/hover.wav',
+  hover2: '/home/fridge/docker/mbta-tracker/hover2.wav',
+  select: '/home/fridge/docker/mbta-tracker/select.wav'
+});
 const MAX_FIELD_LENGTH = 255;
 const MAX_HOMEPAGE_LENGTH = 512;
 const MAX_ENTRIES = 500;
@@ -143,6 +151,16 @@ const curatedLinks = [
     name: 'Node Home',
     link: `${HOMEPAGE_BASE_URL}/`,
     description: 'This launch page'
+  }
+];
+
+const EXTERNAL_SERVICE_CARDS = [
+  {
+    id: 'pihole',
+    name: 'Pi-hole',
+    description: 'DNS filtering + admin dashboard',
+    location: '/home/fridge/docker/pihole',
+    openUrl: 'http://192.168.1.99/admin'
   }
 ];
 
@@ -577,9 +595,9 @@ const iconFor = (link) => {
   const domain = url.replace(/^https?:\/\//, '').split('/')[0].toLowerCase();
   const target = domain ? `https://${domain}` : url;
   const encoded = encodeURIComponent(target);
-  const fallback = `https://www.google.com/s2/favicons?sz=256&domain_url=${encoded}`;
+  const fallback = `https://www.google.com/s2/favicons?sz=512&domain_url=${encoded}`;
   const apple = domain ? `https://${domain}/apple-touch-icon.png` : fallback;
-  const webManifest = domain ? `https://${domain}/android-chrome-192x192.png` : fallback;
+  const webManifest = domain ? `https://${domain}/android-chrome-512x512.png` : fallback;
   const favicon = domain ? `https://${domain}/favicon.ico` : fallback;
   return { primary: apple, secondary: webManifest, tertiary: favicon, fallback };
 };
@@ -591,6 +609,22 @@ const escapeHtml = (value) => {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+};
+
+const emojiForName = (name) => {
+  const n = String(name || '').toLowerCase();
+  if (n.includes('mbta') || n.includes('train')) return '🚆';
+  if (n.includes('printer')) return '🖨️';
+  if (n.includes('pihole') || n.includes('pi-hole')) return '🛡️';
+  if (n.includes('chat') || n.includes('rocket')) return '💬';
+  if (n.includes('photo')) return '🖼️';
+  if (n.includes('wiki') || n.includes('note')) return '📚';
+  if (n.includes('media')) return '🎬';
+  if (n.includes('sprite')) return '🧃';
+  if (n.includes('sentry')) return '📡';
+  if (n.includes('v0')) return '🧪';
+  if (n.includes('folder') || n.includes('project')) return '📁';
+  return '🔗';
 };
 
 const runCommand = async (command, args, options = {}) => {
@@ -614,6 +648,166 @@ const parseUrlForProxy = (raw) => {
     return parsed;
   } catch {
     return null;
+  }
+};
+
+const iconCachePathForUrl = (url) => {
+  const key = crypto.createHash('sha1').update(String(url)).digest('hex');
+  return {
+    metaPath: path.join(ICON_CACHE_DIR, `${key}.json`),
+    binPath: path.join(ICON_CACHE_DIR, `${key}.bin`)
+  };
+};
+
+const readDiskIconCache = (url) => {
+  try {
+    const { metaPath, binPath } = iconCachePathForUrl(url);
+    if (!fs.existsSync(metaPath) || !fs.existsSync(binPath)) return null;
+    const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
+    if (!meta || typeof meta !== 'object') return null;
+    if (!meta.cachedAt || (Date.now() - Number(meta.cachedAt)) > ICON_CACHE_TTL_MS) return null;
+    const payload = fs.readFileSync(binPath);
+    if (!payload.length) return null;
+    return { contentType: meta.contentType || 'image/png', payload };
+  } catch {
+    return null;
+  }
+};
+
+const writeDiskIconCache = (url, contentType, payload) => {
+  try {
+    fs.mkdirSync(ICON_CACHE_DIR, { recursive: true });
+    const { metaPath, binPath } = iconCachePathForUrl(url);
+    fs.writeFileSync(binPath, payload);
+    fs.writeFileSync(metaPath, JSON.stringify({ contentType, cachedAt: Date.now() }), 'utf8');
+  } catch (err) {
+    console.error('Unable to write icon cache', err.message || err);
+  }
+};
+
+const resolvePageIconUrl = async (rawUrl) => {
+  const parsed = parseUrlForProxy(rawUrl);
+  if (!parsed) return '';
+  const response = await fetch(parsed.toString(), {
+    method: 'GET',
+    redirect: 'follow',
+    headers: { 'User-Agent': 'node-home-icon-discovery/1.0' }
+  });
+  if (!response.ok) return '';
+  const contentType = String(response.headers.get('content-type') || '');
+  if (!contentType.includes('text/html')) return '';
+  const html = await response.text();
+  const relPattern = /<link[^>]*rel=["']([^"']+)["'][^>]*>/gi;
+  let match;
+  while ((match = relPattern.exec(html)) !== null) {
+    const rel = String(match[1] || '').toLowerCase();
+    if (!/(^|\\s)(apple-touch-icon|icon|shortcut icon)(\\s|$)/.test(rel)) continue;
+    const tag = match[0];
+    const hrefMatch = tag.match(/href=["']([^"']+)["']/i);
+    if (!hrefMatch || !hrefMatch[1]) continue;
+    try {
+      return new URL(hrefMatch[1], parsed).toString();
+    } catch {
+      continue;
+    }
+  }
+  return '';
+};
+
+const fetchJsonWithTimeout = async (url, timeoutMs = 5000) => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    return response.json();
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
+const parseMinutesUntil = (isoOrRaw, nowMs) => {
+  const eventMs = isoOrRaw ? Date.parse(isoOrRaw) : NaN;
+  if (!Number.isFinite(eventMs)) return null;
+  return Math.max(0, Math.floor((eventMs - nowMs) / 60000));
+};
+
+const computeTrainMotdFromPublicApi = async () => {
+  const now = Date.now();
+  const url = 'https://api-v3.mbta.com/predictions?filter[stop]=place-sdmnl&filter[route]=Blue&sort=arrival_time&page[limit]=8';
+  const payload = await fetchJsonWithTimeout(url, 6000);
+  const rows = Array.isArray(payload?.data) ? payload.data : [];
+  const inbound = rows
+    .filter((row) => Number(row?.attributes?.direction_id) === 1)
+    .map((row) => ({
+      minutes: parseMinutesUntil(row?.attributes?.arrival_time || row?.attributes?.departure_time, now),
+      headsign: row?.attributes?.direction_id === 1 ? 'Bowdoin' : 'Wonderland'
+    }))
+    .filter((row) => Number.isFinite(row.minutes))
+    .sort((a, b) => a.minutes - b.minutes);
+  const next = inbound[0];
+  if (!next) {
+    return {
+      title: 'no inbound train data right now',
+      leaveText: 'check tracker for live refresh',
+      ctaUrl: '/?go=trains',
+      ctaLabel: 'open mbta tracker'
+    };
+  }
+  const walk = 4;
+  const leaveIn = Math.max(0, next.minutes - walk);
+  return {
+    title: `next train ${next.minutes} min to ${next.headsign}`,
+    leaveText: leaveIn <= 0 ? 'leave now' : `leave in ${leaveIn} min`,
+    ctaUrl: '/?go=trains',
+    ctaLabel: 'open mbta tracker'
+  };
+};
+
+const computeTrainMotd = async () => {
+  try {
+    const [cfg, data] = await Promise.all([
+      fetchJsonWithTimeout(`${MBTA_API_BASE}/api/config`, 5000),
+      fetchJsonWithTimeout(`${MBTA_API_BASE}/api/suffolk-downs`, 5000)
+    ]);
+    const walk = Number(cfg.walkTimeMinutes || 4);
+    const predictions = Array.isArray(data.predictions) ? data.predictions : [];
+    const now = Date.now();
+    const inbound = predictions
+      .filter((p) => Number(p.directionId) === 1)
+      .map((p) => {
+        const minutes = Number.isFinite(p.minutes)
+          ? Number(p.minutes)
+          : parseMinutesUntil(p.arrivalTime || p.departureTime, now);
+        return { ...p, minutes };
+      })
+      .filter((p) => Number.isFinite(p.minutes))
+      .sort((a, b) => a.minutes - b.minutes);
+
+    const next = inbound[0] || null;
+    if (!next) {
+      return {
+        title: 'no inbound train data right now',
+        leaveText: 'check tracker for live refresh',
+        ctaUrl: '/?go=trains',
+        ctaLabel: 'open mbta tracker'
+      };
+    }
+
+    const leaveIn = Math.max(0, next.minutes - walk);
+    const leaveText = leaveIn <= 0 ? 'leave now' : `leave in ${leaveIn} min`;
+    const headsign = next.headsign || 'Bowdoin';
+    return {
+      title: `next train ${next.minutes} min to ${headsign}`,
+      leaveText,
+      ctaUrl: '/?go=trains',
+      ctaLabel: 'open mbta tracker'
+    };
+  } catch (err) {
+    console.error('Primary MBTA API unavailable, using public fallback', err.message || err);
+    return computeTrainMotdFromPublicApi();
   }
 };
 
@@ -837,11 +1031,15 @@ const managedServiceCard = (state) => {
   const service = state.service;
   const openHref = formatLink(service.openUrl, { defaultScheme: inferDefaultScheme(service.openUrl) || 'https' });
   const hasOpen = Boolean(openHref);
+  const icon = iconFor(openHref || service.location || service.name);
+  const domainLabel = (openHref || service.name).replace(/^https?:\/\//, '');
 
   return `
-    <article class="bookmark-card service-card managed-card ${state.state}" tabindex="0" role="group" aria-label="${escapeHtml(service.name)} controls">
+    <article class="bookmark-card service-card managed-card ${state.state} ${hasOpen ? 'link-card' : ''}" ${hasOpen ? `data-href="${openHref}" role="link"` : 'role="group"'} tabindex="0" aria-label="${escapeHtml(service.name)} controls">
       <div class="bookmark-content">
         <header>
+          <img src="${icon.primary}" data-primary="${icon.primary}" data-secondary="${icon.secondary}" data-tertiary="${icon.tertiary}" data-fallback="${icon.fallback}" data-domain="${escapeHtml(domainLabel.toLowerCase())}" data-pageurl="${escapeHtml(openHref)}" alt="${escapeHtml(service.name)} icon" loading="lazy" width="48" height="48" onerror="this.onerror=null; this.src=this.dataset.fallback;" />
+          <span class="icon-emoji" aria-hidden="true">${emojiForName(service.name)}</span>
           <div class="bookmark-meta">
             <p class="bookmark-name">${escapeHtml(service.name)}</p>
             <p class="bookmark-url">${escapeHtml(service.description)}</p>
@@ -850,13 +1048,13 @@ const managedServiceCard = (state) => {
             <p class="service-detail">${escapeHtml(state.detail)}</p>
           </div>
         </header>
-        <form method="POST" action="/service-action" class="service-actions" data-no-card-nav>
+        <form method="POST" action="/service-action" class="service-actions admin-control" data-no-card-nav>
           <input type="hidden" name="id" value="${escapeHtml(service.id)}">
-          <button type="submit" name="action" value="start">▶️ start</button>
-          <button type="submit" name="action" value="stop">⏹️ stop</button>
-          <button type="submit" name="action" value="restart">🔁 restart</button>
+          <button type="submit" name="action" value="start" aria-label="Start service">▶️</button>
+          <button type="submit" name="action" value="stop" aria-label="Stop service">⏹️</button>
+          <button type="submit" name="action" value="restart" aria-label="Restart service">🔁</button>
         </form>
-        ${hasOpen ? `<a class="bookmark-link" href="${openHref}">🚀 open</a>` : '<p class="no-open-link">No web endpoint</p>'}
+        ${hasOpen ? '' : '<p class="no-open-link">No web endpoint</p>'}
       </div>
     </article>
   `;
@@ -864,23 +1062,25 @@ const managedServiceCard = (state) => {
 
 const curatedCard = (entry) => {
   const href = formatLink(entry.link, { defaultScheme: inferDefaultScheme(entry.link) || 'https' });
+  const icon = iconFor(href);
+  const domainLabel = href.replace(/^https?:\/\//, '');
   return `
-    <article class="bookmark-card service-card" data-href="${href}" tabindex="0" role="link" aria-label="${escapeHtml(entry.name)}">
+    <article class="bookmark-card service-card link-card" data-href="${href}" tabindex="0" role="link" aria-label="${escapeHtml(entry.name)}">
       <div class="bookmark-content">
         <header>
+          <img src="${icon.primary}" data-primary="${icon.primary}" data-secondary="${icon.secondary}" data-tertiary="${icon.tertiary}" data-fallback="${icon.fallback}" data-domain="${escapeHtml(domainLabel.toLowerCase())}" data-pageurl="${escapeHtml(href)}" alt="${escapeHtml(entry.name)} icon" loading="lazy" width="48" height="48" onerror="this.onerror=null; this.src=this.dataset.fallback;" />
+          <span class="icon-emoji" aria-hidden="true">${emojiForName(entry.name)}</span>
           <div class="bookmark-meta">
             <p class="bookmark-name">${escapeHtml(entry.name)}</p>
             <p class="bookmark-url">${escapeHtml(entry.description)}</p>
           </div>
         </header>
-        <a class="bookmark-link" href="${href}">Open</a>
       </div>
     </article>
   `;
 };
 
 const renderHtml = (links, managedStates, serviceMessage, dockerProjects) => {
-  const managedProjectIds = new Set(managedStates.map((state) => state.service.id));
   const userCards = links.map((entry, index) => {
     const shortcut = getShortcutForEntry(entry);
     const destinationRaw = getDestinationForEntry(entry);
@@ -891,45 +1091,71 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects) => {
     const allowUp = index > 0;
     const allowDown = index < links.length - 1;
     return `
-      <article class="bookmark-card" data-href="${href}" tabindex="0" role="link" aria-label="${escapeHtml(entry.name)}">
+      <article class="bookmark-card link-card" data-href="${href}" tabindex="0" role="link" aria-label="${escapeHtml(entry.name)}">
         <div class="bookmark-content">
           <header>
-            <img src="${icon.primary}" data-primary="${icon.primary}" data-secondary="${icon.secondary}" data-tertiary="${icon.tertiary}" data-fallback="${icon.fallback}" data-domain="${escapeHtml(domainLabel.toLowerCase())}" alt="${escapeHtml(entry.name)} icon" loading="lazy" width="48" height="48" onerror="this.onerror=null; this.src=this.dataset.fallback;" />
+            <img src="${icon.primary}" data-primary="${icon.primary}" data-secondary="${icon.secondary}" data-tertiary="${icon.tertiary}" data-fallback="${icon.fallback}" data-domain="${escapeHtml(domainLabel.toLowerCase())}" data-pageurl="${escapeHtml(destination)}" alt="${escapeHtml(entry.name)} icon" loading="lazy" width="48" height="48" onerror="this.onerror=null; this.src=this.dataset.fallback;" />
+            <span class="icon-emoji" aria-hidden="true">${emojiForName(entry.name)}</span>
             <div class="bookmark-meta">
               <p class="bookmark-name">${escapeHtml(entry.name)}</p>
               <p class="bookmark-url">${escapeHtml(domainLabel)}</p>
             </div>
-            <div class="bookmark-actions">
+            <div class="bookmark-actions admin-control">
               <form method="POST" action="/move-link">
                 <input type="hidden" name="name" value="${escapeHtml(entry.name)}">
                 <input type="hidden" name="direction" value="up">
-                <button type="submit" ${allowUp ? '' : 'disabled'} aria-label="Move ${escapeHtml(entry.name)} up">↑</button>
+                <button type="submit" ${allowUp ? '' : 'disabled'} aria-label="Move ${escapeHtml(entry.name)} up">⬆️</button>
               </form>
               <form method="POST" action="/move-link">
                 <input type="hidden" name="name" value="${escapeHtml(entry.name)}">
                 <input type="hidden" name="direction" value="down">
-                <button type="submit" ${allowDown ? '' : 'disabled'} aria-label="Move ${escapeHtml(entry.name)} down">↓</button>
+                <button type="submit" ${allowDown ? '' : 'disabled'} aria-label="Move ${escapeHtml(entry.name)} down">⬇️</button>
               </form>
               <form method="POST" action="/delete-link" class="bookmark-delete">
                 <input type="hidden" name="name" value="${escapeHtml(entry.name)}">
-                <button title="Delete ${escapeHtml(entry.name)}" type="submit">×</button>
+                <button title="Delete ${escapeHtml(entry.name)}" type="submit" aria-label="Delete ${escapeHtml(entry.name)}">🗑️</button>
               </form>
             </div>
           </header>
-          <a class="bookmark-link" href="${href}">Visit</a>
         </div>
       </article>
     `;
   });
 
-  const managedCards = managedStates.map((state) => managedServiceCard(state));
   const infoCards = curatedLinks.map((entry) => curatedCard(entry));
-  const projectList = dockerProjects.map((name) => {
-    const managed = managedProjectIds.has(name);
-    const emoji = managed ? '🧩' : '📦';
-    const state = managed ? 'managed' : 'unmanaged';
-    return `<li class="project-item ${state}"><span class="project-emoji">${emoji}</span><span class="project-name">${escapeHtml(name)}</span><span class="project-state">${managed ? 'managed service' : 'manual'}</span></li>`;
-  });
+  const serviceCards = [
+    ...managedStates.map((state) => managedServiceCard(state)),
+    ...EXTERNAL_SERVICE_CARDS.map((service) => `
+      <article class="bookmark-card service-card external-service link-card" data-href="${escapeHtml(formatLink(service.openUrl, { defaultScheme: 'http' }))}" tabindex="0" role="link" aria-label="${escapeHtml(service.name)}">
+        <div class="bookmark-content">
+          <header>
+            <img src="${iconFor(service.openUrl).primary}" data-primary="${iconFor(service.openUrl).primary}" data-secondary="${iconFor(service.openUrl).secondary}" data-tertiary="${iconFor(service.openUrl).tertiary}" data-fallback="${iconFor(service.openUrl).fallback}" data-domain="${escapeHtml(String(service.openUrl).replace(/^https?:\/\//, '').toLowerCase())}" data-pageurl="${escapeHtml(formatLink(service.openUrl, { defaultScheme: 'http' }))}" alt="${escapeHtml(service.name)} icon" loading="lazy" width="48" height="48" onerror="this.onerror=null; this.src=this.dataset.fallback;" />
+            <span class="icon-emoji" aria-hidden="true">${emojiForName(service.name)}</span>
+            <div class="bookmark-meta">
+              <p class="bookmark-name">${escapeHtml(service.name)}</p>
+              <p class="bookmark-url">${escapeHtml(service.description)}</p>
+              <p class="service-location">${escapeHtml(service.location)}</p>
+              <p class="service-state service-running">Always on</p>
+            </div>
+          </header>
+        </div>
+      </article>
+    `)
+  ];
+  const folderCards = dockerProjects.map((folder) => `
+    <article class="bookmark-card folder-card link-card" data-href="${escapeHtml(`${HOMEPAGE_BASE_URL}/?go=notes&id=tech:docker_projects`)}" tabindex="0" role="link" aria-label="${escapeHtml(folder)} folder">
+      <div class="bookmark-content">
+        <header>
+          <span class="icon-emoji" aria-hidden="true">📁</span>
+          <div class="bookmark-meta">
+            <p class="bookmark-name">📁 ${escapeHtml(folder)}</p>
+            <p class="bookmark-url">docker project folder</p>
+            <p class="service-location">/home/fridge/docker/${escapeHtml(folder)}</p>
+          </div>
+        </header>
+      </div>
+    </article>
+  `);
 
   const cards = [
     ...userCards,
@@ -947,15 +1173,40 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects) => {
             <span>URL</span>
             <input type="text" name="link" placeholder="example.com or https://" required>
           </label>
-          <button type="submit">Save</button>
+          <button type="submit" aria-label="Save link">💾</button>
         </form>
       </div>
     </article>
-    `
+    `,
+    ...serviceCards,
+    ...folderCards
   ];
 
   const today = moment().format('ddd, MMM D');
   const msg = `Hello YOU today is ${today}.`;
+  const heroCard = `
+    <article class="bookmark-card hero hero-card" role="region" aria-label="Homepage header">
+      <div class="bookmark-content">
+        <p class="tag">fridge.local</p>
+        <h1><span id="greeting-name">YOU</span>, ${msg.replace('Hello YOU ', '')}</h1>
+        <p class="subtitle">Links, tools, and query redirects for local services (example: <code>?go=notes</code>).</p>
+        <p class="settings-nav"><a class="bookmark-link" href="/settings">⚙️ Settings</a></p>
+        ${serviceMessage ? `<p class="service-message">${escapeHtml(serviceMessage)}</p>` : ''}
+      </div>
+    </article>
+  `;
+  const motdCard = `
+    <article class="bookmark-card motd-card link-card" id="trainMOTD" data-href="/?go=trains" tabindex="0" role="link" aria-label="Train MOTD">
+      <div class="bookmark-content">
+        <header>
+          <div class="bookmark-meta">
+            <p class="bookmark-name"><span class="train-pill">🚆 mbta</span> <span class="train-title">loading train timing...</span></p>
+            <p class="train-leave">tap to open tracker</p>
+          </div>
+        </header>
+      </div>
+    </article>
+  `;
 
   return `
     <!DOCTYPE html>
@@ -968,42 +1219,14 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects) => {
         <link rel="stylesheet" href="d.css">
       </head>
       <body>
+        <button id="pageControlsToggle" class="page-controls-toggle" type="button" aria-label="Toggle controls" title="Toggle controls">⚙️</button>
         <main class="page">
-          <section class="hero">
-            <p class="tag">fridge.local</p>
-            <h1><span id="greeting-name">YOU</span>, ${msg.replace('Hello YOU ', '')}</h1>
-            <p class="subtitle">Links, tools, and query redirects for local services (example: <code>?go=notes</code>).</p>
-            <form class="name-form" data-no-card-nav>
-              <label for="displayName">name</label>
-              <input id="displayName" type="text" maxlength="24" placeholder="type your name">
-              <button type="button" id="saveDisplayName">save</button>
-            </form>
-            <p class="settings-nav"><a href="/settings">Settings</a></p>
-            ${serviceMessage ? `<p class="service-message">${escapeHtml(serviceMessage)}</p>` : ''}
-          </section>
-
-          <section>
-            <h2 class="section-title">Managed Services</h2>
-            <p class="section-subtitle">Start/stop/restart optional containers so they do not run all the time.</p>
-            <section class="bookmark-grid managed-grid">
-              ${managedCards.join('')}
+          <section class="stack-layout">
+            <section class="bookmark-grid">
+              ${heroCard}
+              ${motdCard}
+              ${cards.join('')}
             </section>
-          </section>
-
-          <section>
-            <h2 class="section-title">Projects + Links</h2>
-            <div class="stack-layout">
-              <section class="bookmark-grid">
-                ${cards.join('')}
-              </section>
-              <article class="project-list-card">
-                <h3>Docker Projects</h3>
-                <p class="section-subtitle">All folders under <code>/home/fridge/docker</code></p>
-                <ul class="project-list">
-                  ${projectList.join('')}
-                </ul>
-              </article>
-            </div>
           </section>
       </main>
       <script>
@@ -1022,26 +1245,53 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects) => {
           } catch {}
 
           const greetingEl = document.getElementById('greeting-name');
-          const nameInput = document.getElementById('displayName');
-          const saveBtn = document.getElementById('saveDisplayName');
+          const controlsToggle = document.getElementById('pageControlsToggle');
           const safeName = (raw) => String(raw || '').trim().replace(/[^\\w\\s-]/g, '').slice(0, 24);
+          const readProfile = () => {
+            try {
+              const profile = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
+              return {
+                name: safeName(profile.name),
+                updatedAt: Number(profile.updatedAt) || 0
+              };
+            } catch {
+              return { name: '', updatedAt: 0 };
+            }
+          };
+          const writeProfile = (next) => {
+            try {
+              localStorage.setItem(PROFILE_KEY, JSON.stringify({
+                name: safeName(next.name),
+                updatedAt: Date.now()
+              }));
+            } catch {}
+          };
           const applyName = (name) => {
             greetingEl.textContent = name || 'YOU';
-            nameInput.value = name || '';
           };
-          try {
-            const profile = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
-            applyName(safeName(profile.name));
-          } catch {
-            applyName('');
-          }
-          saveBtn.addEventListener('click', () => {
-            const name = safeName(nameInput.value);
-            applyName(name);
+          const profile = readProfile();
+          applyName(profile.name);
+          const CONTROL_MODE_KEY = 'nodehome-controls-visible-v1';
+          const setControlsVisible = (visible) => {
+            if (visible) document.body.classList.remove('controls-hidden');
+            else document.body.classList.add('controls-hidden');
             try {
-              localStorage.setItem(PROFILE_KEY, JSON.stringify({ name, updatedAt: Date.now() }));
+              localStorage.setItem(CONTROL_MODE_KEY, visible ? '1' : '0');
             } catch {}
-          });
+          };
+          const controlsVisible = (() => {
+            try {
+              return localStorage.getItem(CONTROL_MODE_KEY) === '1';
+            } catch {
+              return false;
+            }
+          })();
+          setControlsVisible(controlsVisible);
+          if (controlsToggle) {
+            controlsToggle.addEventListener('click', () => {
+              setControlsVisible(document.body.classList.contains('controls-hidden'));
+            });
+          }
 
           const iconCache = (() => {
             try {
@@ -1073,7 +1323,9 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects) => {
           };
           const loadIcon = (img) => {
             const card = img.closest('.bookmark-card');
+            const emoji = card ? card.querySelector('.icon-emoji') : null;
             const key = (img.dataset.domain || '').toLowerCase();
+            const pageUrl = img.dataset.pageurl || '';
             const cached = iconCache[key];
             const fresh = cached && (Date.now() - cached.updatedAt) < ICON_TTL_MS;
             if (fresh && cached.dataUrl) {
@@ -1085,15 +1337,25 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects) => {
             const secondary = img.dataset.secondary;
             const tertiary = img.dataset.tertiary;
             const fallback = img.dataset.fallback;
-            const chain = [primary, secondary, tertiary, fallback].filter(Boolean).map(proxy);
-            let idx = 0;
-            const next = () => {
-              if (idx >= chain.length) return;
-              img.src = chain[idx++];
+            const baseChain = [primary, secondary, tertiary, fallback].filter(Boolean);
+            const runChain = (urls) => {
+              const chain = urls.map(proxy);
+              let idx = 0;
+              const next = () => {
+                if (idx >= chain.length) {
+                  img.style.display = 'none';
+                  if (emoji) emoji.style.display = 'inline-flex';
+                  return;
+                }
+                img.src = chain[idx++];
+              };
+              img.onerror = next;
+              next();
             };
             img.crossOrigin = 'anonymous';
-            img.onerror = next;
             img.onload = () => {
+              img.style.display = 'block';
+              if (emoji) emoji.style.display = 'none';
               const color = averageColor(img);
               if (color && card) card.style.setProperty('--icon-accent', color);
               try {
@@ -1111,7 +1373,18 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects) => {
                 }
               } catch {}
             };
-            next();
+            if (pageUrl) {
+              fetch('/api/icon-discover?url=' + encodeURIComponent(pageUrl))
+                .then((r) => r.ok ? r.json() : Promise.resolve({ iconUrl: '' }))
+                .then((data) => {
+                  const discovered = String((data && data.iconUrl) || '').trim();
+                  const chain = discovered ? [discovered, ...baseChain] : baseChain;
+                  runChain(chain);
+                })
+                .catch(() => runChain(baseChain));
+            } else {
+              runChain(baseChain);
+            }
           };
 
           const activateCard = (card) => {
@@ -1120,12 +1393,122 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects) => {
             window.location.assign(href);
           };
 
+          const sound = (() => {
+            const urls = {
+              hover: ['/api/sfx/hover1', '/api/sfx/hover2'],
+              click: '/api/sfx/select'
+            };
+            let ctx = null;
+            let unlocked = false;
+            const buffers = new Map();
+            let hoverSource = null;
+            let clickSource = null;
+            let lastHoverAt = 0;
+            const HOVER_MIN_MS = 90;
+
+            const ensureCtx = () => {
+              if (!ctx) {
+                const Ctx = window.AudioContext || window.webkitAudioContext;
+                if (!Ctx) return null;
+                ctx = new Ctx({ latencyHint: 'interactive' });
+              }
+              return ctx;
+            };
+
+            const decode = async (url) => {
+              if (buffers.has(url)) return buffers.get(url);
+              const audioCtx = ensureCtx();
+              if (!audioCtx) return null;
+              try {
+                const response = await fetch(url, { cache: 'force-cache' });
+                if (!response.ok) return null;
+                const arrayBuffer = await response.arrayBuffer();
+                const buffer = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
+                buffers.set(url, buffer);
+                return buffer;
+              } catch {
+                return null;
+              }
+            };
+
+            const init = async () => {
+              const audioCtx = ensureCtx();
+              if (!audioCtx) return;
+              if (audioCtx.state === 'suspended') {
+                try { await audioCtx.resume(); } catch {}
+              }
+              if (!unlocked) {
+                unlocked = true;
+                decode(urls.click);
+                decode(urls.hover[0]);
+                decode(urls.hover[1]);
+              }
+            };
+
+            const playBuffer = async (url, type) => {
+              const audioCtx = ensureCtx();
+              if (!audioCtx || audioCtx.state !== 'running') return;
+              const buffer = await decode(url);
+              if (!buffer) return;
+              const src = audioCtx.createBufferSource();
+              src.buffer = buffer;
+              const gain = audioCtx.createGain();
+              gain.gain.value = type === 'click' ? 0.38 : 0.26;
+              src.connect(gain);
+              gain.connect(audioCtx.destination);
+              if (type === 'hover' && hoverSource) {
+                try { hoverSource.stop(); } catch {}
+              }
+              if (type === 'click' && clickSource) {
+                try { clickSource.stop(); } catch {}
+              }
+              if (type === 'hover') hoverSource = src;
+              if (type === 'click') clickSource = src;
+              src.start(0);
+              src.onended = () => {
+                if (type === 'hover' && hoverSource === src) hoverSource = null;
+                if (type === 'click' && clickSource === src) clickSource = null;
+              };
+            };
+
+            const playHover = async () => {
+              if (!unlocked) return;
+              const now = Date.now();
+              if ((now - lastHoverAt) < HOVER_MIN_MS) return;
+              lastHoverAt = now;
+              const pick = urls.hover[Math.random() < 0.5 ? 0 : 1];
+              playBuffer(pick, 'hover');
+            };
+
+            const playClick = async () => {
+              if (!unlocked) return;
+              playBuffer(urls.click, 'click');
+            };
+
+            return { init, playHover, playClick };
+          })();
+
+          const unlockSound = () => {
+            sound.init();
+            window.removeEventListener('pointerdown', unlockSound, true);
+            window.removeEventListener('keydown', unlockSound, true);
+          };
+          window.addEventListener('pointerdown', unlockSound, true);
+          window.addEventListener('keydown', unlockSound, true);
+
           document.querySelectorAll('.bookmark-card').forEach((card) => {
+            card.addEventListener('pointerenter', () => {
+              if (!card.dataset.href) return;
+              sound.playHover();
+            });
             card.addEventListener('click', (event) => {
               if (event.target.closest('form') || event.target.closest('button') || event.target.closest('[data-no-card-nav]')) {
                 return;
               }
-              activateCard(card);
+              if (!card.dataset.href) return;
+              event.preventDefault();
+              sound.playClick();
+              setTimeout(() => activateCard(card), 55);
             });
 
             card.addEventListener('keydown', (event) => {
@@ -1133,13 +1516,56 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects) => {
                 if (event.target.closest('form') || event.target.closest('button') || event.target.closest('[data-no-card-nav]')) {
                   return;
                 }
+                if (!card.dataset.href) return;
                 event.preventDefault();
-                activateCard(card);
+                sound.playClick();
+                setTimeout(() => activateCard(card), 55);
+              }
+            });
+          });
+
+          document.querySelectorAll('form.bookmark-delete').forEach((form) => {
+            form.addEventListener('submit', async (event) => {
+              event.preventDefault();
+              const card = form.closest('.bookmark-card');
+              const input = form.querySelector('input[name="name"]');
+              const name = input ? String(input.value || '').trim() : '';
+              if (!name) return;
+              try {
+                const response = await fetch('/api/links/' + encodeURIComponent(name), { method: 'DELETE' });
+                if (!response.ok) throw new Error('delete failed');
+                if (card) {
+                  card.style.transition = 'opacity 140ms ease, transform 140ms ease';
+                  card.style.opacity = '0';
+                  card.style.transform = 'scale(0.97)';
+                  setTimeout(() => card.remove(), 150);
+                }
+              } catch {
+                form.submit();
               }
             });
           });
 
           document.querySelectorAll('.bookmark-card img[data-primary]').forEach(loadIcon);
+
+          const trainCard = document.getElementById('trainMOTD');
+          if (trainCard) {
+            fetch('/api/train-motd')
+              .then((r) => r.ok ? r.json() : Promise.reject(new Error('bad train data')))
+              .then((data) => {
+                const title = trainCard.querySelector('.train-title');
+                const leave = trainCard.querySelector('.train-leave');
+                if (title) title.textContent = data.title || 'train info unavailable';
+                if (leave) leave.textContent = data.leaveText || '';
+                if (data.ctaUrl) trainCard.dataset.href = data.ctaUrl;
+              })
+              .catch(() => {
+                const title = trainCard.querySelector('.train-title');
+                const leave = trainCard.querySelector('.train-leave');
+                if (title) title.textContent = 'loading tracker summary...';
+                if (leave) leave.textContent = 'tap to open tracker';
+              });
+          }
         })();
       </script>
     </body>
@@ -1298,6 +1724,18 @@ const renderSettingsHtml = () => `
         </section>
 
         <section class="panel">
+          <h2 style="margin-top:0;">Profile</h2>
+          <form id="profile-form">
+            <label>
+              Display Name
+              <input id="profileName" name="profileName" maxlength="24" placeholder="type your name">
+            </label>
+            <button type="submit" aria-label="Save display name">Save name</button>
+            <p id="profile-message" class="message"></p>
+          </form>
+        </section>
+
+        <section class="panel">
           <form id="hostname-form">
             <div class="row">
               <label>
@@ -1313,7 +1751,7 @@ const renderSettingsHtml = () => `
               Fallback IP:Port (optional)
               <input id="fallbackTarget" name="fallbackTarget" placeholder="192.168.1.50:631" maxlength="255">
             </label>
-            <button type="submit">Save</button>
+            <button type="submit" aria-label="Save hostname">💾</button>
             <p id="message" class="message"></p>
           </form>
         </section>
@@ -1326,12 +1764,17 @@ const renderSettingsHtml = () => `
 
       <script>
         (function () {
+          const PROFILE_KEY = 'nodehome-profile-v1';
           const form = document.getElementById('hostname-form');
+          const profileForm = document.getElementById('profile-form');
+          const profileNameInput = document.getElementById('profileName');
+          const profileMessageEl = document.getElementById('profile-message');
           const homepageInput = document.getElementById('homepageUrl');
           const hostnameInput = document.getElementById('serviceHostname');
           const fallbackInput = document.getElementById('fallbackTarget');
           const messageEl = document.getElementById('message');
           const listEl = document.getElementById('hostname-list');
+          const safeName = (raw) => String(raw || '').trim().replace(/[^\\w\\s-]/g, '').slice(0, 24);
 
           const escapeHtml = (value) => String(value || '')
             .replace(/&/g, '&amp;')
@@ -1343,6 +1786,32 @@ const renderSettingsHtml = () => `
           const setMessage = (text, isError) => {
             messageEl.textContent = text || '';
             messageEl.style.color = isError ? '#991b1b' : '#334155';
+          };
+          const setProfileMessage = (text, isError) => {
+            if (!profileMessageEl) return;
+            profileMessageEl.textContent = text || '';
+            profileMessageEl.style.color = isError ? '#991b1b' : '#334155';
+          };
+          const readProfile = () => {
+            try {
+              const profile = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
+              return {
+                name: safeName(profile.name)
+              };
+            } catch {
+              return { name: '' };
+            }
+          };
+          const writeProfile = (next) => {
+            try {
+              localStorage.setItem(PROFILE_KEY, JSON.stringify({
+                name: safeName(next.name),
+                updatedAt: Date.now()
+              }));
+              return true;
+            } catch {
+              return false;
+            }
           };
 
           const renderEntries = (entries) => {
@@ -1437,6 +1906,19 @@ const renderSettingsHtml = () => `
             }
           });
 
+          if (profileForm && profileNameInput) {
+            const currentProfile = readProfile();
+            profileNameInput.value = currentProfile.name || '';
+            profileForm.addEventListener('submit', (event) => {
+              event.preventDefault();
+              const nextName = safeName(profileNameInput.value);
+              const ok = writeProfile({
+                name: nextName
+              });
+              setProfileMessage(ok ? 'Saved.' : 'Save failed', !ok);
+            });
+          }
+
           loadEntries();
         })();
       </script>
@@ -1475,6 +1957,13 @@ app.get('/api/icon-proxy', async (req, res) => {
     return res.status(400).send('Invalid icon url');
   }
 
+  const cached = readDiskIconCache(parsed.toString());
+  if (cached) {
+    res.set('content-type', cached.contentType);
+    res.set('cache-control', 'public, max-age=1209600, immutable');
+    return res.send(cached.payload);
+  }
+
   try {
     const response = await fetch(parsed.toString(), {
       method: 'GET',
@@ -1489,12 +1978,57 @@ app.get('/api/icon-proxy', async (req, res) => {
       return res.status(415).send('Not an image');
     }
     const arrayBuffer = await response.arrayBuffer();
+    const payload = Buffer.from(arrayBuffer);
+    writeDiskIconCache(parsed.toString(), contentType, payload);
     res.set('content-type', contentType);
     res.set('cache-control', 'public, max-age=1209600, immutable');
-    return res.send(Buffer.from(arrayBuffer));
+    return res.send(payload);
   } catch (err) {
     console.error('Icon proxy error', err);
     return res.status(500).send('Icon fetch failed');
+  }
+});
+
+app.get('/api/sfx/:id', (req, res) => {
+  const id = String(req.params.id || '').trim().toLowerCase();
+  const filePath = SOUND_FILES[id];
+  if (!filePath) return res.status(404).send('sound not found');
+  try {
+    if (!fs.existsSync(filePath)) return res.status(404).send('sound not found');
+    res.set('content-type', 'audio/wav');
+    res.set('cache-control', 'public, max-age=604800');
+    return res.sendFile(filePath);
+  } catch (err) {
+    console.error('Unable to serve sound', err);
+    return res.status(500).send('sound unavailable');
+  }
+});
+
+app.get('/api/icon-discover', async (req, res) => {
+  const pageUrl = String(req.query.url || '').trim();
+  const parsed = parseUrlForProxy(pageUrl);
+  if (!parsed) return res.json({ iconUrl: '' });
+  try {
+    const iconUrl = await resolvePageIconUrl(parsed.toString());
+    return res.json({ iconUrl: iconUrl || '' });
+  } catch (err) {
+    console.error('Icon discovery error', err.message || err);
+    return res.json({ iconUrl: '' });
+  }
+});
+
+app.get('/api/train-motd', async (_req, res) => {
+  try {
+    const motd = await computeTrainMotd();
+    return res.json(motd);
+  } catch (err) {
+    console.error('Train MOTD error', err);
+    return res.status(200).json({
+      title: 'train motd unavailable',
+      leaveText: 'open tracker for details',
+      ctaUrl: '/?go=trains',
+      ctaLabel: 'open mbta tracker',
+    });
   }
 });
 
@@ -1662,6 +2196,26 @@ app.post('/delete-link', (req, res) => {
   } catch (err) {
     console.error('Error deleting link', err);
     return res.status(500).send('Error deleting link');
+  }
+});
+
+app.delete('/api/links/:name', (req, res) => {
+  try {
+    const name = String(req.params.name || '').trim();
+    if (!name) {
+      return res.status(400).json({ error: 'Name is required' });
+    }
+    const links = readLinks();
+    const updated = links.filter((entry) => String(entry.name || '').toLowerCase() !== name.toLowerCase());
+    if (updated.length === links.length) {
+      return res.status(404).json({ error: 'Link not found' });
+    }
+    writeLinks(updated);
+    appendDeletedSnapshot(links);
+    return res.json({ ok: true, deleted: name });
+  } catch (err) {
+    console.error('Error deleting link via API', err);
+    return res.status(500).json({ error: 'Error deleting link' });
   }
 });
 

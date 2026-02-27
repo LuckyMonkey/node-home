@@ -162,9 +162,12 @@ body {
   column-gap: 0.8rem;
   column-fill: auto;
   height: calc(100vh - 1.1rem);
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow-y: hidden;
+  overflow-x: auto;
   padding-right: 0.2rem;
+  padding-bottom: 0.4rem;
+  overscroll-behavior-x: contain;
+  scroll-behavior: smooth;
 }
 
 .card-block {

@@ -23,6 +23,7 @@
   const controlsToggle = shared.qs('#pageControlsToggle');
   const cardListRoot = shared.qs('.bookmark-grid');
   if (!cardListRoot) return;
+  cardListRoot.setAttribute('tabindex', '0');
 
   const readProfile = () => {
     const profile = shared.readJson(PROFILE_KEY, {});
@@ -215,6 +216,15 @@
       setControlsVisible(document.body.classList.contains('controls-hidden'));
     });
   }
+
+  cardListRoot.addEventListener('wheel', (event) => {
+    const hasHiddenColumns = cardListRoot.scrollWidth > cardListRoot.clientWidth + 2;
+    if (!hasHiddenColumns) return;
+    const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+    if (Math.abs(delta) < 0.5) return;
+    event.preventDefault();
+    cardListRoot.scrollLeft += delta;
+  }, { passive: false });
 
   const updateShowHiddenUi = () => {
     rankToggleBtn.textContent = showHidden ? '🙈' : '👁️';

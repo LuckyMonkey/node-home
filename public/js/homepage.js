@@ -217,13 +217,30 @@
     });
   }
 
+  const cycleBlockItems = (block, direction) => {
+    const movable = shared.qsa('.bookmark-card[data-item-id]', block)
+      .filter((card) => !isPinned(card) && itemId(card) !== 'system:add-link');
+    if (movable.length < 2) return;
+    if (direction > 0) {
+      block.appendChild(movable[0]);
+      return;
+    }
+    block.insertBefore(movable[movable.length - 1], movable[0]);
+  };
+
+  let lastWheelCycleAt = 0;
   cardListRoot.addEventListener('wheel', (event) => {
-    const hasHiddenColumns = cardListRoot.scrollWidth > cardListRoot.clientWidth + 2;
-    if (!hasHiddenColumns) return;
-    const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+    if (event.ctrlKey) return;
+    if (event.target instanceof Element && event.target.closest('input, textarea, select')) return;
+    const delta = Math.abs(event.deltaY) >= Math.abs(event.deltaX) ? event.deltaY : event.deltaX;
     if (Math.abs(delta) < 0.5) return;
     event.preventDefault();
-    cardListRoot.scrollLeft += delta;
+    const now = Date.now();
+    if (now - lastWheelCycleAt < 60) return;
+    lastWheelCycleAt = now;
+    const direction = delta > 0 ? 1 : -1;
+    blocks().forEach((block) => cycleBlockItems(block, direction));
+    applyHiddenState();
   }, { passive: false });
 
   const updateShowHiddenUi = () => {

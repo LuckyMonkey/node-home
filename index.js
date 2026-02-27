@@ -26,6 +26,7 @@ const SOUND_FILES = Object.freeze({
   hover2: '/home/fridge/docker/mbta-tracker/hover2.wav',
   select: '/home/fridge/docker/mbta-tracker/select.wav'
 });
+const FRIDGE_ICON_PATH = '/home/fridge/docker/icon.png';
 const MAX_FIELD_LENGTH = 255;
 const MAX_HOMEPAGE_LENGTH = 512;
 const MAX_ENTRIES = 500;
@@ -166,6 +167,18 @@ const EXTERNAL_SERVICE_CARDS = [
 
 const QUERY_REDIRECT_TARGETS = Object.freeze({
   home: `${HOMEPAGE_BASE_URL}/`,
+  notes: `${HOMEPAGE_BASE_URL}/app/notes`,
+  trains: `${HOMEPAGE_BASE_URL}/app/trains`,
+  printers: `${HOMEPAGE_BASE_URL}/app/printers`,
+  sprite: `${HOMEPAGE_BASE_URL}/app/sprite`,
+  v0: `${HOMEPAGE_BASE_URL}/app/v0`,
+  sentry: `${HOMEPAGE_BASE_URL}/app/sentry`,
+  photos: `${HOMEPAGE_BASE_URL}/app/photos`,
+  chat: `${HOMEPAGE_BASE_URL}/app/chat`,
+  pihole: 'http://192.168.1.99/admin'
+});
+
+const APP_WRAPPER_TARGETS = Object.freeze({
   notes: `${HOMEPAGE_BASE_URL}:9090/`,
   trains: `${HOMEPAGE_BASE_URL}:5174/`,
   printers: `${HOMEPAGE_BASE_URL}:8088/ui/`,
@@ -173,8 +186,7 @@ const QUERY_REDIRECT_TARGETS = Object.freeze({
   v0: `${HOMEPAGE_BASE_URL}:8064/`,
   sentry: `${HOMEPAGE_BASE_URL}:8089/`,
   photos: `${HOMEPAGE_BASE_URL}:8081/`,
-  chat: `${HOMEPAGE_BASE_URL}:4002/`,
-  pihole: 'http://192.168.1.99/admin'
+  chat: `${HOMEPAGE_BASE_URL}:4002/`
 });
 
 const QUERY_REDIRECT_ALIASES = Object.freeze({
@@ -491,6 +503,24 @@ const formatLink = (raw, { defaultScheme = 'https' } = {}) => {
   return `${defaultScheme}://${value}`;
 };
 
+const wrapKnownAppUrl = (rawHref) => {
+  const href = String(rawHref || '').trim();
+  if (!href) return href;
+  const normalized = href
+    .toLowerCase()
+    .replace(/^https?:\/\//, '')
+    .replace(/\/+$/, '');
+  if (
+    normalized === 'fridge.local:8088'
+    || normalized === 'fridge.local:8088/ui'
+    || normalized === '192.168.1.102:8088'
+    || normalized === '192.168.1.102:8088/ui'
+  ) {
+    return `${HOMEPAGE_BASE_URL}/app/printers`;
+  }
+  return href;
+};
+
 const normalizeShortcut = (raw) => {
   if (!raw) return '';
   const value = String(raw).trim();
@@ -649,6 +679,17 @@ const parseUrlForProxy = (raw) => {
   } catch {
     return null;
   }
+};
+
+const requestHost = (req) => {
+  const forwarded = String(req.headers['x-forwarded-host'] || '').trim();
+  const host = forwarded || String(req.headers.host || '').trim();
+  return host.split(',')[0].trim().toLowerCase();
+};
+
+const shouldInjectForHost = (req) => {
+  const host = requestHost(req).split(':')[0];
+  return host === 'fridge.local' || host.endsWith('.fridge.local');
 };
 
 const iconCachePathForUrl = (url) => {
@@ -1035,7 +1076,7 @@ const managedServiceCard = (state) => {
   const domainLabel = (openHref || service.name).replace(/^https?:\/\//, '');
 
   return `
-    <article class="bookmark-card service-card managed-card ${state.state} ${hasOpen ? 'link-card' : ''}" ${hasOpen ? `data-href="${openHref}" role="link"` : 'role="group"'} tabindex="0" aria-label="${escapeHtml(service.name)} controls">
+    <article class="bookmark-card service-card managed-card ${state.state} ${hasOpen ? 'link-card' : ''}" data-item-id="service:${escapeHtml(service.id)}" ${hasOpen ? `data-href="${openHref}" role="link"` : 'role="group"'} tabindex="0" aria-label="${escapeHtml(service.name)} controls">
       <div class="bookmark-content">
         <header>
           <img src="${icon.primary}" data-primary="${icon.primary}" data-secondary="${icon.secondary}" data-tertiary="${icon.tertiary}" data-fallback="${icon.fallback}" data-domain="${escapeHtml(domainLabel.toLowerCase())}" data-pageurl="${escapeHtml(openHref)}" alt="${escapeHtml(service.name)} icon" loading="lazy" width="48" height="48" onerror="this.onerror=null; this.src=this.dataset.fallback;" />
@@ -1065,7 +1106,7 @@ const curatedCard = (entry) => {
   const icon = iconFor(href);
   const domainLabel = href.replace(/^https?:\/\//, '');
   return `
-    <article class="bookmark-card service-card link-card" data-href="${href}" tabindex="0" role="link" aria-label="${escapeHtml(entry.name)}">
+    <article class="bookmark-card service-card link-card" data-item-id="curated:${escapeHtml(String(entry.name).toLowerCase())}" data-href="${href}" tabindex="0" role="link" aria-label="${escapeHtml(entry.name)}">
       <div class="bookmark-content">
         <header>
           <img src="${icon.primary}" data-primary="${icon.primary}" data-secondary="${icon.secondary}" data-tertiary="${icon.tertiary}" data-fallback="${icon.fallback}" data-domain="${escapeHtml(domainLabel.toLowerCase())}" data-pageurl="${escapeHtml(href)}" alt="${escapeHtml(entry.name)} icon" loading="lazy" width="48" height="48" onerror="this.onerror=null; this.src=this.dataset.fallback;" />
@@ -1080,18 +1121,19 @@ const curatedCard = (entry) => {
   `;
 };
 
-const renderHtml = (links, managedStates, serviceMessage, dockerProjects) => {
+const renderHtml = (links, managedStates, serviceMessage, dockerProjects, injectOverlayScript) => {
   const userCards = links.map((entry, index) => {
     const shortcut = getShortcutForEntry(entry);
     const destinationRaw = getDestinationForEntry(entry);
     const destination = formatLink(destinationRaw, { defaultScheme: inferDefaultScheme(destinationRaw) || 'https' });
-    const href = shortcut ? `/${encodeURIComponent(shortcut)}` : destination;
+    const hrefRaw = shortcut ? `/${encodeURIComponent(shortcut)}` : destination;
+    const href = wrapKnownAppUrl(hrefRaw);
     const icon = iconFor(destination);
     const domainLabel = destination.replace(/^https?:\/\//, '');
     const allowUp = index > 0;
     const allowDown = index < links.length - 1;
     return `
-      <article class="bookmark-card link-card" data-href="${href}" tabindex="0" role="link" aria-label="${escapeHtml(entry.name)}">
+      <article class="bookmark-card link-card" data-item-id="link:${escapeHtml(String(entry.name).toLowerCase())}" data-href="${href}" tabindex="0" role="link" aria-label="${escapeHtml(entry.name)}">
         <div class="bookmark-content">
           <header>
             <img src="${icon.primary}" data-primary="${icon.primary}" data-secondary="${icon.secondary}" data-tertiary="${icon.tertiary}" data-fallback="${icon.fallback}" data-domain="${escapeHtml(domainLabel.toLowerCase())}" data-pageurl="${escapeHtml(destination)}" alt="${escapeHtml(entry.name)} icon" loading="lazy" width="48" height="48" onerror="this.onerror=null; this.src=this.dataset.fallback;" />
@@ -1126,7 +1168,7 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects) => {
   const serviceCards = [
     ...managedStates.map((state) => managedServiceCard(state)),
     ...EXTERNAL_SERVICE_CARDS.map((service) => `
-      <article class="bookmark-card service-card external-service link-card" data-href="${escapeHtml(formatLink(service.openUrl, { defaultScheme: 'http' }))}" tabindex="0" role="link" aria-label="${escapeHtml(service.name)}">
+      <article class="bookmark-card service-card external-service link-card" data-item-id="service:${escapeHtml(String(service.id).toLowerCase())}" data-href="${escapeHtml(formatLink(service.openUrl, { defaultScheme: 'http' }))}" tabindex="0" role="link" aria-label="${escapeHtml(service.name)}">
         <div class="bookmark-content">
           <header>
             <img src="${iconFor(service.openUrl).primary}" data-primary="${iconFor(service.openUrl).primary}" data-secondary="${iconFor(service.openUrl).secondary}" data-tertiary="${iconFor(service.openUrl).tertiary}" data-fallback="${iconFor(service.openUrl).fallback}" data-domain="${escapeHtml(String(service.openUrl).replace(/^https?:\/\//, '').toLowerCase())}" data-pageurl="${escapeHtml(formatLink(service.openUrl, { defaultScheme: 'http' }))}" alt="${escapeHtml(service.name)} icon" loading="lazy" width="48" height="48" onerror="this.onerror=null; this.src=this.dataset.fallback;" />
@@ -1143,7 +1185,7 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects) => {
     `)
   ];
   const folderCards = dockerProjects.map((folder) => `
-    <article class="bookmark-card folder-card link-card" data-href="${escapeHtml(`${HOMEPAGE_BASE_URL}/?go=notes&id=tech:docker_projects`)}" tabindex="0" role="link" aria-label="${escapeHtml(folder)} folder">
+    <article class="bookmark-card folder-card link-card" data-item-id="folder:${escapeHtml(String(folder).toLowerCase())}" data-href="${escapeHtml(`${HOMEPAGE_BASE_URL}/?go=notes&id=tech:docker_projects`)}" tabindex="0" role="link" aria-label="${escapeHtml(folder)} folder">
       <div class="bookmark-content">
         <header>
           <span class="icon-emoji" aria-hidden="true">📁</span>
@@ -1161,7 +1203,7 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects) => {
     ...userCards,
     ...infoCards,
     `
-    <article class="bookmark-card add-card" data-href="/" tabindex="0" role="link" aria-label="Add quick link">
+    <article class="bookmark-card add-card" data-item-id="system:add-link" data-href="/" tabindex="0" role="link" aria-label="Add quick link">
       <div class="bookmark-content">
         <h2>Add quick link</h2>
         <form method="POST" action="/add-link" class="add-form" data-no-card-nav>
@@ -1183,20 +1225,45 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects) => {
   ];
 
   const today = moment().format('ddd, MMM D');
-  const msg = `Hello YOU today is ${today}.`;
+  const msg = `Today is ${today}.`;
   const heroCard = `
-    <article class="bookmark-card hero hero-card" role="region" aria-label="Homepage header">
+    <article class="bookmark-card hero hero-card" data-item-id="pinned:hero" data-pinned="1" role="region" aria-label="Homepage header">
       <div class="bookmark-content">
-        <p class="tag">fridge.local</p>
-        <h1><span id="greeting-name">YOU</span>, ${msg.replace('Hello YOU ', '')}</h1>
-        <p class="subtitle">Links, tools, and query redirects for local services (example: <code>?go=notes</code>).</p>
-        <p class="settings-nav"><a class="bookmark-link" href="/settings">⚙️ Settings</a></p>
+        <h1><span id="greeting-name">CHARLIE</span></h1>
+        <p class="subtitle">${msg}</p>
+        <p class="subtitle">Links, tools, and query redirects for local services.</p>
         ${serviceMessage ? `<p class="service-message">${escapeHtml(serviceMessage)}</p>` : ''}
       </div>
     </article>
   `;
+  const fridgeHomeCard = `
+    <article class="bookmark-card service-card link-card" data-item-id="pinned:fridge-home" data-pinned="1" data-href="${HOMEPAGE_BASE_URL}/" tabindex="0" role="link" aria-label="fridge.local home">
+      <div class="bookmark-content">
+        <header>
+          <span class="icon-emoji" style="display:inline-flex;" aria-hidden="true">🏠</span>
+          <div class="bookmark-meta">
+            <p class="bookmark-name">fridge.local</p>
+            <p class="bookmark-url">open homepage root</p>
+          </div>
+        </header>
+      </div>
+    </article>
+  `;
+  const settingsCard = `
+    <article class="bookmark-card service-card link-card" data-item-id="pinned:settings" data-pinned="1" data-href="/settings" tabindex="0" role="link" aria-label="Open settings">
+      <div class="bookmark-content">
+        <header>
+          <span class="icon-emoji" style="display:inline-flex;" aria-hidden="true">⚙️</span>
+          <div class="bookmark-meta">
+            <p class="bookmark-name">Settings</p>
+            <p class="bookmark-url">profile + hostname manager</p>
+          </div>
+        </header>
+      </div>
+    </article>
+  `;
   const motdCard = `
-    <article class="bookmark-card motd-card link-card" id="trainMOTD" data-href="/?go=trains" tabindex="0" role="link" aria-label="Train MOTD">
+    <article class="bookmark-card motd-card link-card" data-item-id="system:motd" id="trainMOTD" data-href="/?go=trains" tabindex="0" role="link" aria-label="Train MOTD">
       <div class="bookmark-content">
         <header>
           <div class="bookmark-meta">
@@ -1217,6 +1284,7 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects) => {
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#0f172a">
         <link rel="stylesheet" href="d.css">
+        ${injectOverlayScript ? '<script defer src="/_fridge/home-overlay.js"></script>' : ''}
       </head>
       <body>
         <button id="pageControlsToggle" class="page-controls-toggle" type="button" aria-label="Toggle controls" title="Toggle controls">⚙️</button>
@@ -1224,6 +1292,8 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects) => {
           <section class="stack-layout">
             <section class="bookmark-grid">
               ${heroCard}
+              ${fridgeHomeCard}
+              ${settingsCard}
               ${motdCard}
               ${cards.join('')}
             </section>
@@ -1246,6 +1316,14 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects) => {
 
           const greetingEl = document.getElementById('greeting-name');
           const controlsToggle = document.getElementById('pageControlsToggle');
+          const rankToggleBtn = document.createElement('button');
+          rankToggleBtn.id = 'showHiddenToggle';
+          rankToggleBtn.className = 'page-controls-toggle';
+          rankToggleBtn.style.right = '46px';
+          rankToggleBtn.title = 'Show hidden items';
+          rankToggleBtn.setAttribute('aria-label', 'Show hidden items');
+          rankToggleBtn.textContent = '👁️';
+          document.body.appendChild(rankToggleBtn);
           const safeName = (raw) => String(raw || '').trim().replace(/[^\\w\\s-]/g, '').slice(0, 24);
           const readProfile = () => {
             try {
@@ -1271,6 +1349,92 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects) => {
           };
           const profile = readProfile();
           applyName(profile.name);
+          const CLICK_RANK_KEY = 'nodehome-click-rank-v1';
+          const HIDDEN_ITEMS_KEY = 'nodehome-hidden-items-v1';
+          const SHOW_HIDDEN_KEY = 'nodehome-show-hidden-v1';
+          const readObj = (key) => {
+            try {
+              const value = JSON.parse(localStorage.getItem(key) || '{}');
+              return value && typeof value === 'object' ? value : {};
+            } catch {
+              return {};
+            }
+          };
+          const writeObj = (key, obj) => {
+            try { localStorage.setItem(key, JSON.stringify(obj)); } catch {}
+          };
+          const rankMap = readObj(CLICK_RANK_KEY);
+          const hiddenMap = readObj(HIDDEN_ITEMS_KEY);
+          let showHidden = localStorage.getItem(SHOW_HIDDEN_KEY) === '1';
+          const cardListRoot = document.querySelector('.bookmark-grid');
+          const cards = () => Array.from(document.querySelectorAll('.bookmark-grid .bookmark-card[data-item-id]'));
+          const isPinned = (card) => card.dataset.pinned === '1';
+          const itemId = (card) => String(card.dataset.itemId || '').trim();
+          const applyHiddenState = () => {
+            cards().forEach((card) => {
+              const id = itemId(card);
+              const hidden = Boolean(hiddenMap[id]) && !isPinned(card);
+              card.classList.toggle('is-hidden-item', hidden && !showHidden);
+              card.classList.toggle('is-shown-hidden', hidden && showHidden);
+            });
+          };
+          const applyOrder = () => {
+            if (!cardListRoot) return;
+            const all = cards();
+            const pinned = all.filter(isPinned);
+            const other = all.filter((c) => !isPinned(c));
+            const withIndex = other.map((card, idx) => ({ card, idx }));
+            withIndex.sort((a, b) => {
+              const sa = Number(rankMap[itemId(a.card)] || 0);
+              const sb = Number(rankMap[itemId(b.card)] || 0);
+              if (sb !== sa) return sb - sa;
+              return a.idx - b.idx;
+            });
+            [...pinned, ...withIndex.map((e) => e.card)].forEach((card) => cardListRoot.appendChild(card));
+            applyHiddenState();
+          };
+          const installHideButtons = () => {
+            cards().forEach((card) => {
+              if (isPinned(card) || card.querySelector('.hide-item-btn')) return;
+              const controlWrap = document.createElement('div');
+              controlWrap.className = 'card-hide-control admin-control';
+              const btn = document.createElement('button');
+              btn.type = 'button';
+              btn.className = 'hide-item-btn';
+              btn.textContent = '🙈';
+              btn.title = 'Hide this item';
+              btn.setAttribute('aria-label', 'Hide this item');
+              btn.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                const id = itemId(card);
+                if (!id) return;
+                hiddenMap[id] = 1;
+                writeObj(HIDDEN_ITEMS_KEY, hiddenMap);
+                applyHiddenState();
+              });
+              controlWrap.appendChild(btn);
+              card.appendChild(controlWrap);
+            });
+          };
+          const bumpRank = (id) => {
+            if (!id || id.startsWith('pinned:')) return;
+            rankMap[id] = Number(rankMap[id] || 0) + 1;
+            writeObj(CLICK_RANK_KEY, rankMap);
+          };
+          rankToggleBtn.addEventListener('click', () => {
+            showHidden = !showHidden;
+            localStorage.setItem(SHOW_HIDDEN_KEY, showHidden ? '1' : '0');
+            rankToggleBtn.textContent = showHidden ? '🙈' : '👁️';
+            rankToggleBtn.title = showHidden ? 'Hide hidden items' : 'Show hidden items';
+            applyHiddenState();
+          });
+          if (showHidden) {
+            rankToggleBtn.textContent = '🙈';
+            rankToggleBtn.title = 'Hide hidden items';
+          }
+          installHideButtons();
+          applyOrder();
           const CONTROL_MODE_KEY = 'nodehome-controls-visible-v1';
           const setControlsVisible = (visible) => {
             if (visible) document.body.classList.remove('controls-hidden');
@@ -1390,6 +1554,7 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects) => {
           const activateCard = (card) => {
             const href = card.dataset.href;
             if (!href) return;
+            bumpRank(itemId(card));
             window.location.assign(href);
           };
 
@@ -1529,20 +1694,13 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects) => {
               event.preventDefault();
               const card = form.closest('.bookmark-card');
               const input = form.querySelector('input[name="name"]');
-              const name = input ? String(input.value || '').trim() : '';
-              if (!name) return;
-              try {
-                const response = await fetch('/api/links/' + encodeURIComponent(name), { method: 'DELETE' });
-                if (!response.ok) throw new Error('delete failed');
-                if (card) {
-                  card.style.transition = 'opacity 140ms ease, transform 140ms ease';
-                  card.style.opacity = '0';
-                  card.style.transform = 'scale(0.97)';
-                  setTimeout(() => card.remove(), 150);
-                }
-              } catch {
-                form.submit();
-              }
+              const name = input ? String(input.value || '').trim().toLowerCase() : '';
+              const id = card ? itemId(card) : '';
+              const hideId = id || (name ? ('link:' + name) : '');
+              if (!hideId) return;
+              hiddenMap[hideId] = 1;
+              writeObj(HIDDEN_ITEMS_KEY, hiddenMap);
+              applyHiddenState();
             });
           });
 
@@ -1573,13 +1731,14 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects) => {
   `;
 };
 
-const renderSettingsHtml = () => `
+const renderSettingsHtml = (injectOverlayScript) => `
   <!DOCTYPE html>
   <html lang="en">
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1">
       <title>Hostname Settings</title>
+      ${injectOverlayScript ? '<script defer src="/_fridge/home-overlay.js"></script>' : ''}
       <style>
         :root {
           color-scheme: light;
@@ -1937,11 +2096,84 @@ app.get('/', async (req, res) => {
   const dockerProjects = listDockerProjects();
   const serviceMessageRaw = typeof req.query.serviceMsg === 'string' ? req.query.serviceMsg : '';
   const serviceMessage = [serviceMessageRaw, redirect.error].filter(Boolean).join(' | ');
-  res.send(renderHtml(links, managedStates, serviceMessage, dockerProjects));
+  res.send(renderHtml(links, managedStates, serviceMessage, dockerProjects, shouldInjectForHost(req)));
 });
 
 app.get('/settings', (req, res) => {
-  res.send(renderSettingsHtml());
+  res.send(renderSettingsHtml(shouldInjectForHost(req)));
+});
+
+app.get('/app/:key', (req, res) => {
+  const key = String(req.params.key || '').trim().toLowerCase();
+  const targetBase = APP_WRAPPER_TARGETS[key];
+  if (!targetBase) return res.status(404).send('Unknown app');
+  const forwardPath = normalizeLocalPath(req.query.path) || '/';
+  const target = `${targetBase.replace(/\/+$/, '')}${forwardPath}`;
+  const inject = shouldInjectForHost(req);
+  const overlayScript = inject ? '<script defer src="/_fridge/home-overlay.js"></script>' : '';
+  return res.send(`<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>fridge app: ${escapeHtml(key)}</title>
+  ${overlayScript}
+  <style>
+    html, body { margin:0; padding:0; width:100%; height:100%; background:#0b0b0f; }
+    iframe { width:100%; height:100%; border:0; display:block; background:#fff; }
+  </style>
+</head>
+<body>
+  <iframe src="${escapeHtml(target)}" referrerpolicy="no-referrer-when-downgrade" allow="clipboard-read; clipboard-write; fullscreen"></iframe>
+</body>
+</html>`);
+});
+
+app.get('/_fridge/home-icon.png', (req, res) => {
+  if (!shouldInjectForHost(req)) return res.status(404).send('Not found');
+  if (!fs.existsSync(FRIDGE_ICON_PATH)) return res.status(404).send('Icon not found');
+  res.set('cache-control', 'public, max-age=86400');
+  res.set('content-type', 'image/png');
+  return res.sendFile(FRIDGE_ICON_PATH);
+});
+
+app.get('/_fridge/home-overlay.js', (req, res) => {
+  if (!shouldInjectForHost(req)) return res.status(404).send('Not found');
+  res.set('content-type', 'application/javascript; charset=utf-8');
+  res.set('cache-control', 'public, max-age=3600');
+  return res.send(`(() => {
+  try {
+    const host = String(window.location.hostname || '').toLowerCase();
+    if (!(host === 'fridge.local' || host.endsWith('.fridge.local'))) return;
+    if (document.getElementById('fridge-home-overlay')) return;
+    const a = document.createElement('a');
+    a.id = 'fridge-home-overlay';
+    a.href = 'http://fridge.local/';
+    a.setAttribute('aria-label', 'Back to fridge homepage');
+    a.title = 'Back to fridge homepage';
+    a.style.cssText = [
+      'position:fixed','right:14px','bottom:14px','z-index:2147483647',
+      'width:46px','height:46px','display:flex','align-items:center','justify-content:center',
+      'border-radius:12px','background:rgba(0,0,0,0.18)','backdrop-filter:blur(2px)',
+      'box-shadow:0 2px 8px rgba(0,0,0,.25)','opacity:.9','transition:transform .15s ease,opacity .15s ease'
+    ].join(';');
+    const img = document.createElement('img');
+    img.src = '/_fridge/home-icon.png';
+    img.alt = 'Home';
+    img.style.cssText = [
+      'width:36px','height:36px','display:block','object-fit:cover',
+      'border:0','border-radius:10px','clip-path:inset(1px round 10px)',
+      'mask-image:radial-gradient(circle at center, rgba(0,0,0,1) 84%, rgba(0,0,0,.65) 94%, rgba(0,0,0,0) 100%)'
+    ].join(';');
+    a.addEventListener('mouseenter', () => { a.style.opacity = '1'; a.style.transform = 'translateY(-1px) scale(1.03)'; });
+    a.addEventListener('mouseleave', () => { a.style.opacity = '.9'; a.style.transform = 'none'; });
+    a.appendChild(img);
+    document.addEventListener('DOMContentLoaded', () => document.body.appendChild(a), { once: true });
+    if (document.readyState === 'interactive' || document.readyState === 'complete') {
+      document.body.appendChild(a);
+    }
+  } catch {}
+})();`);
 });
 
 app.get('/api/health', (req, res) => {

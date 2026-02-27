@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fridge.Run Access Portal</title>
+  <meta name="theme-color" content="#0a101a">
+  <style>
+    :root { --bg:#0a101a; --bg2:#111c2e; --panel:rgba(10,16,26,.9); --line:rgba(255,255,255,.2); --text:#edf2fb; --muted:#9caec7; --accent:#2f7ff9; --accent2:#1f5db9; }
+    * { box-sizing: border-box; }
+    html, body { margin:0; min-height:100%; font-family:"IBM Plex Sans","Segoe UI",sans-serif; color:var(--text); background:radial-gradient(120% 70% at 90% -20%,rgba(49,118,214,.35),transparent 65%),radial-gradient(120% 90% at 10% -10%,rgba(255,255,255,.08),transparent 50%),linear-gradient(155deg,var(--bg),var(--bg2)); }
+    .wrap { min-height:100vh; display:grid; place-items:center; padding:24px; }
+    .card { width:min(760px,96vw); background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:clamp(20px,4vw,44px); box-shadow:0 26px 80px rgba(0,0,0,.45); backdrop-filter:blur(8px); }
+    .eyebrow { margin:0; letter-spacing:.16em; text-transform:uppercase; font-size:12px; color:var(--muted); font-weight:600; }
+    h1 { margin:12px 0 10px; font-size:clamp(26px,3.2vw,40px); line-height:1.05; letter-spacing:.02em; text-transform:uppercase; }
+    .sub { margin:0; color:var(--muted); font-size:clamp(14px,1.5vw,16px); }
+    .stack { margin-top:28px; display:grid; gap:12px; }
+    .link { display:flex; align-items:center; justify-content:space-between; gap:16px; text-decoration:none; color:var(--text); padding:14px 16px; border:1px solid rgba(255,255,255,.16); border-radius:12px; background:rgba(255,255,255,.04); transition:transform .15s ease, background .15s ease, border-color .15s ease; }
+    .link:hover,.link:focus-visible { transform:translateY(-1px); border-color:rgba(255,255,255,.35); background:rgba(255,255,255,.09); outline:none; }
+    .left { display:grid; gap:3px; }
+    .name { font-weight:650; font-size:16px; }
+    .meta { color:var(--muted); font-size:13px; }
+    .tag { background:linear-gradient(180deg,var(--accent),var(--accent2)); color:#fff; font-weight:700; font-size:12px; letter-spacing:.04em; text-transform:uppercase; border-radius:999px; padding:7px 10px; white-space:nowrap; }
+    .back { display:inline-block; margin-top:20px; color:var(--muted); text-decoration:none; font-size:13px; letter-spacing:.06em; text-transform:uppercase; }
+    .back:hover { color:var(--text); }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card">
+      <p class="eyebrow">Fridge.Run Network</p>
+      <h1>Access Portal</h1>
+      <p class="sub">Central launch surface for infrastructure, docs, and operational tools.</p>
+      <nav class="stack" aria-label="Primary links">
+        <a class="link" href="https://fridge.run" target="_blank" rel="noopener noreferrer"><span class="left"><span class="name">Fridge.Run Home</span><span class="meta">Primary public entrypoint</span></span><span class="tag">Open</span></a>
+        <a class="link" href="https://status.fridge.run" target="_blank" rel="noopener noreferrer"><span class="left"><span class="name">Service Status</span><span class="meta">Availability and incident updates</span></span><span class="tag">Status</span></a>
+        <a class="link" href="https://docs.fridge.run" target="_blank" rel="noopener noreferrer"><span class="left"><span class="name">Documentation</span><span class="meta">Technical docs and operational references</span></span><span class="tag">Docs</span></a>
+        <a class="link" href="https://fridge.run/security" target="_blank" rel="noopener noreferrer"><span class="left"><span class="name">Security Policy</span><span class="meta">Access controls and legal terms</span></span><span class="tag">Policy</span></a>
+      </nav>
+      <a class="back" href="./index.html">Return to Warning Screen</a>
+    </section>
+  </main>
+</body>
+</html>

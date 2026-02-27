@@ -169,7 +169,8 @@ const EXTERNAL_SERVICE_CARDS = [
 ];
 
 const QUERY_REDIRECT_TARGETS = Object.freeze({
-  home: `${HOMEPAGE_BASE_URL}/`,
+  home: `${HOMEPAGE_BASE_URL}/warning`,
+  warning: `${HOMEPAGE_BASE_URL}/warning`,
   notes: `${HOMEPAGE_BASE_URL}/app/notes`,
   trains: `${HOMEPAGE_BASE_URL}/app/trains`,
   printers: `${HOMEPAGE_BASE_URL}/app/printers`,
@@ -196,6 +197,8 @@ const QUERY_REDIRECT_ALIASES = Object.freeze({
   wiki: 'notes',
   docs: 'notes',
   dokuwiki: 'notes',
+  warn: 'warning',
+  secure: 'warning',
   mbta: 'trains',
   train: 'trains',
   printer: 'printers',
@@ -1604,7 +1607,7 @@ const renderSettingsHtml = (injectOverlayScript) => `
   </html>
 `;
 
-app.get('/', async (req, res) => {
+app.get('/dashboard', async (req, res) => {
   const redirect = resolveHomepageQueryRedirect(req.query || {});
   if (redirect.target) {
     return res.redirect(302, redirect.target);
@@ -1618,8 +1621,24 @@ app.get('/', async (req, res) => {
   res.send(renderHtml(links, managedStates, serviceMessage, dockerProjects, shouldInjectForHost(req)));
 });
 
+app.get('/', (req, res) => {
+  const redirect = resolveHomepageQueryRedirect(req.query || {});
+  if (redirect.target) {
+    return res.redirect(302, redirect.target);
+  }
+  return res.redirect(302, '/warning');
+});
+
 app.get('/settings', (req, res) => {
   res.send(renderSettingsHtml(shouldInjectForHost(req)));
+});
+
+app.get('/warning', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'warning-wall.html'));
+});
+
+app.get('/links', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'linktree.html'));
 });
 
 app.get('/app/:key', (req, res) => {

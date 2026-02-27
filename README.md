@@ -1,13 +1,15 @@
 # node-homepage
 
-Homepage + shortcut redirects for `http://fridge.local/` (runs in the `node-home` container).
+Homepage + warning/portal redirects for `http://fridge.local/` (runs in the `node-home` container).
 
 ## Features
 
 - User quick links from `links.json` (reorder, delete, add).
 - Shortcut redirects (e.g. `/wiki` -> DokuWiki).
 - Managed services panel with container status and one-click `Start` / `Stop` / `Restart` for optional Docker projects.
-- Query redirects on `/` for single-hostname navigation (for example `/?go=notes`, `/?go=trains`, `/?go=printers`).
+- Default warning screen on `/warning` with background video wall.
+- Flat access portal on `/links` (linktree-style public links only).
+- Query redirects on `/` for single-hostname navigation (for example `/?go=warning`, `/?go=notes`, `/?go=trains`, `/?go=printers`).
 - Settings page at `/settings` for service hostname management with optional fallback `IP:port`.
 - Hostname API with runtime DNS resolution checks and persistent JSON storage in `/data/hostnames.json`.
 - Client-side profile persistence (display name, click-rank, hidden state, block order, history) synced to `/api/profiles/:name`.
@@ -41,6 +43,13 @@ Container requirements in compose:
 - The container runs `node --watch index.js`, so backend code changes auto-reload without rebuilding the image.
 - CSS/static file updates are served directly from the bind mount and appear on refresh.
 
+## Route Overview
+
+- `/` -> defaults to `/warning` (unless `?go=` query redirect is used).
+- `/warning` -> warning wall page.
+- `/links` -> flat access portal page.
+- `/dashboard` -> full dynamic node-home dashboard (legacy homepage UI).
+
 ## links.json schema
 
 `links.json` is a JSON array of entries:
@@ -70,6 +79,7 @@ Entries are persisted to `HOSTNAMES_FILE` (default `/data/hostnames.json`) and w
 Homepage supports query-based redirects to local services:
 
 - `/?go=home`
+- `/?go=warning`
 - `/?go=notes`
 - `/?go=notes&id=tech:fridge`
 - `/?go=trains`
@@ -79,3 +89,15 @@ Homepage supports query-based redirects to local services:
 - `/?go=photos`
 - `/?go=sentry`
 - `/?go=chat`
+
+## GitHub Pages
+
+Static Pages-ready artifacts live in `docs/`:
+
+- `docs/index.html` (default warning page)
+- `docs/links.html` (flat linktree-style portal)
+- `docs/media/warning-wall/*.mp4` (background video tiles)
+
+Automatic deployment workflow:
+
+- `.github/workflows/deploy-pages.yml` publishes `docs/` to GitHub Pages on push to `main`.

@@ -34,7 +34,7 @@ const MAX_HOMEPAGE_LENGTH = 512;
 const MAX_ENTRIES = 500;
 const MAX_PROFILE_NAME_LENGTH = 40;
 
-app.use(express.static(__dirname));
+app.use(express.static(__dirname, { index: false }));
 app.use(express.json({ limit: '16kb' }));
 app.use(express.urlencoded({ extended: true }));
 

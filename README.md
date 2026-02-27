@@ -10,6 +10,20 @@ Homepage + shortcut redirects for `http://fridge.local/` (runs in the `node-home
 - Query redirects on `/` for single-hostname navigation (for example `/?go=notes`, `/?go=trains`, `/?go=printers`).
 - Settings page at `/settings` for service hostname management with optional fallback `IP:port`.
 - Hostname API with runtime DNS resolution checks and persistent JSON storage in `/data/hostnames.json`.
+- Client-side profile persistence (display name, click-rank, hidden state, block order, history) synced to `/api/profiles/:name`.
+
+## Frontend Structure
+
+- `public/js/app-shared.js`: shared browser helpers (`localStorage` JSON wrappers, selectors, name sanitizer).
+- `public/js/homepage.js`: homepage behavior (ordering, hide/show, block move controls, icon loading/cache, sound, profile sync, MOTD).
+- `public/js/settings.js`: settings page behavior (profile name save + hostname CRUD).
+- `index.js` now renders markup and bootstrap JSON only; page logic lives in static scripts.
+
+## Performance Notes
+
+- Removed large inline scripts from HTML responses, reducing page parse cost and simplifying caching.
+- Switched to event delegation for card activation/hover handling to reduce per-card listener overhead.
+- Preserved local caches for favicons and interaction state to keep UI interactions instant.
 
 ## Service Management
 

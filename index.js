@@ -15,6 +15,8 @@ const DEFAULT_LINKS_FILE = path.join(__dirname, 'links.defaults.json');
 const DELETED_FILE = path.join(__dirname, 'deleted.json');
 const HOSTNAMES_FILE = process.env.HOSTNAMES_FILE || path.join(__dirname, 'hostnames.json');
 const HOSTNAMES_LOCK_FILE = `${HOSTNAMES_FILE}.lock`;
+const PROFILES_FILE = process.env.PROFILES_FILE || path.join(__dirname, 'data', 'profiles.json');
+const PROFILES_LOCK_FILE = `${PROFILES_FILE}.lock`;
 const HOMEPAGE_BASE_URL = process.env.HOMEPAGE_BASE_URL || 'http://fridge.local';
 const APP_VERSION = process.env.APP_VERSION || '1.1.0';
 const PORT = Number(process.env.PORT) || 8088;
@@ -30,6 +32,7 @@ const FRIDGE_ICON_PATH = '/home/fridge/docker/icon.png';
 const MAX_FIELD_LENGTH = 255;
 const MAX_HOMEPAGE_LENGTH = 512;
 const MAX_ENTRIES = 500;
+const MAX_PROFILE_NAME_LENGTH = 40;
 
 app.use(express.static(__dirname));
 app.use(express.json({ limit: '16kb' }));
@@ -416,6 +419,82 @@ const writeHostnamesToDisk = async (entries) => {
   await withFileLock(HOSTNAMES_LOCK_FILE, async () => {
     writeJsonAtomic(HOSTNAMES_FILE, entries);
   });
+};
+
+const normalizeProfileName = (raw) => String(raw || '')
+  .trim()
+  .replace(/[^\w\s-]/g, '')
+  .slice(0, MAX_PROFILE_NAME_LENGTH);
+
+const readProfilesFromDisk = () => {
+  try {
+    ensureParentDir(PROFILES_FILE);
+    if (!fs.existsSync(PROFILES_FILE)) fs.writeFileSync(PROFILES_FILE, '{}\n', 'utf8');
+    const parsed = JSON.parse(fs.readFileSync(PROFILES_FILE, 'utf8'));
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch (err) {
+    console.error('Unable to read profiles file', err);
+    return {};
+  }
+};
+
+const writeProfilesToDisk = async (profiles) => {
+  await withFileLock(PROFILES_LOCK_FILE, async () => {
+    writeJsonAtomic(PROFILES_FILE, profiles);
+  });
+};
+
+const sanitizeProfilePayload = (payload) => {
+  const displayName = normalizeProfileName(payload?.displayName || '');
+  const linksRank = payload && payload.linksRank && typeof payload.linksRank === 'object' ? payload.linksRank : {};
+  const hiddenItems = payload && payload.hiddenItems && typeof payload.hiddenItems === 'object' ? payload.hiddenItems : {};
+  const blockOrderRaw = Array.isArray(payload?.blockOrder) ? payload.blockOrder : [];
+  const allowedBlocks = new Set(['pinned', 'links', 'services', 'folders']);
+  const blockOrder = blockOrderRaw
+    .map((item) => String(item || '').trim())
+    .filter((item, idx, arr) => allowedBlocks.has(item) && arr.indexOf(item) === idx);
+  for (const block of ['pinned', 'links', 'services', 'folders']) {
+    if (!blockOrder.includes(block)) blockOrder.push(block);
+  }
+
+  const cleanScoreMap = {};
+  Object.entries(linksRank).slice(0, 2000).forEach(([k, v]) => {
+    const key = String(k || '').trim().slice(0, 120);
+    if (!key) return;
+    const score = Number(v);
+    if (!Number.isFinite(score) || score < 0) return;
+    cleanScoreMap[key] = Math.floor(score);
+  });
+
+  const cleanHiddenMap = {};
+  Object.entries(hiddenItems).slice(0, 2000).forEach(([k, v]) => {
+    const key = String(k || '').trim().slice(0, 120);
+    if (!key) return;
+    cleanHiddenMap[key] = v ? 1 : 0;
+  });
+
+  const history = Array.isArray(payload?.history) ? payload.history : [];
+  const cleanHistory = history.slice(-200).map((entry) => ({
+    id: String(entry?.id || '').slice(0, 120),
+    href: String(entry?.href || '').slice(0, 512),
+    ts: Number(entry?.ts) || Date.now()
+  })).filter((entry) => entry.id && entry.href);
+  const linksSnapshotRaw = Array.isArray(payload?.linksSnapshot) ? payload.linksSnapshot : [];
+  const linksSnapshot = linksSnapshotRaw.slice(0, 1000).map((entry) => ({
+    name: String(entry?.name || '').trim().slice(0, 120),
+    link: String(entry?.link || '').trim().slice(0, 512),
+    destination: String(entry?.destination || '').trim().slice(0, 512),
+    shortcut: String(entry?.shortcut || '').trim().slice(0, 80)
+  })).filter((entry) => entry.name);
+
+  return {
+    displayName,
+    linksRank: cleanScoreMap,
+    hiddenItems: cleanHiddenMap,
+    blockOrder,
+    history: cleanHistory,
+    linksSnapshot
+  };
 };
 
 const parseHostnamePayload = (payload) => {
@@ -1076,7 +1155,7 @@ const managedServiceCard = (state) => {
   const domainLabel = (openHref || service.name).replace(/^https?:\/\//, '');
 
   return `
-    <article class="bookmark-card service-card managed-card ${state.state} ${hasOpen ? 'link-card' : ''}" data-item-id="service:${escapeHtml(service.id)}" ${hasOpen ? `data-href="${openHref}" role="link"` : 'role="group"'} tabindex="0" aria-label="${escapeHtml(service.name)} controls">
+    <article class="bookmark-card service-card managed-card ${state.state} ${hasOpen ? 'link-card' : ''}" data-item-id="service:${escapeHtml(service.id)}" data-item-group="services" ${hasOpen ? `data-href="${openHref}" role="link"` : 'role="group"'} tabindex="0" aria-label="${escapeHtml(service.name)} controls">
       <div class="bookmark-content">
         <header>
           <img src="${icon.primary}" data-primary="${icon.primary}" data-secondary="${icon.secondary}" data-tertiary="${icon.tertiary}" data-fallback="${icon.fallback}" data-domain="${escapeHtml(domainLabel.toLowerCase())}" data-pageurl="${escapeHtml(openHref)}" alt="${escapeHtml(service.name)} icon" loading="lazy" width="48" height="48" onerror="this.onerror=null; this.src=this.dataset.fallback;" />
@@ -1106,7 +1185,7 @@ const curatedCard = (entry) => {
   const icon = iconFor(href);
   const domainLabel = href.replace(/^https?:\/\//, '');
   return `
-    <article class="bookmark-card service-card link-card" data-item-id="curated:${escapeHtml(String(entry.name).toLowerCase())}" data-href="${href}" tabindex="0" role="link" aria-label="${escapeHtml(entry.name)}">
+    <article class="bookmark-card service-card link-card" data-item-id="curated:${escapeHtml(String(entry.name).toLowerCase())}" data-item-group="links" data-href="${href}" tabindex="0" role="link" aria-label="${escapeHtml(entry.name)}">
       <div class="bookmark-content">
         <header>
           <img src="${icon.primary}" data-primary="${icon.primary}" data-secondary="${icon.secondary}" data-tertiary="${icon.tertiary}" data-fallback="${icon.fallback}" data-domain="${escapeHtml(domainLabel.toLowerCase())}" data-pageurl="${escapeHtml(href)}" alt="${escapeHtml(entry.name)} icon" loading="lazy" width="48" height="48" onerror="this.onerror=null; this.src=this.dataset.fallback;" />
@@ -1133,7 +1212,7 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects, inject
     const allowUp = index > 0;
     const allowDown = index < links.length - 1;
     return `
-      <article class="bookmark-card link-card" data-item-id="link:${escapeHtml(String(entry.name).toLowerCase())}" data-href="${href}" tabindex="0" role="link" aria-label="${escapeHtml(entry.name)}">
+      <article class="bookmark-card link-card" data-item-id="link:${escapeHtml(String(entry.name).toLowerCase())}" data-item-group="links" data-href="${href}" tabindex="0" role="link" aria-label="${escapeHtml(entry.name)}">
         <div class="bookmark-content">
           <header>
             <img src="${icon.primary}" data-primary="${icon.primary}" data-secondary="${icon.secondary}" data-tertiary="${icon.tertiary}" data-fallback="${icon.fallback}" data-domain="${escapeHtml(domainLabel.toLowerCase())}" data-pageurl="${escapeHtml(destination)}" alt="${escapeHtml(entry.name)} icon" loading="lazy" width="48" height="48" onerror="this.onerror=null; this.src=this.dataset.fallback;" />
@@ -1168,7 +1247,7 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects, inject
   const serviceCards = [
     ...managedStates.map((state) => managedServiceCard(state)),
     ...EXTERNAL_SERVICE_CARDS.map((service) => `
-      <article class="bookmark-card service-card external-service link-card" data-item-id="service:${escapeHtml(String(service.id).toLowerCase())}" data-href="${escapeHtml(formatLink(service.openUrl, { defaultScheme: 'http' }))}" tabindex="0" role="link" aria-label="${escapeHtml(service.name)}">
+      <article class="bookmark-card service-card external-service link-card" data-item-id="service:${escapeHtml(String(service.id).toLowerCase())}" data-item-group="services" data-href="${escapeHtml(formatLink(service.openUrl, { defaultScheme: 'http' }))}" tabindex="0" role="link" aria-label="${escapeHtml(service.name)}">
         <div class="bookmark-content">
           <header>
             <img src="${iconFor(service.openUrl).primary}" data-primary="${iconFor(service.openUrl).primary}" data-secondary="${iconFor(service.openUrl).secondary}" data-tertiary="${iconFor(service.openUrl).tertiary}" data-fallback="${iconFor(service.openUrl).fallback}" data-domain="${escapeHtml(String(service.openUrl).replace(/^https?:\/\//, '').toLowerCase())}" data-pageurl="${escapeHtml(formatLink(service.openUrl, { defaultScheme: 'http' }))}" alt="${escapeHtml(service.name)} icon" loading="lazy" width="48" height="48" onerror="this.onerror=null; this.src=this.dataset.fallback;" />
@@ -1185,7 +1264,7 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects, inject
     `)
   ];
   const folderCards = dockerProjects.map((folder) => `
-    <article class="bookmark-card folder-card link-card" data-item-id="folder:${escapeHtml(String(folder).toLowerCase())}" data-href="${escapeHtml(`${HOMEPAGE_BASE_URL}/?go=notes&id=tech:docker_projects`)}" tabindex="0" role="link" aria-label="${escapeHtml(folder)} folder">
+    <article class="bookmark-card folder-card link-card" data-item-id="folder:${escapeHtml(String(folder).toLowerCase())}" data-item-group="folders" data-href="${escapeHtml(`${HOMEPAGE_BASE_URL}/?go=notes&id=tech:docker_projects`)}" tabindex="0" role="link" aria-label="${escapeHtml(folder)} folder">
       <div class="bookmark-content">
         <header>
           <span class="icon-emoji" aria-hidden="true">📁</span>
@@ -1199,35 +1278,29 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects, inject
     </article>
   `);
 
-  const cards = [
-    ...userCards,
-    ...infoCards,
-    `
-    <article class="bookmark-card add-card" data-item-id="system:add-link" data-href="/" tabindex="0" role="link" aria-label="Add quick link">
-      <div class="bookmark-content">
-        <h2>Add quick link</h2>
-        <form method="POST" action="/add-link" class="add-form" data-no-card-nav>
-          <label>
-            <span>Name</span>
-            <input type="text" name="name" placeholder="Site label" required>
-          </label>
-          <label>
-            <span>URL</span>
-            <input type="text" name="link" placeholder="example.com or https://" required>
-          </label>
-          <button type="submit" aria-label="Save link">💾</button>
-        </form>
-      </div>
-    </article>
-    `,
-    ...serviceCards,
-    ...folderCards
-  ];
+  const addLinkCard = `
+  <article class="bookmark-card add-card" data-item-id="system:add-link" data-item-group="links" tabindex="0" role="group" aria-label="Add quick link">
+    <div class="bookmark-content">
+      <h2>Add quick link</h2>
+      <form method="POST" action="/add-link" class="add-form" data-no-card-nav>
+        <label>
+          <span>Name</span>
+          <input type="text" name="name" placeholder="Site label" required>
+        </label>
+        <label>
+          <span>URL</span>
+          <input type="text" name="link" placeholder="example.com or https://" required>
+        </label>
+        <button type="submit" aria-label="Save link">💾</button>
+      </form>
+    </div>
+  </article>
+  `;
 
   const today = moment().format('ddd, MMM D');
   const msg = `Today is ${today}.`;
   const heroCard = `
-    <article class="bookmark-card hero hero-card" data-item-id="pinned:hero" data-pinned="1" role="region" aria-label="Homepage header">
+    <article class="bookmark-card hero hero-card" data-item-id="pinned:hero" data-item-group="pinned" data-pinned="1" role="region" aria-label="Homepage header">
       <div class="bookmark-content">
         <h1><span id="greeting-name">CHARLIE</span></h1>
         <p class="subtitle">${msg}</p>
@@ -1237,7 +1310,7 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects, inject
     </article>
   `;
   const fridgeHomeCard = `
-    <article class="bookmark-card service-card link-card" data-item-id="pinned:fridge-home" data-pinned="1" data-href="${HOMEPAGE_BASE_URL}/" tabindex="0" role="link" aria-label="fridge.local home">
+    <article class="bookmark-card service-card link-card" data-item-id="pinned:fridge-home" data-item-group="pinned" data-pinned="1" data-href="${HOMEPAGE_BASE_URL}/" tabindex="0" role="link" aria-label="fridge.local home">
       <div class="bookmark-content">
         <header>
           <span class="icon-emoji" style="display:inline-flex;" aria-hidden="true">🏠</span>
@@ -1250,7 +1323,7 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects, inject
     </article>
   `;
   const settingsCard = `
-    <article class="bookmark-card service-card link-card" data-item-id="pinned:settings" data-pinned="1" data-href="/settings" tabindex="0" role="link" aria-label="Open settings">
+    <article class="bookmark-card service-card link-card" data-item-id="pinned:settings" data-item-group="pinned" data-pinned="1" data-href="/settings" tabindex="0" role="link" aria-label="Open settings">
       <div class="bookmark-content">
         <header>
           <span class="icon-emoji" style="display:inline-flex;" aria-hidden="true">⚙️</span>
@@ -1263,7 +1336,7 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects, inject
     </article>
   `;
   const motdCard = `
-    <article class="bookmark-card motd-card link-card" data-item-id="system:motd" id="trainMOTD" data-href="/?go=trains" tabindex="0" role="link" aria-label="Train MOTD">
+    <article class="bookmark-card motd-card link-card" data-item-id="system:motd" data-item-group="pinned" id="trainMOTD" data-href="/?go=trains" tabindex="0" role="link" aria-label="Train MOTD">
       <div class="bookmark-content">
         <header>
           <div class="bookmark-meta">
@@ -1291,11 +1364,47 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects, inject
         <main class="page">
           <section class="stack-layout">
             <section class="bookmark-grid">
-              ${heroCard}
-              ${fridgeHomeCard}
-              ${settingsCard}
-              ${motdCard}
-              ${cards.join('')}
+              <section class="card-block" data-block-id="pinned">
+                <article class="bookmark-card block-title-card" data-item-id="block:pinned" data-pinned="1" role="region" aria-label="Pinned section">
+                  <div class="bookmark-content">
+                    <p class="bookmark-name">Pinned</p>
+                    <p class="bookmark-url">header, home, settings, motd</p>
+                  </div>
+                </article>
+                ${heroCard}
+                ${fridgeHomeCard}
+                ${settingsCard}
+                ${motdCard}
+              </section>
+              <section class="card-block" data-block-id="links">
+                <article class="bookmark-card block-title-card" data-item-id="block:links" data-pinned="1" role="region" aria-label="Links section">
+                  <div class="bookmark-content">
+                    <p class="bookmark-name">Links</p>
+                    <p class="bookmark-url">ordered by click frequency</p>
+                  </div>
+                </article>
+                ${addLinkCard}
+                ${userCards.join('')}
+                ${infoCards.join('')}
+              </section>
+              <section class="card-block" data-block-id="services">
+                <article class="bookmark-card block-title-card" data-item-id="block:services" data-pinned="1" role="region" aria-label="Services section">
+                  <div class="bookmark-content">
+                    <p class="bookmark-name">Fridge Services</p>
+                    <p class="bookmark-url">project and service links</p>
+                  </div>
+                </article>
+                ${serviceCards.join('')}
+              </section>
+              <section class="card-block" data-block-id="folders">
+                <article class="bookmark-card block-title-card" data-item-id="block:folders" data-pinned="1" role="region" aria-label="Folders section">
+                  <div class="bookmark-content">
+                    <p class="bookmark-name">Project Folders</p>
+                    <p class="bookmark-url">docker workspace directories</p>
+                  </div>
+                </article>
+                ${folderCards.join('')}
+              </section>
             </section>
           </section>
       </main>
@@ -1352,6 +1461,8 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects, inject
           const CLICK_RANK_KEY = 'nodehome-click-rank-v1';
           const HIDDEN_ITEMS_KEY = 'nodehome-hidden-items-v1';
           const SHOW_HIDDEN_KEY = 'nodehome-show-hidden-v1';
+          const BLOCK_ORDER_KEY = 'nodehome-block-order-v1';
+          const HISTORY_KEY = 'nodehome-history-v1';
           const readObj = (key) => {
             try {
               const value = JSON.parse(localStorage.getItem(key) || '{}');
@@ -1365,9 +1476,30 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects, inject
           };
           const rankMap = readObj(CLICK_RANK_KEY);
           const hiddenMap = readObj(HIDDEN_ITEMS_KEY);
+          const historyList = (() => {
+            try {
+              const raw = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+              return Array.isArray(raw) ? raw : [];
+            } catch {
+              return [];
+            }
+          })();
+          let blockOrder = (() => {
+            try {
+              const raw = JSON.parse(localStorage.getItem(BLOCK_ORDER_KEY) || '[]');
+              return Array.isArray(raw) ? raw : [];
+            } catch {
+              return [];
+            }
+          })();
           let showHidden = localStorage.getItem(SHOW_HIDDEN_KEY) === '1';
           const cardListRoot = document.querySelector('.bookmark-grid');
+          const blocks = () => Array.from(document.querySelectorAll('.bookmark-grid .card-block[data-block-id]'));
           const cards = () => Array.from(document.querySelectorAll('.bookmark-grid .bookmark-card[data-item-id]'));
+          const cardsInBlock = (blockId) => {
+            const block = cardListRoot ? cardListRoot.querySelector('.card-block[data-block-id="' + CSS.escape(blockId) + '"]') : null;
+            return block ? Array.from(block.querySelectorAll('.bookmark-card[data-item-id]')) : [];
+          };
           const isPinned = (card) => card.dataset.pinned === '1';
           const itemId = (card) => String(card.dataset.itemId || '').trim();
           const applyHiddenState = () => {
@@ -1380,18 +1512,61 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects, inject
           };
           const applyOrder = () => {
             if (!cardListRoot) return;
-            const all = cards();
-            const pinned = all.filter(isPinned);
-            const other = all.filter((c) => !isPinned(c));
-            const withIndex = other.map((card, idx) => ({ card, idx }));
+            const availableBlocks = blocks().map((b) => b.dataset.blockId).filter(Boolean);
+            if (!Array.isArray(blockOrder) || blockOrder.length === 0) blockOrder = availableBlocks.slice();
+            for (const key of availableBlocks) if (!blockOrder.includes(key)) blockOrder.push(key);
+            blockOrder = blockOrder.filter((key, idx, arr) => availableBlocks.includes(key) && arr.indexOf(key) === idx);
+            localStorage.setItem(BLOCK_ORDER_KEY, JSON.stringify(blockOrder));
+            blockOrder.forEach((key) => {
+              const el = cardListRoot.querySelector('.card-block[data-block-id="' + CSS.escape(key) + '"]');
+              if (el) cardListRoot.appendChild(el);
+            });
+            const linkCards = cardsInBlock('links').filter((card) => !isPinned(card) && itemId(card) !== 'system:add-link');
+            const withIndex = linkCards.map((card, idx) => ({ card, idx }));
             withIndex.sort((a, b) => {
               const sa = Number(rankMap[itemId(a.card)] || 0);
               const sb = Number(rankMap[itemId(b.card)] || 0);
               if (sb !== sa) return sb - sa;
               return a.idx - b.idx;
             });
-            [...pinned, ...withIndex.map((e) => e.card)].forEach((card) => cardListRoot.appendChild(card));
+            const linksBlock = cardListRoot.querySelector('.card-block[data-block-id="links"]');
+            if (linksBlock) {
+              withIndex.forEach((entry) => linksBlock.appendChild(entry.card));
+            }
             applyHiddenState();
+          };
+          const installBlockMoveButtons = () => {
+            blocks().forEach((block) => {
+              const titleCard = block.querySelector('.block-title-card');
+              if (!titleCard || titleCard.querySelector('.block-move-controls')) return;
+              const id = String(block.dataset.blockId || '').trim();
+              if (!id) return;
+              const controls = document.createElement('div');
+              controls.className = 'block-move-controls admin-control';
+              const up = document.createElement('button');
+              const down = document.createElement('button');
+              up.type = 'button'; down.type = 'button';
+              up.textContent = '⬆️'; down.textContent = '⬇️';
+              up.title = 'Move block up'; down.title = 'Move block down';
+              up.addEventListener('click', (e) => {
+                e.preventDefault(); e.stopPropagation();
+                const idx = blockOrder.indexOf(id);
+                if (idx <= 0) return;
+                const tmp = blockOrder[idx - 1]; blockOrder[idx - 1] = blockOrder[idx]; blockOrder[idx] = tmp;
+                applyOrder();
+              });
+              down.addEventListener('click', (e) => {
+                e.preventDefault(); e.stopPropagation();
+                const idx = blockOrder.indexOf(id);
+                if (idx === -1 || idx >= blockOrder.length - 1) return;
+                const tmp = blockOrder[idx + 1]; blockOrder[idx + 1] = blockOrder[idx]; blockOrder[idx] = tmp;
+                applyOrder();
+              });
+              controls.appendChild(up);
+              controls.appendChild(down);
+              const content = titleCard.querySelector('.bookmark-content');
+              (content || titleCard).appendChild(controls);
+            });
           };
           const installHideButtons = () => {
             cards().forEach((card) => {
@@ -1422,6 +1597,14 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects, inject
             rankMap[id] = Number(rankMap[id] || 0) + 1;
             writeObj(CLICK_RANK_KEY, rankMap);
           };
+          const pushHistory = (card) => {
+            const id = itemId(card);
+            const href = String(card?.dataset?.href || '').trim();
+            if (!id || !href) return;
+            historyList.push({ id, href, ts: Date.now() });
+            while (historyList.length > 200) historyList.shift();
+            try { localStorage.setItem(HISTORY_KEY, JSON.stringify(historyList)); } catch {}
+          };
           rankToggleBtn.addEventListener('click', () => {
             showHidden = !showHidden;
             localStorage.setItem(SHOW_HIDDEN_KEY, showHidden ? '1' : '0');
@@ -1434,6 +1617,7 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects, inject
             rankToggleBtn.title = 'Hide hidden items';
           }
           installHideButtons();
+          installBlockMoveButtons();
           applyOrder();
           const CONTROL_MODE_KEY = 'nodehome-controls-visible-v1';
           const setControlsVisible = (visible) => {
@@ -1555,6 +1739,7 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects, inject
             const href = card.dataset.href;
             if (!href) return;
             bumpRank(itemId(card));
+            pushHistory(card);
             window.location.assign(href);
           };
 
@@ -1673,7 +1858,7 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects, inject
               if (!card.dataset.href) return;
               event.preventDefault();
               sound.playClick();
-              setTimeout(() => activateCard(card), 55);
+              activateCard(card);
             });
 
             card.addEventListener('keydown', (event) => {
@@ -1684,7 +1869,7 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects, inject
                 if (!card.dataset.href) return;
                 event.preventDefault();
                 sound.playClick();
-                setTimeout(() => activateCard(card), 55);
+                activateCard(card);
               }
             });
           });
@@ -1703,6 +1888,84 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects, inject
               applyHiddenState();
             });
           });
+
+          const hiddenNavUp = document.createElement('button');
+          hiddenNavUp.className = 'page-controls-toggle';
+          hiddenNavUp.style.right = '82px';
+          hiddenNavUp.title = 'Previous hidden';
+          hiddenNavUp.textContent = '⬆️';
+          const hiddenNavDown = document.createElement('button');
+          hiddenNavDown.className = 'page-controls-toggle';
+          hiddenNavDown.style.right = '118px';
+          hiddenNavDown.title = 'Next hidden';
+          hiddenNavDown.textContent = '⬇️';
+          document.body.appendChild(hiddenNavUp);
+          document.body.appendChild(hiddenNavDown);
+          let hiddenNavIdx = 0;
+          const hiddenCardsForNav = () => cards().filter((c) => Boolean(hiddenMap[itemId(c)]));
+          const navHidden = (delta) => {
+            const list = hiddenCardsForNav();
+            if (!list.length) return;
+            hiddenNavIdx = (hiddenNavIdx + delta + list.length) % list.length;
+            const target = list[hiddenNavIdx];
+            if (!showHidden) {
+              showHidden = true;
+              localStorage.setItem(SHOW_HIDDEN_KEY, '1');
+              rankToggleBtn.textContent = '🙈';
+              rankToggleBtn.title = 'Hide hidden items';
+              applyHiddenState();
+            }
+            target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+          };
+          hiddenNavUp.addEventListener('click', () => navHidden(-1));
+          hiddenNavDown.addEventListener('click', () => navHidden(1));
+
+          const syncProfile = async () => {
+            const name = safeName(readProfile().name || 'default');
+            const payload = {
+              displayName: safeName(readProfile().name || ''),
+              linksRank: rankMap,
+              hiddenItems: hiddenMap,
+              blockOrder,
+              history: historyList,
+              linksSnapshot: allLinks
+            };
+            try {
+              await fetch('/api/profiles/' + encodeURIComponent(name), {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+              });
+            } catch {}
+          };
+
+          const loadProfileState = async () => {
+            const name = safeName(readProfile().name || 'default');
+            try {
+              const response = await fetch('/api/profiles/' + encodeURIComponent(name), { cache: 'no-store' });
+              if (!response.ok) return;
+              const data = await response.json();
+              const state = data && data.state && typeof data.state === 'object' ? data.state : {};
+              if (state.displayName) {
+                writeProfile({ name: state.displayName });
+                applyName(state.displayName);
+              }
+              Object.assign(rankMap, state.linksRank || {});
+              Object.assign(hiddenMap, state.hiddenItems || {});
+              if (Array.isArray(state.blockOrder)) blockOrder = state.blockOrder;
+              if (Array.isArray(state.history)) {
+                historyList.length = 0;
+                state.history.slice(-200).forEach((entry) => historyList.push(entry));
+              }
+              localStorage.setItem(CLICK_RANK_KEY, JSON.stringify(rankMap));
+              localStorage.setItem(HIDDEN_ITEMS_KEY, JSON.stringify(hiddenMap));
+              localStorage.setItem(BLOCK_ORDER_KEY, JSON.stringify(blockOrder));
+              localStorage.setItem(HISTORY_KEY, JSON.stringify(historyList));
+              applyOrder();
+            } catch {}
+          };
+          loadProfileState();
+          window.addEventListener('beforeunload', () => { syncProfile(); });
 
           document.querySelectorAll('.bookmark-card img[data-primary]').forEach(loadIcon);
 
@@ -2068,13 +2331,27 @@ const renderSettingsHtml = (injectOverlayScript) => `
           if (profileForm && profileNameInput) {
             const currentProfile = readProfile();
             profileNameInput.value = currentProfile.name || '';
-            profileForm.addEventListener('submit', (event) => {
+            profileForm.addEventListener('submit', async (event) => {
               event.preventDefault();
               const nextName = safeName(profileNameInput.value);
               const ok = writeProfile({
                 name: nextName
               });
-              setProfileMessage(ok ? 'Saved.' : 'Save failed', !ok);
+              if (!ok || !nextName) {
+                setProfileMessage(ok ? 'Enter a valid name.' : 'Save failed', true);
+                return;
+              }
+              try {
+                const response = await fetch('/api/profiles/' + encodeURIComponent(nextName), {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ displayName: nextName })
+                });
+                if (!response.ok) throw new Error('Profile sync failed');
+                setProfileMessage('Saved.', false);
+              } catch {
+                setProfileMessage('Saved locally; server sync failed.', true);
+              }
             });
           }
 
@@ -2341,6 +2618,34 @@ app.delete('/api/hostnames/:id', async (req, res) => {
     const code = err.status || 500;
     console.error('Error deleting hostname entry', err);
     return res.status(code).json({ error: err.message || 'Unable to delete entry' });
+  }
+});
+
+app.get('/api/profiles/:name', (req, res) => {
+  try {
+    const name = normalizeProfileName(req.params.name);
+    if (!name) return res.status(400).json({ error: 'Invalid profile name' });
+    const profiles = readProfilesFromDisk();
+    const state = profiles[name] && typeof profiles[name] === 'object' ? profiles[name] : {};
+    return res.json({ name, state });
+  } catch (err) {
+    console.error('Error reading profile', err);
+    return res.status(500).json({ error: 'Unable to read profile' });
+  }
+});
+
+app.put('/api/profiles/:name', async (req, res) => {
+  try {
+    const name = normalizeProfileName(req.params.name);
+    if (!name) return res.status(400).json({ error: 'Invalid profile name' });
+    const profiles = readProfilesFromDisk();
+    profiles[name] = sanitizeProfilePayload(req.body || {});
+    profiles[name].updatedAt = new Date().toISOString();
+    await writeProfilesToDisk(profiles);
+    return res.json({ ok: true, name });
+  } catch (err) {
+    console.error('Error writing profile', err);
+    return res.status(500).json({ error: 'Unable to write profile' });
   }
 });
 

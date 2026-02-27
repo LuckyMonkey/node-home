@@ -169,7 +169,7 @@ const EXTERNAL_SERVICE_CARDS = [
 ];
 
 const QUERY_REDIRECT_TARGETS = Object.freeze({
-  home: `${HOMEPAGE_BASE_URL}/warning`,
+  home: `${HOMEPAGE_BASE_URL}/dashboard`,
   warning: `${HOMEPAGE_BASE_URL}/warning`,
   notes: `${HOMEPAGE_BASE_URL}/app/notes`,
   trains: `${HOMEPAGE_BASE_URL}/app/trains`,
@@ -777,6 +777,11 @@ const requestHost = (req) => {
 const shouldInjectForHost = (req) => {
   const host = requestHost(req).split(':')[0];
   return host === 'fridge.local' || host.endsWith('.fridge.local');
+};
+
+const shouldShowWarningByDefault = (req) => {
+  const host = requestHost(req).split(':')[0];
+  return host === 'fridge.run' || host === 'www.fridge.run';
 };
 
 const iconCachePathForUrl = (url) => {
@@ -1626,7 +1631,7 @@ app.get('/', (req, res) => {
   if (redirect.target) {
     return res.redirect(302, redirect.target);
   }
-  return res.redirect(302, '/warning');
+  return res.redirect(302, shouldShowWarningByDefault(req) ? '/warning' : '/dashboard');
 });
 
 app.get('/settings', (req, res) => {

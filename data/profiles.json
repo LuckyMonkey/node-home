@@ -1,0 +1,356 @@
+{
+  "default": {
+    "displayName": "",
+    "linksRank": {
+      "system:motd": 2,
+      "link:mbta tracker": 1
+    },
+    "hiddenItems": {},
+    "blockOrder": [
+      "pinned",
+      "links",
+      "services",
+      "folders"
+    ],
+    "history": [
+      {
+        "id": "link:mbta tracker",
+        "href": "/mbta",
+        "ts": 1772211133329
+      }
+    ],
+    "linksSnapshot": [
+      {
+        "name": "Gmail",
+        "link": "gmail.com",
+        "destination": "",
+        "shortcut": ""
+      },
+      {
+        "name": "ChatGPT",
+        "link": "https://chatgpt.com",
+        "destination": "",
+        "shortcut": ""
+      },
+      {
+        "name": "KimCartoon",
+        "link": "kimcartoon.li",
+        "destination": "",
+        "shortcut": ""
+      },
+      {
+        "name": "Youtube",
+        "link": "youtube.com",
+        "destination": "",
+        "shortcut": ""
+      },
+      {
+        "name": "Fbox.to",
+        "link": "4.fbox.to/home",
+        "destination": "",
+        "shortcut": ""
+      },
+      {
+        "name": "ThePirateBay",
+        "link": "thepiratebay.org",
+        "destination": "",
+        "shortcut": ""
+      },
+      {
+        "name": "NeoCities",
+        "link": "neocities.org",
+        "destination": "",
+        "shortcut": ""
+      },
+      {
+        "name": "4chan",
+        "link": "4chan.org",
+        "destination": "",
+        "shortcut": ""
+      },
+      {
+        "name": "Instagram",
+        "link": "instagram.com",
+        "destination": "",
+        "shortcut": ""
+      },
+      {
+        "name": "Github",
+        "link": "Github.com",
+        "destination": "",
+        "shortcut": ""
+      },
+      {
+        "name": "Spotify",
+        "link": "open.spotify.com/user/lkymky?si=79a7fa6e02714d1e",
+        "destination": "",
+        "shortcut": ""
+      },
+      {
+        "name": "Wallhaven",
+        "link": "wallhaven.cc",
+        "destination": "",
+        "shortcut": ""
+      },
+      {
+        "name": "Macintosh garden",
+        "link": "macintosh.garden",
+        "destination": "",
+        "shortcut": ""
+      },
+      {
+        "name": "CharlieVision",
+        "link": "youtube.com/playlist?list=PLJnNyx-zRSqTsqrzGKOWhhitQ2k8DneMt",
+        "destination": "",
+        "shortcut": ""
+      },
+      {
+        "name": "@chawee.w00f",
+        "link": "instagram.com/chawee.w00f/",
+        "destination": "",
+        "shortcut": ""
+      },
+      {
+        "name": "Sugarmate",
+        "link": "sugarmate.io",
+        "destination": "",
+        "shortcut": ""
+      },
+      {
+        "name": "Labelery",
+        "link": "labelary.com/viewer.html",
+        "destination": "",
+        "shortcut": ""
+      },
+      {
+        "name": "ROMs Archive",
+        "link": "r-roms.github.io/",
+        "destination": "",
+        "shortcut": ""
+      },
+      {
+        "name": "Mbta Tracker",
+        "link": "fridge.local:5174",
+        "destination": "fridge.local:5174",
+        "shortcut": "mbta"
+      },
+      {
+        "name": "Sprite Cylinder Tagger",
+        "link": "fridge.local:5173",
+        "destination": "fridge.local:5173",
+        "shortcut": "sprite"
+      },
+      {
+        "name": "Printer Hub",
+        "link": "fridge.local:8088",
+        "destination": "fridge.local:8088",
+        "shortcut": "printer"
+      },
+      {
+        "name": "Device Sentry",
+        "link": "fridge.local:8089",
+        "destination": "fridge.local:8089",
+        "shortcut": "sentry"
+      },
+      {
+        "name": "Rocket.Chat",
+        "link": "fridge.local:4002",
+        "destination": "fridge.local:4002",
+        "shortcut": "chat"
+      },
+      {
+        "name": "DokuWiki",
+        "link": "fridge.local:9090",
+        "destination": "fridge.local:9090",
+        "shortcut": "wiki"
+      }
+    ],
+    "updatedAt": "2026-02-27T17:08:45.284Z"
+  },
+  "Charlie": {
+    "displayName": "Charlie",
+    "linksRank": {
+      "service:rocketchat": 1,
+      "link:youtube": 4,
+      "system:motd": 8,
+      "link:instagram": 1,
+      "service:mbta-tracker": 3,
+      "service:photosort": 1,
+      "curated:projects inventory": 1,
+      "service:dokuwiki": 7,
+      "link:printer hub": 3,
+      "service:printer-hub": 2,
+      "curated:pi-hole admin": 1,
+      "link:dokuwiki": 3,
+      "link:spotify": 1,
+      "link:4chan": 1,
+      "link:github": 3,
+      "link:gmail": 1,
+      "link:chatgpt": 1,
+      "service:v0-lab": 1,
+      "link:mbta tracker": 3
+    },
+    "hiddenItems": {
+      "link:fbox.to": 1,
+      "service:rocketchat": 1,
+      "curated:node home": 1,
+      "curated:fridge server notes": 1,
+      "service:device-sentry": 1,
+      "link:dokuwiki": 1
+    },
+    "blockOrder": [
+      "pinned",
+      "links",
+      "services",
+      "folders"
+    ],
+    "history": [],
+    "linksSnapshot": [
+      {
+        "name": "Gmail",
+        "link": "gmail.com",
+        "destination": "",
+        "shortcut": ""
+      },
+      {
+        "name": "ChatGPT",
+        "link": "https://chatgpt.com",
+        "destination": "",
+        "shortcut": ""
+      },
+      {
+        "name": "KimCartoon",
+        "link": "kimcartoon.li",
+        "destination": "",
+        "shortcut": ""
+      },
+      {
+        "name": "Youtube",
+        "link": "youtube.com",
+        "destination": "",
+        "shortcut": ""
+      },
+      {
+        "name": "Fbox.to",
+        "link": "4.fbox.to/home",
+        "destination": "",
+        "shortcut": ""
+      },
+      {
+        "name": "ThePirateBay",
+        "link": "thepiratebay.org",
+        "destination": "",
+        "shortcut": ""
+      },
+      {
+        "name": "NeoCities",
+        "link": "neocities.org",
+        "destination": "",
+        "shortcut": ""
+      },
+      {
+        "name": "4chan",
+        "link": "4chan.org",
+        "destination": "",
+        "shortcut": ""
+      },
+      {
+        "name": "Instagram",
+        "link": "instagram.com",
+        "destination": "",
+        "shortcut": ""
+      },
+      {
+        "name": "Github",
+        "link": "Github.com",
+        "destination": "",
+        "shortcut": ""
+      },
+      {
+        "name": "Spotify",
+        "link": "open.spotify.com/user/lkymky?si=79a7fa6e02714d1e",
+        "destination": "",
+        "shortcut": ""
+      },
+      {
+        "name": "Wallhaven",
+        "link": "wallhaven.cc",
+        "destination": "",
+        "shortcut": ""
+      },
+      {
+        "name": "Macintosh garden",
+        "link": "macintosh.garden",
+        "destination": "",
+        "shortcut": ""
+      },
+      {
+        "name": "CharlieVision",
+        "link": "youtube.com/playlist?list=PLJnNyx-zRSqTsqrzGKOWhhitQ2k8DneMt",
+        "destination": "",
+        "shortcut": ""
+      },
+      {
+        "name": "@chawee.w00f",
+        "link": "instagram.com/chawee.w00f/",
+        "destination": "",
+        "shortcut": ""
+      },
+      {
+        "name": "Sugarmate",
+        "link": "sugarmate.io",
+        "destination": "",
+        "shortcut": ""
+      },
+      {
+        "name": "Labelery",
+        "link": "labelary.com/viewer.html",
+        "destination": "",
+        "shortcut": ""
+      },
+      {
+        "name": "ROMs Archive",
+        "link": "r-roms.github.io/",
+        "destination": "",
+        "shortcut": ""
+      },
+      {
+        "name": "Mbta Tracker",
+        "link": "fridge.local:5174",
+        "destination": "fridge.local:5174",
+        "shortcut": "mbta"
+      },
+      {
+        "name": "Sprite Cylinder Tagger",
+        "link": "fridge.local:5173",
+        "destination": "fridge.local:5173",
+        "shortcut": "sprite"
+      },
+      {
+        "name": "Printer Hub",
+        "link": "fridge.local:8088",
+        "destination": "fridge.local:8088",
+        "shortcut": "printer"
+      },
+      {
+        "name": "Device Sentry",
+        "link": "fridge.local:8089",
+        "destination": "fridge.local:8089",
+        "shortcut": "sentry"
+      },
+      {
+        "name": "Rocket.Chat",
+        "link": "fridge.local:4002",
+        "destination": "fridge.local:4002",
+        "shortcut": "chat"
+      },
+      {
+        "name": "DokuWiki",
+        "link": "fridge.local:9090",
+        "destination": "fridge.local:9090",
+        "shortcut": "wiki"
+      }
+    ],
+    "updatedAt": "2026-02-28T13:41:18.304Z"
+  }
+}

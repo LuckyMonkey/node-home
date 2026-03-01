@@ -1,6 +1,6 @@
 # Node-Homepage Dashboard
 
-Homepage + warning/portal redirects for `http://fridge.local/` (runs in the `node-home` container).
+Dashboard + warning/portal redirects for `http://fridge.local/` (runs in the `node-dashboard` container).
 
 ## Features
 
@@ -17,7 +17,7 @@ Homepage + warning/portal redirects for `http://fridge.local/` (runs in the `nod
 ## Frontend Structure
 
 - `public/js/app-shared.js`: shared browser helpers (`localStorage` JSON wrappers, selectors, name sanitizer).
-- `public/js/homepage.js`: homepage behavior (ordering, hide/show, block move controls, icon loading/cache, sound, profile sync, MOTD).
+- `public/js/homepage.js`: dashboard behavior (ordering, hide/show, block move controls, icon loading/cache, sound, profile sync, MOTD).
 - `public/js/settings.js`: settings page behavior (profile name save + hostname CRUD).
 - `index.js` now renders markup and bootstrap JSON only; page logic lives in static scripts.
 
@@ -48,7 +48,7 @@ Container requirements in compose:
 - `/` -> defaults to `/warning` (unless `?go=` query redirect is used).
 - `/warning` -> warning wall page.
 - `/links` -> flat access portal page.
-- `/dashboard` -> full dynamic node-home dashboard (legacy homepage UI).
+- `/dashboard` -> full dynamic dashboard view.
 
 ## links.json schema
 
@@ -59,7 +59,7 @@ Container requirements in compose:
 - `destination` (string, optional): Redirect target URL for a shortcut.
 - `shortcut` (string, optional): Shortcut path segment (ex: `wiki` -> `http://fridge.local/wiki`).
 
-If an entry has `destination` (or `dest`), the homepage links to `/${shortcut}` and the server redirects to `destination`.
+If an entry has `destination` (or `dest`), the dashboard links to `/${shortcut}` and the server redirects to `destination`.
 If `shortcut` is omitted, it is generated from `name`.
 
 `destination`/`link` can be a full URL (`http://...`) or a bare host/path (`fridge.local:9090/`, `gmail.com`).
@@ -76,7 +76,7 @@ Entries are persisted to `HOSTNAMES_FILE` (default `/data/hostnames.json`) and w
 
 ## Query Redirects
 
-Homepage supports query-based redirects to local services:
+Dashboard supports query-based redirects to local services:
 
 - `/?go=home`
 - `/?go=warning`

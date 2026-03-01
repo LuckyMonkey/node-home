@@ -152,7 +152,7 @@ const curatedLinks = [
     description: 'Pi-hole control panel (always-on core service)'
   },
   {
-    name: 'Node Home',
+    name: 'dashboard',
     link: `${HOMEPAGE_BASE_URL}/`,
     description: 'This launch page'
   }
@@ -824,7 +824,7 @@ const resolvePageIconUrl = async (rawUrl) => {
   const response = await fetch(parsed.toString(), {
     method: 'GET',
     redirect: 'follow',
-    headers: { 'User-Agent': 'node-home-icon-discovery/1.0' }
+    headers: { 'User-Agent': 'dashboard-icon-discovery/1.0' }
   });
   if (!response.ok) return '';
   const contentType = String(response.headers.get('content-type') || '');
@@ -1321,7 +1321,7 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects, inject
   const today = moment().format('ddd, MMM D');
   const msg = `Today is ${today}.`;
   const heroCard = `
-    <article class="bookmark-card hero hero-card" data-item-id="pinned:hero" data-item-group="pinned" data-pinned="1" role="region" aria-label="Homepage header">
+    <article class="bookmark-card hero hero-card" data-item-id="pinned:hero" data-item-group="pinned" data-pinned="1" role="region" aria-label="Dashboard header">
       <div class="bookmark-content">
         <h1><span id="greeting-name">CHARLIE</span></h1>
         <p class="subtitle">${msg}</p>
@@ -1337,7 +1337,7 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects, inject
           <span class="icon-emoji" style="display:inline-flex;" aria-hidden="true">🏠</span>
           <div class="bookmark-meta">
             <p class="bookmark-name">fridge.local</p>
-            <p class="bookmark-url">open homepage root</p>
+            <p class="bookmark-url">open dashboard root</p>
           </div>
         </header>
       </div>
@@ -1373,7 +1373,7 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects, inject
     <!DOCTYPE html>
     <html lang="en">
       <head>
-        <title>fridge homepage</title>
+        <title>fridge dashboard</title>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#0f172a">
@@ -1565,7 +1565,7 @@ const renderSettingsHtml = (injectOverlayScript) => `
             <h1 style="margin:0;">Service Hostname Manager</h1>
             <p style="margin:0.25rem 0 0;color:#475569;">Store fridge.local hostnames (the query redirect host) and optional fallback targets.</p>
           </div>
-          <a href="/">Back to homepage</a>
+          <a href="/">Back to dashboard</a>
         </section>
 
         <section class="panel">
@@ -1584,7 +1584,7 @@ const renderSettingsHtml = (injectOverlayScript) => `
           <form id="hostname-form">
             <div class="row">
               <label>
-                Homepage URL
+                Dashboard URL
                 <input id="homepageUrl" name="homepageUrl" required placeholder="fridge.local:8088" value="fridge.local:8088" maxlength="512">
               </label>
               <label>
@@ -1692,8 +1692,8 @@ app.get('/_fridge/home-overlay.js', (req, res) => {
     const a = document.createElement('a');
     a.id = 'fridge-home-overlay';
     a.href = 'http://fridge.local/';
-    a.setAttribute('aria-label', 'Back to fridge homepage');
-    a.title = 'Back to fridge homepage';
+    a.setAttribute('aria-label', 'Back to fridge dashboard');
+    a.title = 'Back to fridge dashboard';
     a.style.cssText = [
       'position:fixed','right:14px','bottom:14px','z-index:2147483647',
       'width:46px','height:46px','display:flex','align-items:center','justify-content:center',
@@ -1743,7 +1743,7 @@ app.get('/api/icon-proxy', async (req, res) => {
     const response = await fetch(parsed.toString(), {
       method: 'GET',
       redirect: 'follow',
-      headers: { 'User-Agent': 'node-home-icon-proxy/1.0' }
+      headers: { 'User-Agent': 'dashboard-icon-proxy/1.0' }
     });
     if (!response.ok) {
       return res.status(404).send('Icon not found');

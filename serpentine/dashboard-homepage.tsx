@@ -219,7 +219,8 @@ function buildSections(boot: Boot): Section[] {
 }
 
 function DashboardHomepage({ boot }: { boot: Boot }) {
-  const [sections, setSections] = useState<Section[]>(() => buildSections(boot));
+  const [sections] = useState<Section[]>(() => buildSections(boot));
+  const [slitherStep, setSlitherStep] = useState(0);
   const rootRef = useRef<HTMLElement | null>(null);
   const lastWheelAt = useRef(0);
   const gridRef = useRef<HTMLDivElement | null>(null);
@@ -229,9 +230,31 @@ function DashboardHomepage({ boot }: { boot: Boot }) {
   const wrappedTokenIdsRef = useRef<Set<string>>(new Set());
   const [flowTick, setFlowTick] = useState(0);
 
-  useLayoutEffect(() => {
-    type WheelToken = { kind: 'leader'; leaderSectionId: string } | { kind: 'card'; cardId: string };
+  const baseTokens = useMemo(() => {
+    const tokens: RenderToken[] = [];
+    sections.forEach((section) => {
+      tokens.push({ kind: 'section', section });
+      section.cards.forEach((card) => tokens.push({ kind: 'card', sectionId: section.id, card }));
+    });
+    return tokens;
+  }, [sections]);
 
+  const slitheredTokens = useMemo(() => {
+    if (!baseTokens.length || baseTokens.length === 1) return baseTokens;
+    let pinnedEnd = 1;
+    for (let i = 1; i < baseTokens.length; i += 1) {
+      if (baseTokens[i].kind === 'section') break;
+      pinnedEnd = i + 1;
+    }
+    const pinned = baseTokens.slice(0, pinnedEnd);
+    const rest = baseTokens.slice(pinnedEnd);
+    if (!rest.length) return pinned;
+    const k = ((slitherStep % rest.length) + rest.length) % rest.length;
+    if (k === 0) return [...pinned, ...rest];
+    return [...pinned, ...rest.slice(k), ...rest.slice(0, k)];
+  }, [baseTokens, slitherStep]);
+
+  useLayoutEffect(() => {
     const onWheel = (ev: WheelEvent) => {
       if (ev.ctrlKey) return;
       if (ev.target instanceof Element && ev.target.closest('input, textarea, select')) return;
@@ -252,69 +275,22 @@ function DashboardHomepage({ boot }: { boot: Boot }) {
           prevRectsRef.current.set(id, node.getBoundingClientRect());
         });
       }
-      setFlowTick((tick) => tick + 1);
-
-      setSections((prev) => {
-        if (prev.length < 2) return prev;
-
-        const cardsById = new Map(prev.flatMap((s) => s.cards).map((c) => [c.id, c] as const));
-        const leadersBySectionId = new Map(prev.map((s) => [s.id, { title: s.title, description: s.description }] as const));
-
-        const flat: WheelToken[] = [];
-        for (const section of prev) {
-          flat.push({ kind: 'leader', leaderSectionId: section.id });
-          for (const card of section.cards) flat.push({ kind: 'card', cardId: card.id });
-        }
-        if (flat.length <= 1) return prev;
-
-        const pinnedCount = 1 + prev[0].cards.length;
-        const pinned = flat.slice(0, pinnedCount);
-        const rest = flat.slice(pinnedCount);
-        if (rest.length < 2) return prev;
-
-        const rotated = rest.slice();
-        if (d > 0) {
-          const wrapped = rotated.shift() as WheelToken;
-          rotated.push(wrapped);
-          wrappedTokenIdsRef.current = new Set([
-            wrapped.kind === 'leader' ? `section:${wrapped.leaderSectionId}` : `card:${wrapped.cardId}`
-          ]);
+      const pinnedCount = 1 + sections[0].cards.length;
+      const rest = slitheredTokens.slice(pinnedCount);
+      if (rest.length > 0) {
+        const wrapped = d > 0 ? rest[0] : rest[rest.length - 1];
+        if (wrapped.kind === 'section') {
+          wrappedTokenIdsRef.current = new Set([`section:${wrapped.section.id}`]);
         } else {
-          const wrapped = rotated.pop() as WheelToken;
-          rotated.unshift(wrapped);
-          wrappedTokenIdsRef.current = new Set([
-            wrapped.kind === 'leader' ? `section:${wrapped.leaderSectionId}` : `card:${wrapped.cardId}`
-          ]);
+          wrappedTokenIdsRef.current = new Set([`card:${wrapped.card.id}`]);
         }
-
-        const merged = [...pinned, ...rotated];
-        let cursor = 0;
-        const next = prev.map((section, index) => {
-          const slotCount = 1 + section.cards.length;
-          const slice = merged.slice(cursor, cursor + slotCount);
-          cursor += slotCount;
-
-          let leader = leadersBySectionId.get(section.id) || { title: section.title, description: section.description };
-          if (index > 0) {
-            const movedLeader = slice.find((t) => t.kind === 'leader') as Extract<WheelToken, { kind: 'leader' }> | undefined;
-            if (movedLeader) leader = leadersBySectionId.get(movedLeader.leaderSectionId) || leader;
-          }
-
-          const cards = slice
-            .filter((t): t is Extract<WheelToken, { kind: 'card' }> => t.kind === 'card')
-            .map((t) => cardsById.get(t.cardId))
-            .filter(Boolean)
-            .map((c) => ({ ...(c as Card), sectionId: section.id }));
-
-          return { ...section, title: leader.title, description: leader.description, cards };
-        });
-
-        return next;
-      });
+      }
+      setFlowTick((tick) => tick + 1);
+      setSlitherStep((step) => step + (d > 0 ? 1 : -1));
     };
     window.addEventListener('wheel', onWheel, { passive: false });
     return () => window.removeEventListener('wheel', onWheel as EventListener);
-  }, []);
+  }, [sections, slitheredTokens]);
 
   useLayoutEffect(() => {
     if (!flowTick) return;
@@ -359,7 +335,7 @@ function DashboardHomepage({ boot }: { boot: Boot }) {
 
     prevRectsRef.current = new Map();
     wrappedTokenIdsRef.current = new Set();
-  }, [flowTick, sections]);
+  }, [flowTick, slitheredTokens]);
 
   useLayoutEffect(() => {
     const update = () => {
@@ -396,21 +372,16 @@ function DashboardHomepage({ boot }: { boot: Boot }) {
   };
 
   const serpentineColumns = useMemo(() => {
-    const tokens: RenderToken[] = [];
-    sections.forEach((section) => {
-      tokens.push({ kind: 'section', section });
-      section.cards.forEach((card) => tokens.push({ kind: 'card', sectionId: section.id, card }));
-    });
     const order = computeColumnOrder(containerW, 295, 12);
     const colCount = Math.max(1, order.length);
-    const rowsPerCol = Math.max(1, Math.ceil(tokens.length / colCount));
+    const rowsPerCol = Math.max(1, Math.ceil(slitheredTokens.length / colCount));
     const chunked = Array.from({ length: colCount }, (_, colPos) => {
       const start = colPos * rowsPerCol;
-      const colTokens = tokens.slice(start, start + rowsPerCol);
+      const colTokens = slitheredTokens.slice(start, start + rowsPerCol);
       return colPos % 2 === 1 ? colTokens.reverse() : colTokens;
     });
     return chunked;
-  }, [containerW, sections]);
+  }, [containerW, slitheredTokens]);
 
   const onCardClick = (card: Card) => {
     const href = resolveAwayHref(card.href);

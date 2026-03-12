@@ -6,7 +6,11 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build:serpentine": "node serpentine/build-serpentine.mjs",
+    "build:snakelet": "node serpentine/build-snakelet.mjs",
+    "build:dashboard-react": "node serpentine/build-dashboard-react.mjs",
+    "build:dashboard-homepage": "node serpentine/build-dashboard-homepage.mjs",
+    "test": "tsx --test serpentine/*.test.ts"
   },
   "author": "",
   "license": "ISC",
@@ -14,6 +18,15 @@
     "axios": "^1.4.0",
     "cookie-parser": "^1.4.7",
     "express": "^4.22.1",
-    "moment": "^2.29.4"
+    "moment": "^2.29.4",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "esbuild": "^0.27.3",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   }
 }

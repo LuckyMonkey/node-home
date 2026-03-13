@@ -1,4 +1,4 @@
-# dashboard
+# Node-Homepage Dashboard
 
 Dashboard + warning/portal redirects for `http://fridge.local/` (runs in the `node-dashboard` container).
 

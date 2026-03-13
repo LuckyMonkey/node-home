@@ -10,6 +10,7 @@
   const HIDDEN_ITEMS_KEY = 'nodehome-hidden-items-v1';
   const SHOW_HIDDEN_KEY = 'nodehome-show-hidden-v1';
   const BLOCK_ORDER_KEY = 'nodehome-block-order-v1';
+  const HEADER_BLOCK_ID = 'pinned';
   const HISTORY_KEY = 'nodehome-history-v1';
   const CONTROL_MODE_KEY = 'nodehome-controls-visible-v1';
 
@@ -20,7 +21,6 @@
   shared.writeJson(LINKS_BACKUP_KEY, { savedAt: Date.now(), links: allLinks });
 
   const greetingEl = shared.qs('#greeting-name');
-  const controlsToggle = shared.qs('#pageControlsToggle');
   const cardListRoot = shared.qs('.bookmark-grid');
   if (!cardListRoot) return;
   cardListRoot.setAttribute('tabindex', '0');
@@ -37,9 +37,17 @@
   const hiddenMap = shared.readJson(HIDDEN_ITEMS_KEY, {});
   const historyList = shared.readJson(HISTORY_KEY, []);
   let blockOrder = shared.readJson(BLOCK_ORDER_KEY, []);
-  let showHidden = localStorage.getItem(SHOW_HIDDEN_KEY) === '1';
+  let showHidden = false;
 
   const blocks = () => shared.qsa('.bookmark-grid .card-block[data-block-id]');
+  const visibleBlocksForSlither = () => {
+    const controlsOn = !document.body.classList.contains('controls-hidden');
+    return blocks().filter((block) => {
+      const id = String(block.dataset.blockId || '');
+      if (id !== 'deleted') return true;
+      return controlsOn;
+    });
+  };
   const cards = () => shared.qsa('.bookmark-grid .bookmark-card[data-item-id]');
   const cardsInBlock = (blockId) => {
     const block = shared.qs('.card-block[data-block-id="' + CSS.escape(blockId) + '"]', cardListRoot);
@@ -47,63 +55,142 @@
   };
   const isPinned = (card) => card.dataset.pinned === '1';
   const itemId = (card) => String(card?.dataset?.itemId || '').trim();
-
-  const rankToggleBtn = document.createElement('button');
-  rankToggleBtn.id = 'showHiddenToggle';
-  rankToggleBtn.className = 'page-controls-toggle';
-  rankToggleBtn.style.right = '46px';
-  document.body.appendChild(rankToggleBtn);
-
-  const hiddenNavUp = document.createElement('button');
-  hiddenNavUp.className = 'page-controls-toggle';
-  hiddenNavUp.style.right = '82px';
-  hiddenNavUp.title = 'Previous hidden';
-  hiddenNavUp.textContent = '⬆️';
-
-  const hiddenNavDown = document.createElement('button');
-  hiddenNavDown.className = 'page-controls-toggle';
-  hiddenNavDown.style.right = '118px';
-  hiddenNavDown.title = 'Next hidden';
-  hiddenNavDown.textContent = '⬇️';
-
-  document.body.appendChild(hiddenNavUp);
-  document.body.appendChild(hiddenNavDown);
+  const isLanHostname = (hostname) => {
+    const host = String(hostname || '').toLowerCase();
+    return host === 'fridge.local' || host.endsWith('.fridge.local');
+  };
+  const isPrivateIp = (hostname) => {
+    const host = String(hostname || '').trim();
+    return /^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host)
+      || /^192\.168\.\d{1,3}\.\d{1,3}$/.test(host)
+      || /^172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}$/.test(host)
+      || /^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host);
+  };
+  const hostnameFromUrl = (raw) => {
+    const value = String(raw || '').trim();
+    if (!value) return '';
+    try {
+      return String(new URL(value, window.location.origin).hostname || '').toLowerCase();
+    } catch {
+      return value.split('/')[0].split(':')[0].trim().toLowerCase();
+    }
+  };
+  const resolveAwayHref = (rawHref) => {
+    const href = String(rawHref || '').trim();
+    if (!href || href.startsWith('/')) return href;
+    try {
+      const currentHost = String(window.location.hostname || '').toLowerCase();
+      if (isLanHostname(currentHost)) return href;
+      const parsed = new URL(href, window.location.origin);
+      if (!isLanHostname(parsed.hostname)) return parsed.toString();
+      parsed.protocol = window.location.protocol;
+      parsed.host = window.location.host;
+      return parsed.toString();
+    } catch {
+      return href;
+    }
+  };
 
   const applyHiddenState = () => {
     cards().forEach((card) => {
       const id = itemId(card);
       const hidden = Boolean(hiddenMap[id]) && !isPinned(card);
       card.classList.toggle('is-hidden-item', hidden && !showHidden);
-      card.classList.toggle('is-shown-hidden', hidden && showHidden);
+      card.classList.toggle('is-shown-hidden', false);
     });
   };
 
-  const applyOrder = () => {
-    const available = blocks().map((b) => b.dataset.blockId).filter(Boolean);
-    if (!Array.isArray(blockOrder) || blockOrder.length === 0) blockOrder = available.slice();
-    for (const id of available) if (!blockOrder.includes(id)) blockOrder.push(id);
-    blockOrder = blockOrder.filter((id, idx, arr) => available.includes(id) && arr.indexOf(id) === idx);
-    shared.writeJson(BLOCK_ORDER_KEY, blockOrder);
+  const applyDeletedSectionState = () => {
+    const deletedBlock = shared.qs('.card-block[data-block-id="deleted"]', cardListRoot);
+    if (!deletedBlock) return;
+    const controlsOn = !document.body.classList.contains('controls-hidden');
+    showHidden = controlsOn;
+    cards().forEach((card) => {
+      const id = itemId(card);
+      if (!id || isPinned(card) || id === 'system:add-link') return;
+      const hidden = Boolean(hiddenMap[id]);
+      if (hidden) {
+        if (controlsOn) {
+          deletedBlock.appendChild(card);
+        } else {
+          card.classList.add('is-hidden-item');
+        }
+      }
+    });
+  };
 
-    blockOrder.forEach((id) => {
+  const normalizeBlockOrder = (available) => {
+    const source = Array.isArray(blockOrder) && blockOrder.length ? blockOrder.slice() : available.slice();
+    for (const id of available) if (!source.includes(id)) source.push(id);
+    const unique = source.filter((id, idx, arr) => available.includes(id) && arr.indexOf(id) === idx);
+    if (!available.includes(HEADER_BLOCK_ID)) return unique;
+    return [HEADER_BLOCK_ID, ...unique.filter((id) => id !== HEADER_BLOCK_ID)];
+  };
+
+  const animateBlockLayout = (beforeRects) => {
+    blocks().forEach((block) => {
+      const id = String(block.dataset.blockId || '');
+      if (!id) return;
+      const before = beforeRects.get(id);
+      if (!before) return;
+      const after = block.getBoundingClientRect();
+      const dx = before.left - after.left;
+      const dy = before.top - after.top;
+      if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+      block.animate([
+        { transform: `translate(${dx}px, ${dy}px)` },
+        { transform: 'translate(0, 0)' }
+      ], {
+        duration: 320,
+        easing: 'cubic-bezier(0.2, 0.7, 0.2, 1)'
+      });
+    });
+  };
+
+  const toSnakeDisplayOrder = (orderedIds) => {
+    if (!orderedIds.length) return orderedIds;
+    const byId = new Map();
+    orderedIds.forEach((id) => {
       const el = shared.qs('.card-block[data-block-id="' + CSS.escape(id) + '"]', cardListRoot);
+      if (el) byId.set(id, el);
+    });
+    if (byId.size < 2) return orderedIds;
+
+    // First pass in logical order so CSS columns determine current column breaks.
+    orderedIds.forEach((id) => {
+      const el = byId.get(id);
       if (el) cardListRoot.appendChild(el);
     });
 
-    const linkCards = cardsInBlock('links').filter((card) => !isPinned(card) && itemId(card) !== 'system:add-link');
-    linkCards
-      .map((card, idx) => ({ card, idx }))
-      .sort((a, b) => {
-        const sa = Number(rankMap[itemId(a.card)] || 0);
-        const sb = Number(rankMap[itemId(b.card)] || 0);
-        if (sb !== sa) return sb - sa;
-        return a.idx - b.idx;
-      })
-      .forEach((entry) => {
-        const block = shared.qs('.card-block[data-block-id="links"]', cardListRoot);
-        if (block) block.appendChild(entry.card);
-      });
+    const columns = [];
+    const threshold = 2;
+    orderedIds.forEach((id) => {
+      const el = byId.get(id);
+      if (!el) return;
+      const left = Math.round(el.getBoundingClientRect().left);
+      let col = columns.find((c) => Math.abs(c.left - left) <= threshold);
+      if (!col) {
+        col = { left, ids: [] };
+        columns.push(col);
+      }
+      col.ids.push(id);
+    });
+    columns.sort((a, b) => a.left - b.left);
+    if (columns.length < 2) return orderedIds;
 
+    const snake = [];
+    columns.forEach((col, idx) => {
+      if (idx % 2 === 1) {
+        snake.push(...col.ids.slice().reverse());
+      } else {
+        snake.push(...col.ids);
+      }
+    });
+    return snake;
+  };
+
+  const applyOrder = () => {
+    // Preserve dashboard style/layout; only behavior is serpentine wheel slither.
     applyHiddenState();
   };
 
@@ -123,11 +210,11 @@
         e.preventDefault();
         e.stopPropagation();
         const idx = blockOrder.indexOf(id);
-        if (idx <= 0) return;
+        if (idx <= 1) return;
         const prev = blockOrder[idx - 1];
         blockOrder[idx - 1] = blockOrder[idx];
         blockOrder[idx] = prev;
-        applyOrder();
+        applyOrder({ animate: true });
       });
 
       down.addEventListener('click', (e) => {
@@ -135,10 +222,11 @@
         e.stopPropagation();
         const idx = blockOrder.indexOf(id);
         if (idx < 0 || idx >= blockOrder.length - 1) return;
+        if (id === HEADER_BLOCK_ID) return;
         const next = blockOrder[idx + 1];
         blockOrder[idx + 1] = blockOrder[idx];
         blockOrder[idx] = next;
-        applyOrder();
+        applyOrder({ animate: true });
       });
 
       const content = shared.qs('.bookmark-content', titleCard);
@@ -165,22 +253,6 @@
     });
   };
 
-  const hiddenCardsForNav = () => cards().filter((c) => Boolean(hiddenMap[itemId(c)]));
-  let hiddenNavIdx = 0;
-  const navHidden = (delta) => {
-    const list = hiddenCardsForNav();
-    if (!list.length) return;
-    hiddenNavIdx = (hiddenNavIdx + delta + list.length) % list.length;
-    const target = list[hiddenNavIdx];
-    if (!showHidden) {
-      showHidden = true;
-      localStorage.setItem(SHOW_HIDDEN_KEY, '1');
-      updateShowHiddenUi();
-      applyHiddenState();
-    }
-    target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
-  };
-
   const bumpRank = (id) => {
     if (!id || id.startsWith('pinned:')) return;
     rankMap[id] = Number(rankMap[id] || 0) + 1;
@@ -197,7 +269,7 @@
   };
 
   const activateCard = (card) => {
-    const href = card?.dataset?.href;
+    const href = resolveAwayHref(card?.dataset?.href);
     if (!href) return;
     bumpRank(itemId(card));
     pushHistory(card);
@@ -207,57 +279,189 @@
   const setControlsVisible = (visible) => {
     document.body.classList.toggle('controls-hidden', !visible);
     localStorage.setItem(CONTROL_MODE_KEY, visible ? '1' : '0');
+    applyDeletedSectionState();
+    applyHiddenState();
   };
 
   const controlsVisible = localStorage.getItem(CONTROL_MODE_KEY) === '1';
   setControlsVisible(controlsVisible);
-  if (controlsToggle) {
-    controlsToggle.addEventListener('click', () => {
-      setControlsVisible(document.body.classList.contains('controls-hidden'));
-    });
-  }
+  window.addEventListener('dashboard:controls-mode', (event) => {
+    const detail = event && event.detail ? event.detail : {};
+    setControlsVisible(Boolean(detail.visible));
+  });
+  window.addEventListener('dashboard:profile-name', (event) => {
+    const detail = event && event.detail ? event.detail : {};
+    const name = shared.safeName(detail.name || '');
+    writeProfile({ name });
+    applyName(name);
+  });
 
-  const cycleBlockItems = (block, direction) => {
-    const movable = shared.qsa('.bookmark-card[data-item-id]', block)
-      .filter((card) => !isPinned(card) && itemId(card) !== 'system:add-link');
-    if (movable.length < 2) return;
+  const rotateSerpentineTokens = (direction) => {
+    const blockList = visibleBlocksForSlither();
+    if (blockList.length < 2) return;
+    const movableBlocks = blockList.slice(1); // first section stays pinned
+    if (!movableBlocks.length) return;
+    const tokens = movableBlocks.flatMap((block) => shared.qsa('.bookmark-card[data-item-id]', block));
+    if (tokens.length < 2) return;
+
+    const beforeRects = new Map();
+    tokens.forEach((card) => {
+      const id = itemId(card);
+      if (id) beforeRects.set(id, card.getBoundingClientRect());
+    });
+
+    const rotated = tokens.slice();
     if (direction > 0) {
-      block.appendChild(movable[0]);
-      return;
+      rotated.push(rotated.shift());
+    } else {
+      rotated.unshift(rotated.pop());
     }
-    block.insertBefore(movable[movable.length - 1], movable[0]);
+
+    // Reflow cards in strict flat order across movable blocks to mirror serpentine token rotation.
+    let cursor = 0;
+    movableBlocks.forEach((block) => {
+      const slotCount = shared.qsa('.bookmark-card[data-item-id]', block).length;
+      const nextSlice = rotated.slice(cursor, cursor + slotCount);
+      cursor += slotCount;
+      nextSlice.forEach((card) => block.appendChild(card));
+    });
+
+    requestAnimationFrame(() => {
+      const viewportJump = Math.max(window.innerHeight * 0.58, 240);
+      const overshoot = direction > 0 ? -9 : 9;
+      cards().forEach((card) => {
+        const id = itemId(card);
+        const before = beforeRects.get(id);
+        if (!before) return;
+        const after = card.getBoundingClientRect();
+        let fromY = before.top - after.top;
+        if (Math.abs(before.left - after.left) > 10) {
+          fromY = direction > 0 ? viewportJump : -viewportJump;
+        }
+        if (Math.abs(fromY) < 1) return;
+        card.animate([
+          { transform: `translateY(${fromY}px)` },
+          { transform: `translateY(${overshoot}px)`, offset: 0.84 },
+          { transform: 'translateY(0)', offset: 1 }
+        ], {
+          duration: 540,
+          easing: 'cubic-bezier(0.2, 0.9, 0.15, 1)'
+        });
+      });
+    });
   };
 
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    if (resizeTimer) clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => applyOrder(), 120);
+  });
+
   let lastWheelCycleAt = 0;
-  cardListRoot.addEventListener('wheel', (event) => {
+  window.addEventListener('wheel', (event) => {
     if (event.ctrlKey) return;
     if (event.target instanceof Element && event.target.closest('input, textarea, select')) return;
     const delta = Math.abs(event.deltaY) >= Math.abs(event.deltaX) ? event.deltaY : event.deltaX;
     if (Math.abs(delta) < 0.5) return;
     event.preventDefault();
     const now = Date.now();
-    if (now - lastWheelCycleAt < 60) return;
+    if (now - lastWheelCycleAt < 45) return;
     lastWheelCycleAt = now;
     const direction = delta > 0 ? 1 : -1;
-    blocks().forEach((block) => cycleBlockItems(block, direction));
+    rotateSerpentineTokens(direction);
     applyHiddenState();
   }, { passive: false });
 
-  const updateShowHiddenUi = () => {
-    rankToggleBtn.textContent = showHidden ? '🙈' : '👁️';
-    rankToggleBtn.title = showHidden ? 'Hide hidden items' : 'Show hidden items';
-    rankToggleBtn.setAttribute('aria-label', rankToggleBtn.title);
+  const movableCards = () => cards().filter((card) => !isPinned(card) && itemId(card) !== 'system:add-link' && !itemId(card).startsWith('block:'));
+  let draggedCard = null;
+  const clearDragTargets = () => cards().forEach((c) => c.classList.remove('drag-target'));
+  const allowedDrop = (targetBlock, sourceBlock) => {
+    if (!targetBlock || !sourceBlock) return false;
+    const controlsOn = !document.body.classList.contains('controls-hidden');
+    const sourceId = String(sourceBlock.dataset.blockId || '');
+    const targetId = String(targetBlock.dataset.blockId || '');
+    if (sourceId === targetId) return true;
+    if (!controlsOn) return false;
+    if (targetId === 'deleted' || targetId === 'pinned') return true;
+    return false;
   };
 
-  rankToggleBtn.addEventListener('click', () => {
-    showHidden = !showHidden;
-    localStorage.setItem(SHOW_HIDDEN_KEY, showHidden ? '1' : '0');
-    updateShowHiddenUi();
-    applyHiddenState();
-  });
-  hiddenNavUp.addEventListener('click', () => navHidden(-1));
-  hiddenNavDown.addEventListener('click', () => navHidden(1));
-  updateShowHiddenUi();
+  const installDragReorder = () => {
+    movableCards().forEach((card) => {
+      if (card.dataset.dragInit === '1') return;
+      card.dataset.dragInit = '1';
+      card.draggable = true;
+      card.addEventListener('dragstart', (event) => {
+        draggedCard = card;
+        card.classList.add('is-dragging');
+        try { event.dataTransfer.effectAllowed = 'move'; } catch {}
+      });
+      card.addEventListener('dragend', () => {
+        card.classList.remove('is-dragging');
+        draggedCard = null;
+        clearDragTargets();
+      });
+    });
+
+    cards().forEach((card) => {
+      if (card.dataset.dropInit === '1') return;
+      card.dataset.dropInit = '1';
+      card.addEventListener('dragover', (event) => {
+        if (!draggedCard || draggedCard === card) return;
+        const sourceBlock = draggedCard.closest('.card-block');
+        const targetBlock = card.closest('.card-block');
+        if (!allowedDrop(targetBlock, sourceBlock)) return;
+        event.preventDefault();
+        card.classList.add('drag-target');
+      });
+      card.addEventListener('dragleave', () => card.classList.remove('drag-target'));
+      card.addEventListener('drop', (event) => {
+        if (!draggedCard || draggedCard === card) return;
+        const sourceBlock = draggedCard.closest('.card-block');
+        const targetBlock = card.closest('.card-block');
+        if (!allowedDrop(targetBlock, sourceBlock)) return;
+        event.preventDefault();
+        targetBlock.insertBefore(draggedCard, card);
+        const id = itemId(draggedCard);
+        const targetId = String(targetBlock?.dataset?.blockId || '');
+        if (id) {
+          if (targetId === 'deleted') hiddenMap[id] = 1;
+          else delete hiddenMap[id];
+          shared.writeJson(HIDDEN_ITEMS_KEY, hiddenMap);
+        }
+        applyDeletedSectionState();
+        applyHiddenState();
+        clearDragTargets();
+      });
+    });
+
+    blocks().forEach((block) => {
+      if (block.dataset.dropInit === '1') return;
+      block.dataset.dropInit = '1';
+      block.addEventListener('dragover', (event) => {
+        if (!draggedCard) return;
+        const sourceBlock = draggedCard.closest('.card-block');
+        if (!allowedDrop(block, sourceBlock)) return;
+        event.preventDefault();
+      });
+      block.addEventListener('drop', (event) => {
+        if (!draggedCard) return;
+        const sourceBlock = draggedCard.closest('.card-block');
+        if (!allowedDrop(block, sourceBlock)) return;
+        event.preventDefault();
+        block.appendChild(draggedCard);
+        const id = itemId(draggedCard);
+        const targetId = String(block?.dataset?.blockId || '');
+        if (id) {
+          if (targetId === 'deleted') hiddenMap[id] = 1;
+          else delete hiddenMap[id];
+          shared.writeJson(HIDDEN_ITEMS_KEY, hiddenMap);
+        }
+        applyDeletedSectionState();
+        applyHiddenState();
+      });
+    });
+  };
 
   const iconCache = shared.readJson(ICON_CACHE_KEY, {});
   const persistIconCache = () => shared.writeJson(ICON_CACHE_KEY, iconCache);
@@ -285,6 +489,14 @@
     const emoji = card ? shared.qs('.icon-emoji', card) : null;
     const key = String(img.dataset.domain || '').toLowerCase();
     const pageUrl = String(img.dataset.pageurl || '');
+    const pageHost = hostnameFromUrl(pageUrl || key);
+
+    if (!pageUrl || pageHost === 'localhost' || isLanHostname(pageHost) || isPrivateIp(pageHost)) {
+      img.style.display = 'none';
+      if (emoji) emoji.style.display = 'inline-flex';
+      return;
+    }
+
     const cached = iconCache[key];
     const fresh = cached && (Date.now() - cached.updatedAt) < ICON_TTL_MS;
     if (fresh && cached.dataUrl) {
@@ -521,12 +733,15 @@
       shared.writeJson(BLOCK_ORDER_KEY, blockOrder);
       shared.writeJson(HISTORY_KEY, historyList);
       applyOrder();
+      installDragReorder();
+      applyDeletedSectionState();
     } catch {}
   };
 
   installHideButtons();
-  installBlockMoveButtons();
+  installDragReorder();
   applyOrder();
+  applyDeletedSectionState();
 
   shared.qsa('.bookmark-card img[data-primary]').forEach(loadIcon);
 

@@ -1,11 +1,11 @@
 [
   {
-    "name": "Gmail",
-    "link": "gmail.com"
+    "name": "ChatGBT",
+    "link": "openai.com/blog/chatgpt"
   },
   {
-    "name": "ChatGPT",
-    "link": "https://chatgpt.com"
+    "name": "Gmail",
+    "link": "gmail.com"
   },
   {
     "name": "KimCartoon",
@@ -14,6 +14,10 @@
   {
     "name": "Youtube",
     "link": "youtube.com"
+  },
+  {
+    "name": "Fbox.to",
+    "link": "4.fbox.to/home"
   },
   {
     "name": "ThePirateBay",
@@ -92,6 +96,18 @@
     "destination": "fridge.local:8089"
   },
   {
+    "name": "Snitche Incidents",
+    "link": "fridge.taila8bd9.ts.net/incidents",
+    "shortcut": "incidents",
+    "destination": "fridge.taila8bd9.ts.net/incidents"
+  },
+  {
+    "name": "Snakelet",
+    "link": "fridge.taila8bd9.ts.net/snakelet",
+    "shortcut": "snakelet",
+    "destination": "fridge.taila8bd9.ts.net/snakelet"
+  },
+  {
     "name": "Rocket.Chat",
     "link": "fridge.local:4002",
     "shortcut": "chat",
@@ -102,5 +118,11 @@
     "link": "fridge.local:9090",
     "shortcut": "wiki",
     "destination": "fridge.local:9090"
+  },
+  {
+    "name": "Serpentine Homepage",
+    "link": "fridge.local/serpentine",
+    "shortcut": "serpentine",
+    "destination": "fridge.local/serpentine"
   }
 ]

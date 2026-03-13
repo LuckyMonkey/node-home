@@ -1,15 +1,15 @@
 # Node-Homepage Dashboard
 
-Dashboard + warning/portal redirects for `http://fridge.local/` (runs in the `node-dashboard` container).
+Homepage + warning/portal redirects for `http://fridge.local/` (runs in the `node-home` container).
 
 ## Features
 
-- User quick links from `links.json` (reorder, delete, add).
-- Shortcut redirects (e.g. `/wiki` -> DokuWiki).
-- Managed services panel with container status and one-click `Start` / `Stop` / `Restart` for optional Docker projects.
+- Homepage cards come from a flat `links.json` array only.
+- Shortcut redirects (for example `/wiki` -> DokuWiki).
 - Default warning screen on `/warning` with background video wall.
 - Flat access portal on `/links` (linktree-style public links only).
-- Query redirects on `/` for single-hostname navigation (for example `/?go=warning`, `/?go=notes`, `/?go=trains`, `/?go=printers`).
+- Markdown-backed service discovery on `/services` and `/api/service-docs`, generated from `docker/*/README.md` plus top-level inventory docs.
+- Query redirects on `/` for single-hostname navigation (for example `/?go=warning`, `/?go=notes`, `/?go=trains`, `/?go=printers`, `/?go=services`).
 - Settings page at `/settings` for service hostname management with optional fallback `IP:port`.
 - Hostname API with runtime DNS resolution checks and persistent JSON storage in `/data/hostnames.json`.
 - Client-side profile persistence (display name, click-rank, hidden state, block order, history) synced to `/api/profiles/:name`.
@@ -17,8 +17,11 @@ Dashboard + warning/portal redirects for `http://fridge.local/` (runs in the `no
 ## Frontend Structure
 
 - `public/js/app-shared.js`: shared browser helpers (`localStorage` JSON wrappers, selectors, name sanitizer).
-- `public/js/homepage.js`: dashboard behavior (ordering, hide/show, block move controls, icon loading/cache, sound, profile sync, MOTD).
+- `public/js/homepage.js`: homepage behavior (ordering, hide/show, block move controls, icon loading/cache, sound, profile sync, MOTD).
 - `public/js/settings.js`: settings page behavior (profile name save + hostname CRUD).
+- `public/js/dashboard-homepage.bundle.js`: dashboard homepage cards rendered with the shared serpentine layout/movement engine.
+- The dashboard leader card is the profile-name hero itself, with hourly greeting variants instead of a separate pinned header card.
+- Cross-column dashboard moves use an elevated rail-style arc with temporary z-index lift so cards clear neighboring lanes before settling.
 - `index.js` now renders markup and bootstrap JSON only; page logic lives in static scripts.
 
 ## Performance Notes
@@ -45,25 +48,32 @@ Container requirements in compose:
 
 ## Route Overview
 
-- `/` -> defaults to `/warning` (unless `?go=` query redirect is used).
+- `/` -> defaults to `/dashboard` on `fridge.local`; warning mode remains available at `/warning`.
 - `/warning` -> warning wall page.
 - `/links` -> flat access portal page.
-- `/dashboard` -> full dynamic dashboard view.
+- `/dashboard` -> homepage built from `links.json`.
+- `/services` -> markdown-derived service index.
 
 ## links.json schema
 
-`links.json` is a JSON array of entries:
+`links.json` is the homepage source of truth. It is a JSON array of entries:
 
 - `name` (string, required): Card label.
 - `link` (string, optional): Direct URL.
 - `destination` (string, optional): Redirect target URL for a shortcut.
 - `shortcut` (string, optional): Shortcut path segment (ex: `wiki` -> `http://fridge.local/wiki`).
 
-If an entry has `destination` (or `dest`), the dashboard links to `/${shortcut}` and the server redirects to `destination`.
+If an entry has `destination` (or `dest`), the homepage links to `/${shortcut}` and the server redirects to `destination`.
 If `shortcut` is omitted, it is generated from `name`.
 
 `destination`/`link` can be a full URL (`http://...`) or a bare host/path (`fridge.local:9090/`, `gmail.com`).
 When no scheme is provided, the server infers a default (`http` for private IPs and internal hosts/explicit ports; otherwise `https`).
+
+## Markdown Service Discovery
+
+- The service index scans `/home/fridge/docker/*/README.md`.
+- It also includes `/home/fridge/docker/PROJECTS.md` and `/home/fridge/docker/PORTS.md`.
+- URLs found in those markdown files are surfaced through `/services` and `/api/service-docs`.
 
 ## Hostname Manager API
 
@@ -76,7 +86,7 @@ Entries are persisted to `HOSTNAMES_FILE` (default `/data/hostnames.json`) and w
 
 ## Query Redirects
 
-Dashboard supports query-based redirects to local services:
+Homepage supports query-based redirects to local services:
 
 - `/?go=home`
 - `/?go=warning`

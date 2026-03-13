@@ -1,14 +1,7 @@
-FROM node:20-alpine3.20
-
+FROM node:20-alpine3.16
 WORKDIR /app
-
-RUN apk add --no-cache bash docker-cli docker-cli-compose
-
 COPY package*.json ./
-RUN npm install --production
-
+RUN npm install --omit=dev
 COPY . .
-
 EXPOSE 8088
-
 CMD ["node", "index.js"]

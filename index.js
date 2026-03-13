@@ -11,7 +11,6 @@ const execFileAsync = promisify(execFile);
 
 const app = express();
 const LINKS_FILE = path.join(__dirname, 'links.json');
-const DEFAULT_LINKS_FILE = path.join(__dirname, 'links.defaults.json');
 const DELETED_FILE = path.join(__dirname, 'deleted.json');
 const HOSTNAMES_FILE = process.env.HOSTNAMES_FILE || path.join(__dirname, 'hostnames.json');
 const HOSTNAMES_LOCK_FILE = `${HOSTNAMES_FILE}.lock`;
@@ -33,7 +32,7 @@ const MAX_FIELD_LENGTH = 255;
 const MAX_HOMEPAGE_LENGTH = 512;
 const MAX_ENTRIES = 500;
 const MAX_PROFILE_NAME_LENGTH = 40;
-
+const DOCKER_ROOT = '/home/fridge/docker';
 app.use(express.static(__dirname, { index: false }));
 app.use(express.json({ limit: '16kb' }));
 app.use(express.urlencoded({ extended: true }));
@@ -168,18 +167,19 @@ const EXTERNAL_SERVICE_CARDS = [
   }
 ];
 
-const QUERY_REDIRECT_TARGETS = Object.freeze({
-  home: `${HOMEPAGE_BASE_URL}/dashboard`,
-  warning: `${HOMEPAGE_BASE_URL}/warning`,
-  notes: `${HOMEPAGE_BASE_URL}/app/notes`,
-  trains: `${HOMEPAGE_BASE_URL}/app/trains`,
-  printers: `${HOMEPAGE_BASE_URL}/app/printers`,
-  sprite: `${HOMEPAGE_BASE_URL}/app/sprite`,
-  v0: `${HOMEPAGE_BASE_URL}/app/v0`,
-  sentry: `${HOMEPAGE_BASE_URL}/app/sentry`,
-  photos: `${HOMEPAGE_BASE_URL}/app/photos`,
-  chat: `${HOMEPAGE_BASE_URL}/app/chat`,
-  pihole: 'http://192.168.1.99/admin'
+const buildQueryRedirectTargets = (baseUrl) => ({
+  home: `${baseUrl}/dashboard`,
+  warning: `${baseUrl}/warning`,
+  notes: `${baseUrl}/app/notes`,
+  trains: `${baseUrl}/app/trains`,
+  printers: `${baseUrl}/app/printers`,
+  sprite: `${baseUrl}/app/sprite`,
+  v0: `${baseUrl}/app/v0`,
+  sentry: `${baseUrl}/app/sentry`,
+  photos: `${baseUrl}/app/photos`,
+  chat: `${baseUrl}/app/chat`,
+  pihole: 'http://192.168.1.99/admin',
+  services: `${baseUrl}/services`
 });
 
 const APP_WRAPPER_TARGETS = Object.freeze({
@@ -203,32 +203,31 @@ const QUERY_REDIRECT_ALIASES = Object.freeze({
   train: 'trains',
   printer: 'printers',
   printerhub: 'printers',
+  service: 'services',
+  servicesdocs: 'services',
+  servicedocs: 'services',
   homepage: 'home',
   node: 'home'
 });
 
+const normalizeLinksPayload = (raw) => {
+  if (Array.isArray(raw)) {
+    return raw.filter((entry) => entry && typeof entry === 'object' && entry.name);
+  }
+  if (raw && typeof raw === 'object') {
+    return Object.entries(raw).map(([name, link]) => ({ name, link }));
+  }
+  return [];
+};
+
 const readLinks = () => {
   try {
-    const defaults = fs.existsSync(DEFAULT_LINKS_FILE)
-      ? JSON.parse(fs.readFileSync(DEFAULT_LINKS_FILE, 'utf8'))
-      : [];
     const raw = JSON.parse(fs.readFileSync(LINKS_FILE, 'utf8'));
-    if (Array.isArray(raw)) {
-      const byName = new Map();
-      for (const entry of defaults) {
-        if (entry && entry.name) byName.set(String(entry.name).toLowerCase(), entry);
-      }
-      for (const entry of raw) {
-        if (entry && entry.name) byName.set(String(entry.name).toLowerCase(), entry);
-      }
-      return Array.from(byName.values());
+    const normalized = normalizeLinksPayload(raw);
+    if (!Array.isArray(raw) && normalized.length > 0) {
+      writeLinks(normalized);
     }
-    if (raw && typeof raw === 'object') {
-      const converted = Object.entries(raw).map(([name, link]) => ({ name, link }));
-      writeLinks(converted);
-      return converted;
-    }
-    return [];
+    return normalized;
   } catch (err) {
     console.error('Unable to read links file', err);
     return [];
@@ -585,6 +584,28 @@ const formatLink = (raw, { defaultScheme = 'https' } = {}) => {
   return `${defaultScheme}://${value}`;
 };
 
+const normalizeExtractedServiceUrl = (raw) => {
+  const trimmed = String(raw || '')
+    .trim()
+    .replace(/[),.;'"`]+$/, '');
+  if (!trimmed || trimmed === 'http://' || trimmed === 'https://') {
+    return '';
+  }
+
+  const formatted = formatLink(trimmed, { defaultScheme: inferDefaultScheme(trimmed) || 'https' });
+  if (!formatted || formatted.startsWith('/')) {
+    return '';
+  }
+
+  try {
+    const parsed = new URL(formatted);
+    if (!parsed.hostname) return '';
+    return parsed.toString();
+  } catch {
+    return '';
+  }
+};
+
 const wrapKnownAppUrl = (rawHref) => {
   const href = String(rawHref || '').trim();
   if (!href) return href;
@@ -638,7 +659,7 @@ const normalizeLocalPath = (raw) => {
   return value;
 };
 
-const resolveHomepageQueryRedirect = (query) => {
+const resolveHomepageQueryRedirect = (query, baseUrl = HOMEPAGE_BASE_URL) => {
   const requestedRaw = getSingleQueryValue(query.go || query.to || query.service);
   if (!requestedRaw) {
     return { target: '', error: '' };
@@ -649,8 +670,9 @@ const resolveHomepageQueryRedirect = (query) => {
     return { target: '', error: 'Invalid redirect target' };
   }
 
+  const targets = buildQueryRedirectTargets(baseUrl);
   const key = QUERY_REDIRECT_ALIASES[requested] || requested;
-  const base = QUERY_REDIRECT_TARGETS[key];
+  const base = targets[key];
   if (!base) {
     return { target: '', error: `Unknown redirect target: ${requested}` };
   }
@@ -659,7 +681,7 @@ const resolveHomepageQueryRedirect = (query) => {
     const pageId = normalizeWikiPageId(query.id);
     if (pageId) {
       return {
-        target: `${QUERY_REDIRECT_TARGETS.notes}doku.php?id=${encodeURIComponent(pageId)}`,
+        target: `${targets.notes}doku.php?id=${encodeURIComponent(pageId)}`,
         error: ''
       };
     }
@@ -669,7 +691,7 @@ const resolveHomepageQueryRedirect = (query) => {
     const pathOnly = normalizeLocalPath(query.path);
     if (pathOnly) {
       return {
-        target: `${HOMEPAGE_BASE_URL}${pathOnly}`,
+        target: `${baseUrl}${pathOnly}`,
         error: ''
       };
     }
@@ -772,6 +794,20 @@ const requestHost = (req) => {
   const forwarded = String(req.headers['x-forwarded-host'] || '').trim();
   const host = forwarded || String(req.headers.host || '').trim();
   return host.split(',')[0].trim().toLowerCase();
+};
+
+const requestProtocol = (req) => {
+  const forwarded = String(req.headers['x-forwarded-proto'] || '').trim().toLowerCase();
+  if (forwarded === 'http' || forwarded === 'https') {
+    return forwarded;
+  }
+  return req.protocol === 'https' ? 'https' : 'http';
+};
+
+const publicBaseUrl = (req) => {
+  const host = requestHost(req);
+  if (!host) return HOMEPAGE_BASE_URL;
+  return `${requestProtocol(req)}://${host}`;
 };
 
 const shouldInjectForHost = (req) => {
@@ -955,6 +991,96 @@ const listDockerProjects = (rootDir = '/home/fridge/docker') => {
     console.error('Unable to list docker projects', err);
     return [];
   }
+};
+
+const MarkdownDocPatterns = Object.freeze([
+  /https?:\/\/[^\s<>()\]]+/gi,
+  /\bfridge\.local(?::\d+)?(?:\/[^\s<>()\]]*)?/gi
+]);
+
+const extractMarkdownLinks = (content) => {
+  const links = new Set();
+  for (const pattern of MarkdownDocPatterns) {
+    const matches = String(content || '').match(pattern) || [];
+    for (const match of matches) {
+      const normalized = normalizeExtractedServiceUrl(match);
+      if (normalized) links.add(normalized);
+    }
+  }
+  return Array.from(links);
+};
+
+const summarizeMarkdown = (content, fallbackTitle) => {
+  const lines = String(content || '')
+    .split(/\r?\n/)
+    .map((line) => line.trim());
+
+  const title = lines.find((line) => /^#\s+/.test(line))?.replace(/^#\s+/, '').trim() || fallbackTitle;
+  const summary = (lines.find((line) => {
+    if (!line) return false;
+    if (/^#/.test(line)) return false;
+    if (/^[-*]\s/.test(line)) return false;
+    if (/^\d+\.\s/.test(line)) return false;
+    if (/^[|`]/.test(line)) return false;
+    return true;
+  }) || '').replace(/<[^>]+>/g, '').trim();
+
+  return { title, summary };
+};
+
+const readServiceDocsIndex = (rootDir = DOCKER_ROOT) => {
+  const docs = [];
+  const pushDoc = (entry) => {
+    if (!entry) return;
+    docs.push(entry);
+  };
+
+  const staticDocs = [
+    path.join(rootDir, 'PROJECTS.md'),
+    path.join(rootDir, 'PORTS.md')
+  ];
+
+  for (const filePath of staticDocs) {
+    if (!fs.existsSync(filePath)) continue;
+    const content = fs.readFileSync(filePath, 'utf8');
+    const relativePath = path.relative('/home/fridge', filePath);
+    const { title, summary } = summarizeMarkdown(content, path.basename(filePath));
+    pushDoc({
+      id: relativePath.replace(/[^\w-]+/g, '-').toLowerCase(),
+      project: path.basename(filePath, path.extname(filePath)).toLowerCase(),
+      title,
+      summary,
+      docsPath: filePath,
+      docsRelativePath: relativePath,
+      location: path.dirname(filePath),
+      urls: extractMarkdownLinks(content).slice(0, 8)
+    });
+  }
+
+  const directories = fs.readdirSync(rootDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && !entry.name.startsWith('.'))
+    .map((entry) => entry.name)
+    .sort((a, b) => a.localeCompare(b));
+
+  for (const name of directories) {
+    const docsPath = path.join(rootDir, name, 'README.md');
+    if (!fs.existsSync(docsPath)) continue;
+    const content = fs.readFileSync(docsPath, 'utf8');
+    const relativePath = path.relative('/home/fridge', docsPath);
+    const { title, summary } = summarizeMarkdown(content, name);
+    pushDoc({
+      id: name,
+      project: name,
+      title,
+      summary,
+      docsPath,
+      docsRelativePath: relativePath,
+      location: path.join(rootDir, name),
+      urls: extractMarkdownLinks(content).slice(0, 8)
+    });
+  }
+
+  return docs;
 };
 
 const parseDockerStatusMap = (raw) => {
@@ -1211,6 +1337,146 @@ const curatedCard = (entry) => {
       </div>
     </article>
   `;
+};
+
+const renderServicesHtml = (docs, req) => {
+  const baseUrl = publicBaseUrl(req);
+  const cards = docs.map((entry) => `
+    <article class="service-doc-card">
+      <header>
+        <h2>${escapeHtml(entry.title)}</h2>
+        <p class="service-doc-project">${escapeHtml(entry.project)}</p>
+      </header>
+      <p class="service-doc-summary">${escapeHtml(entry.summary || 'No summary found yet. Add detail to the markdown file.')}</p>
+      <dl class="service-doc-meta">
+        <div><dt>Docs</dt><dd><code>${escapeHtml(entry.docsRelativePath)}</code></dd></div>
+        <div><dt>Location</dt><dd><code>${escapeHtml(entry.location)}</code></dd></div>
+      </dl>
+      ${entry.urls.length ? `
+        <div class="service-doc-links">
+          <h3>Discovered URLs</h3>
+          <ul>
+            ${entry.urls.map((url) => {
+              const href = formatLink(url, { defaultScheme: inferDefaultScheme(url) || 'https' });
+              return `<li><a href="${escapeHtml(href)}">${escapeHtml(url)}</a></li>`;
+            }).join('')}
+          </ul>
+        </div>
+      ` : '<p class="service-doc-empty">No URLs detected in this markdown file yet.</p>'}
+    </article>
+  `).join('');
+
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fridge Service Docs</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f2f5f9;
+      --panel: #ffffff;
+      --border: #1f2937;
+      --muted: #475569;
+      --accent: #0f766e;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top, #ffffff 0, #e8eef5 48%, #dbe4ef 100%);
+      color: #0f172a;
+      font-family: "Space Grotesk", system-ui, sans-serif;
+    }
+    .wrap {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 1.2rem;
+      display: grid;
+      gap: 1rem;
+    }
+    .hero, .service-doc-card {
+      background: var(--panel);
+      border: 2px solid var(--border);
+      box-shadow: 6px 6px 0 rgba(15, 23, 42, 0.12);
+      padding: 1rem;
+    }
+    .hero a {
+      color: var(--accent);
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .hero p {
+      margin: 0.35rem 0 0;
+      color: var(--muted);
+    }
+    .grid {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+    h1, h2, h3, p, dl, ul { margin: 0; }
+    .service-doc-project {
+      margin-top: 0.2rem;
+      color: var(--muted);
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .service-doc-summary {
+      margin-top: 0.75rem;
+      line-height: 1.5;
+    }
+    .service-doc-meta {
+      margin-top: 0.85rem;
+      display: grid;
+      gap: 0.65rem;
+    }
+    .service-doc-meta dt {
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+    .service-doc-meta dd {
+      margin: 0.2rem 0 0;
+    }
+    .service-doc-links {
+      margin-top: 0.9rem;
+    }
+    .service-doc-links ul {
+      margin-top: 0.5rem;
+      padding-left: 1rem;
+      display: grid;
+      gap: 0.35rem;
+    }
+    .service-doc-links a {
+      color: var(--accent);
+      word-break: break-all;
+    }
+    .service-doc-empty {
+      margin-top: 0.9rem;
+      color: var(--muted);
+    }
+    code {
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="hero">
+      <h1>Fridge Service Docs</h1>
+      <p>Service discovery comes from markdown files under <code>docker/*/README.md</code>, plus the top-level inventory docs.</p>
+      <p><a href="${escapeHtml(baseUrl)}/dashboard">Back to homepage</a> · <a href="${escapeHtml(baseUrl)}/api/service-docs">Raw JSON</a></p>
+    </section>
+    <section class="grid">
+      ${cards}
+    </section>
+  </main>
+</body>
+</html>`;
 };
 
 const renderHtml = (links, managedStates, serviceMessage, dockerProjects, injectOverlayScript) => {
@@ -1612,22 +1878,99 @@ const renderSettingsHtml = (injectOverlayScript) => `
   </html>
 `;
 
+const renderSnakeletHtml = (injectOverlayScript) => `
+  <!DOCTYPE html>
+  <html lang="en">
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>Snakelet</title>
+      <meta name="theme-color" content="#0f172a">
+      ${injectOverlayScript ? '<script defer src="/_fridge/home-overlay.js"></script>' : ''}
+      <style>
+        html, body { margin: 0; height: 100%; overflow: hidden; }
+        body { font-family: "Space Grotesk", system-ui, sans-serif; background: #f4f6fb; }
+        #snakelet-root { height: 100vh; }
+      </style>
+    </head>
+    <body>
+      <div id="snakelet-root"></div>
+      <script>
+        (function () {
+          var el = document.getElementById('snakelet-root');
+          if (!el) return;
+          el.id = 'serpentine-root';
+        })();
+      </script>
+      <script defer src="/public/js/snakelet.bundle.js"></script>
+    </body>
+  </html>
+`;
+
+const renderSerpentineHtml = (injectOverlayScript) => `
+  <!DOCTYPE html>
+  <html lang="en">
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>Serpentine</title>
+      <meta name="theme-color" content="#0f172a">
+      ${injectOverlayScript ? '<script defer src="/_fridge/home-overlay.js"></script>' : ''}
+      <style>
+        html, body { margin: 0; height: 100%; overflow: hidden; }
+        body { font-family: "Space Grotesk", system-ui, sans-serif; background: #f4f6fb; }
+        #serpentine-root { height: 100vh; }
+      </style>
+    </head>
+    <body>
+      <div style="position:fixed;top:8px;right:10px;z-index:9999;padding:4px 8px;border-radius:999px;background:#111827;color:#e5e7eb;font:600 11px/1.2 monospace;letter-spacing:.04em;">SERPENTINE DIAGONAL V2</div>
+      <div id="serpentine-root"></div>
+      <script defer src="/public/js/serpentine-demo.bundle.js"></script>
+    </body>
+  </html>
+`;
+
+const renderDashboardHomepageHtml = (bootPayload, injectOverlayScript) => `
+  <!DOCTYPE html>
+  <html lang="en">
+    <head>
+      <title>fridge homepage</title>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <meta name="theme-color" content="#0f172a">
+      <link rel="stylesheet" href="d.css">
+      ${injectOverlayScript ? '<script defer src="/_fridge/home-overlay.js"></script>' : ''}
+    </head>
+    <body>
+      <div id="dashboard-react-root"></div>
+      <div id="dashboard-homepage-root"></div>
+      <script id="homepage-bootstrap" type="application/json">${serializeForInlineScript(bootPayload)}</script>
+      <script defer src="/public/js/dashboard-react.bundle.js"></script>
+      <script defer src="/public/js/dashboard-homepage.bundle.js"></script>
+    </body>
+  </html>
+`;
+
 app.get('/dashboard', async (req, res) => {
-  const redirect = resolveHomepageQueryRedirect(req.query || {});
+  const redirect = resolveHomepageQueryRedirect(req.query || {}, publicBaseUrl(req));
   if (redirect.target) {
     return res.redirect(302, redirect.target);
   }
 
   const links = readLinks();
-  const managedStates = await getManagedServiceStates();
-  const dockerProjects = listDockerProjects();
   const serviceMessageRaw = typeof req.query.serviceMsg === 'string' ? req.query.serviceMsg : '';
   const serviceMessage = [serviceMessageRaw, redirect.error].filter(Boolean).join(' | ');
-  res.send(renderHtml(links, managedStates, serviceMessage, dockerProjects, shouldInjectForHost(req)));
+  res.send(renderDashboardHomepageHtml({
+    homepageBaseUrl: publicBaseUrl(req),
+    serviceMessage,
+    links,
+    appVersion: APP_VERSION,
+    repoUrl: process.env.REPO_URL || ''
+  }, shouldInjectForHost(req)));
 });
 
 app.get('/', (req, res) => {
-  const redirect = resolveHomepageQueryRedirect(req.query || {});
+  const redirect = resolveHomepageQueryRedirect(req.query || {}, publicBaseUrl(req));
   if (redirect.target) {
     return res.redirect(302, redirect.target);
   }
@@ -1638,12 +1981,25 @@ app.get('/settings', (req, res) => {
   res.send(renderSettingsHtml(shouldInjectForHost(req)));
 });
 
+app.get('/snakelet', (req, res) => {
+  res.send(renderSnakeletHtml(shouldInjectForHost(req)));
+});
+
+app.get('/serpentine', (req, res) => {
+  res.send(renderSerpentineHtml(shouldInjectForHost(req)));
+});
+
 app.get('/warning', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'warning-wall.html'));
 });
 
 app.get('/links', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'linktree.html'));
+});
+
+app.get('/services', (req, res) => {
+  const docs = readServiceDocsIndex();
+  res.send(renderServicesHtml(docs, req));
 });
 
 app.get('/app/:key', (req, res) => {
@@ -1807,6 +2163,13 @@ app.get('/api/train-motd', async (_req, res) => {
   }
 });
 
+app.get('/api/service-docs', (_req, res) => {
+  res.json({
+    generatedAt: new Date().toISOString(),
+    services: readServiceDocsIndex()
+  });
+});
+
 app.get('/api/hostnames', async (req, res) => {
   try {
     const entries = readHostnamesFromDisk();
@@ -1919,6 +2282,9 @@ app.get('/:shortcut', (req, res) => {
   const requested = normalizeShortcut(req.params.shortcut);
   if (!requested) {
     return res.redirect('/');
+  }
+  if (requested.toLowerCase() === 'snakelet') {
+    return res.redirect(302, '/snakelet');
   }
 
   const requestedLower = requested.toLowerCase();

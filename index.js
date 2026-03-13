@@ -1878,58 +1878,6 @@ const renderSettingsHtml = (injectOverlayScript) => `
   </html>
 `;
 
-const renderSnakeletHtml = (injectOverlayScript) => `
-  <!DOCTYPE html>
-  <html lang="en">
-    <head>
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1">
-      <title>Snakelet</title>
-      <meta name="theme-color" content="#0f172a">
-      ${injectOverlayScript ? '<script defer src="/_fridge/home-overlay.js"></script>' : ''}
-      <style>
-        html, body { margin: 0; height: 100%; overflow: hidden; }
-        body { font-family: "Space Grotesk", system-ui, sans-serif; background: #f4f6fb; }
-        #snakelet-root { height: 100vh; }
-      </style>
-    </head>
-    <body>
-      <div id="snakelet-root"></div>
-      <script>
-        (function () {
-          var el = document.getElementById('snakelet-root');
-          if (!el) return;
-          el.id = 'serpentine-root';
-        })();
-      </script>
-      <script defer src="/public/js/snakelet.bundle.js"></script>
-    </body>
-  </html>
-`;
-
-const renderSerpentineHtml = (injectOverlayScript) => `
-  <!DOCTYPE html>
-  <html lang="en">
-    <head>
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1">
-      <title>Serpentine</title>
-      <meta name="theme-color" content="#0f172a">
-      ${injectOverlayScript ? '<script defer src="/_fridge/home-overlay.js"></script>' : ''}
-      <style>
-        html, body { margin: 0; height: 100%; overflow: hidden; }
-        body { font-family: "Space Grotesk", system-ui, sans-serif; background: #f4f6fb; }
-        #serpentine-root { height: 100vh; }
-      </style>
-    </head>
-    <body>
-      <div style="position:fixed;top:8px;right:10px;z-index:9999;padding:4px 8px;border-radius:999px;background:#111827;color:#e5e7eb;font:600 11px/1.2 monospace;letter-spacing:.04em;">SERPENTINE DIAGONAL V2</div>
-      <div id="serpentine-root"></div>
-      <script defer src="/public/js/serpentine-demo.bundle.js"></script>
-    </body>
-  </html>
-`;
-
 const renderDashboardHomepageHtml = (bootPayload, injectOverlayScript) => `
   <!DOCTYPE html>
   <html lang="en">
@@ -1979,14 +1927,6 @@ app.get('/', (req, res) => {
 
 app.get('/settings', (req, res) => {
   res.send(renderSettingsHtml(shouldInjectForHost(req)));
-});
-
-app.get('/snakelet', (req, res) => {
-  res.send(renderSnakeletHtml(shouldInjectForHost(req)));
-});
-
-app.get('/serpentine', (req, res) => {
-  res.send(renderSerpentineHtml(shouldInjectForHost(req)));
 });
 
 app.get('/warning', (req, res) => {
@@ -2282,9 +2222,6 @@ app.get('/:shortcut', (req, res) => {
   const requested = normalizeShortcut(req.params.shortcut);
   if (!requested) {
     return res.redirect('/');
-  }
-  if (requested.toLowerCase() === 'snakelet') {
-    return res.redirect(302, '/snakelet');
   }
 
   const requestedLower = requested.toLowerCase();

@@ -5,12 +5,12 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js",
-    "build:serpentine": "node serpentine/build-serpentine.mjs",
-    "build:snakelet": "node serpentine/build-snakelet.mjs",
-    "build:dashboard-react": "node serpentine/build-dashboard-react.mjs",
-    "build:dashboard-homepage": "node serpentine/build-dashboard-homepage.mjs",
-    "test": "tsx --test serpentine/*.test.ts"
+    "dev": "node tools/dev-server.mjs",
+    "build:dashboard-controls": "node tools/build-dashboard-controls.mjs",
+    "watch:dashboard-controls": "node tools/build-dashboard-controls.mjs --watch",
+    "build:dashboard-homepage": "node tools/build-dashboard-homepage.mjs",
+    "watch:dashboard-homepage": "node tools/build-dashboard-homepage.mjs --watch",
+    "test": "tsx --test /home/fridge/serpentine-homepage/*.test.ts"
   },
   "author": "",
   "license": "ISC",

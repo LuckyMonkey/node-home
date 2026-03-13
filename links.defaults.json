@@ -102,12 +102,6 @@
     "destination": "fridge.taila8bd9.ts.net/incidents"
   },
   {
-    "name": "Snakelet",
-    "link": "fridge.taila8bd9.ts.net/snakelet",
-    "shortcut": "snakelet",
-    "destination": "fridge.taila8bd9.ts.net/snakelet"
-  },
-  {
     "name": "Rocket.Chat",
     "link": "fridge.local:4002",
     "shortcut": "chat",

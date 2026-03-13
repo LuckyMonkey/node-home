@@ -21,6 +21,7 @@ Homepage + warning/portal redirects for `http://fridge.local/` (runs in the `nod
 - `public/js/settings.js`: settings page behavior (profile name save + hostname CRUD).
 - `public/js/dashboard-homepage.bundle.js`: dashboard homepage cards rendered with the shared serpentine layout/movement engine.
 - The dashboard leader card is the profile-name hero itself, with hourly greeting variants instead of a separate pinned header card.
+- Cross-column dashboard moves use an elevated rail-style arc with temporary z-index lift so cards clear neighboring lanes before settling.
 - `index.js` now renders markup and bootstrap JSON only; page logic lives in static scripts.
 
 ## Performance Notes

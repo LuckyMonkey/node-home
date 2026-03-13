@@ -206,7 +206,8 @@ const GREETING_INDEX_BY_HOUR = [
   16, 17, 18, 19
 ] as const;
 
-const SLITHER_ANIMATION_MS = 560;
+const SLITHER_ANIMATION_MS = 760;
+const RAIL_CAR_ANIMATION_MS = 760;
 
 const buildLeaderGreeting = (name: string, now: Date) => {
   const safeName = String(name || 'YOU').trim() || 'YOU';
@@ -223,14 +224,16 @@ const buildLeaderSubtitle = (now: Date) => now.toLocaleString(undefined, {
 });
 
 const buildRailCarKeyframes = (fromX: number, fromY: number, cardHeight: number) => {
-  const lift = -Math.max(42, Math.round(cardHeight * 0.95));
-  const settleDip = Math.max(8, Math.round(cardHeight * 0.16));
+  const lift = -Math.max(74, Math.round(cardHeight * 1.28));
+  const settleDip = Math.max(10, Math.round(cardHeight * 0.2));
+  const bank = fromX < 0 ? -1.2 : 1.2;
   return [
-    { transform: `translate(${fromX}px, ${fromY}px)` },
-    { transform: `translate(${fromX * 0.92}px, ${fromY * 0.3 + lift}px)`, offset: 0.18 },
-    { transform: `translate(${fromX * 0.48}px, ${lift - 6}px)`, offset: 0.52 },
-    { transform: `translate(${fromX * 0.14}px, ${settleDip}px)`, offset: 0.82 },
-    { transform: 'translate(0, 0)', offset: 1 }
+    { transform: `translate(${fromX}px, ${fromY}px) rotate(${bank * -0.45}deg)` },
+    { transform: `translate(${fromX * 0.96}px, ${lift * 0.46}px) rotate(${bank * -0.95}deg)`, offset: 0.16 },
+    { transform: `translate(${fromX * 0.74}px, ${lift}px) rotate(${bank * -1.35}deg)`, offset: 0.36 },
+    { transform: `translate(${fromX * 0.34}px, ${lift * 0.9}px) rotate(${bank * -0.42}deg)`, offset: 0.7 },
+    { transform: `translate(${fromX * 0.08}px, ${settleDip}px) rotate(${bank * 0.22}deg)`, offset: 0.9 },
+    { transform: 'translate(0, 0) rotate(0deg)', offset: 1 }
   ];
 };
 
@@ -427,10 +430,17 @@ function DashboardHomepage({ boot }: { boot: Boot }) {
       if (Math.abs(fromX) < 1 && Math.abs(fromY) < 1) return;
 
       if (crossedColumn && !lockToast) {
-        node.animate(
+        const previousZIndex = node.style.zIndex;
+        node.style.zIndex = '8';
+        const animation = node.animate(
           buildRailCarKeyframes(fromX, fromY, after.height),
-          { duration: 640, easing: 'cubic-bezier(0.2, 0.82, 0.2, 1)' }
+          { duration: RAIL_CAR_ANIMATION_MS, easing: 'cubic-bezier(0.18, 0.78, 0.24, 1)' }
         );
+        const resetZIndex = () => {
+          node.style.zIndex = previousZIndex;
+        };
+        animation.addEventListener('finish', resetZIndex, { once: true });
+        animation.addEventListener('cancel', resetZIndex, { once: true });
         return;
       }
 

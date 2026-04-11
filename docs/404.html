@@ -9,33 +9,133 @@
   <style>
     :root {
       color-scheme: dark;
+      --bg: #07101c;
+      --panel: rgba(12, 24, 42, 0.78);
+      --text: #eff4ff;
+      --muted: #9bb0d4;
+      --line: rgba(149, 182, 242, 0.18);
+      --accent: #9cc2ff;
+      --glow: rgba(78, 146, 255, 0.24);
       font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
-      background: #0b1020;
-      color: #eef2ff;
+      background: var(--bg);
+      color: var(--text);
     }
+    * { box-sizing: border-box; }
     body {
       margin: 0;
       min-height: 100vh;
       display: grid;
       place-items: center;
       background:
-        radial-gradient(circle at top right, rgba(57, 102, 255, 0.28), transparent 35%),
-        linear-gradient(180deg, #0b1020, #121931);
+        radial-gradient(circle at top right, rgba(57, 102, 255, 0.28), transparent 30%),
+        radial-gradient(circle at bottom left, rgba(51, 181, 255, 0.12), transparent 26%),
+        linear-gradient(180deg, #07101c, #0d1830 58%, #0a1223);
     }
     main {
-      padding: 24px;
+      width: min(92vw, 38rem);
+      padding: 2rem 1.6rem;
       text-align: center;
-      max-width: 42rem;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 1.4rem;
+      backdrop-filter: blur(18px);
+      box-shadow: 0 1.2rem 3rem rgba(0, 0, 0, 0.35);
     }
+    img {
+      width: min(10rem, 34vw);
+      aspect-ratio: 1 / 1;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto 1.25rem;
+      filter: drop-shadow(0 0 1.3rem var(--glow));
+    }
+    h1 {
+      margin: 0 0 0.45rem;
+      font-size: clamp(1.8rem, 4vw, 2.7rem);
+      letter-spacing: -0.03em;
+    }
+    p {
+      margin: 0.6rem 0;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+    .slug,
+    .target {
+      margin: 1rem 0 0;
+      padding: 0.85rem 0.95rem;
+      background: rgba(8, 18, 33, 0.7);
+      border: 1px solid var(--line);
+      border-radius: 0.9rem;
+      color: var(--text);
+      font-family: "IBM Plex Mono", "SFMono-Regular", monospace;
+      font-size: 0.94rem;
+      word-break: break-word;
+    }
+    .target { color: var(--accent); }
     a {
-      color: #a5c3ff;
+      color: var(--accent);
+    }
+    .actions {
+      display: flex;
+      justify-content: center;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+      margin-top: 1.35rem;
+    }
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 12rem;
+      padding: 0.8rem 1rem;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(15, 30, 53, 0.9);
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .button.primary {
+      background: linear-gradient(180deg, rgba(130, 180, 255, 0.24), rgba(72, 127, 214, 0.18));
+      border-color: rgba(162, 197, 255, 0.34);
+    }
+    .meta {
+      margin-top: 1rem;
+      font-size: 0.92rem;
+      color: var(--muted);
+    }
+    .spinner {
+      width: 2.5rem;
+      height: 2.5rem;
+      margin: 1.3rem auto 0;
+      border-radius: 50%;
+      border: 0.28rem solid rgba(156, 194, 255, 0.15);
+      border-top-color: rgba(156, 194, 255, 0.95);
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    @media (max-width: 640px) {
+      main {
+        padding: 1.5rem 1.1rem;
+      }
     }
   </style>
 </head>
 <body>
   <main>
-    <p id="status">Checking route…</p>
-    <p><a id="fallback" href="/">Return home</a></p>
+    <img src="/logo.png" alt="Fridge logo">
+    <h1>Fridge.run Share</h1>
+    <p id="status">Checking the requested route and preparing the handoff.</p>
+    <div class="slug" id="slugDisplay">Share path: pending</div>
+    <div class="target" id="targetDisplay">Destination host: pending</div>
+    <div class="spinner" aria-hidden="true"></div>
+    <div class="actions">
+      <a class="button primary" id="fallback" href="/">Open share manually</a>
+      <a class="button" href="/links.html">Return home</a>
+    </div>
+    <p class="meta" id="meta">If this is a fridge share route, the browser will open the live fridge-hosted file automatically.</p>
   </main>
   <script>
     (() => {
@@ -43,8 +143,12 @@
       const { pathname, search } = window.location;
       const fallback = document.getElementById('fallback');
       const status = document.getElementById('status');
+      const slugDisplay = document.getElementById('slugDisplay');
+      const targetDisplay = document.getElementById('targetDisplay');
+      const meta = document.getElementById('meta');
 
       let target = '';
+      let label = pathname + (search || '');
 
       if (pathname === '/file' || pathname === '/file/' || pathname === '/file.html') {
         target = `${bridgeOrigin}/file${search}`;
@@ -56,15 +160,21 @@
 
       if (!target) {
         status.textContent = 'Route not found.';
+        slugDisplay.textContent = `Share path: ${label}`;
+        targetDisplay.textContent = 'Destination host: unavailable';
+        meta.textContent = 'Only fridge share routes are redirected from this bridge page.';
         fallback.href = '/links.html';
         fallback.textContent = 'Open access portal';
         return;
       }
 
-      status.textContent = 'Redirecting to live fridge share…';
+      status.textContent = 'Opening a file that is being served live from the fridge.';
+      slugDisplay.textContent = `Share path: ${label}`;
+      targetDisplay.textContent = `Destination host: ${new URL(target).host}`;
+      meta.textContent = 'If the redirect does not happen automatically, use the manual open button below.';
       fallback.href = target;
       fallback.textContent = 'Open share manually';
-      window.location.replace(target);
+      window.setTimeout(() => window.location.replace(target), 900);
     })();
   </script>
 </body>

@@ -151,7 +151,7 @@ const curatedLinks = [
     description: 'Pi-hole control panel (always-on core service)'
   },
   {
-    name: 'Node Home',
+    name: 'dashboard',
     link: `${HOMEPAGE_BASE_URL}/`,
     description: 'This launch page'
   }
@@ -860,7 +860,7 @@ const resolvePageIconUrl = async (rawUrl) => {
   const response = await fetch(parsed.toString(), {
     method: 'GET',
     redirect: 'follow',
-    headers: { 'User-Agent': 'node-home-icon-discovery/1.0' }
+    headers: { 'User-Agent': 'dashboard-icon-discovery/1.0' }
   });
   if (!response.ok) return '';
   const contentType = String(response.headers.get('content-type') || '');
@@ -1587,7 +1587,7 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects, inject
   const today = moment().format('ddd, MMM D');
   const msg = `Today is ${today}.`;
   const heroCard = `
-    <article class="bookmark-card hero hero-card" data-item-id="pinned:hero" data-item-group="pinned" data-pinned="1" role="region" aria-label="Homepage header">
+    <article class="bookmark-card hero hero-card" data-item-id="pinned:hero" data-item-group="pinned" data-pinned="1" role="region" aria-label="Dashboard header">
       <div class="bookmark-content">
         <h1><span id="greeting-name">CHARLIE</span></h1>
         <p class="subtitle">${msg}</p>
@@ -1603,7 +1603,7 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects, inject
           <span class="icon-emoji" style="display:inline-flex;" aria-hidden="true">🏠</span>
           <div class="bookmark-meta">
             <p class="bookmark-name">fridge.local</p>
-            <p class="bookmark-url">open homepage root</p>
+            <p class="bookmark-url">open dashboard root</p>
           </div>
         </header>
       </div>
@@ -1639,7 +1639,7 @@ const renderHtml = (links, managedStates, serviceMessage, dockerProjects, inject
     <!DOCTYPE html>
     <html lang="en">
       <head>
-        <title>fridge homepage</title>
+        <title>fridge dashboard</title>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="theme-color" content="#0f172a">
@@ -1831,7 +1831,7 @@ const renderSettingsHtml = (injectOverlayScript) => `
             <h1 style="margin:0;">Service Hostname Manager</h1>
             <p style="margin:0.25rem 0 0;color:#475569;">Store fridge.local hostnames (the query redirect host) and optional fallback targets.</p>
           </div>
-          <a href="/">Back to homepage</a>
+          <a href="/">Back to dashboard</a>
         </section>
 
         <section class="panel">
@@ -1850,7 +1850,7 @@ const renderSettingsHtml = (injectOverlayScript) => `
           <form id="hostname-form">
             <div class="row">
               <label>
-                Homepage URL
+                Dashboard URL
                 <input id="homepageUrl" name="homepageUrl" required placeholder="fridge.local:8088" value="fridge.local:8088" maxlength="512">
               </label>
               <label>
@@ -1874,58 +1874,6 @@ const renderSettingsHtml = (injectOverlayScript) => `
       </main>
       <script defer src="/public/js/app-shared.js"></script>
       <script defer src="/public/js/settings.js"></script>
-    </body>
-  </html>
-`;
-
-const renderSnakeletHtml = (injectOverlayScript) => `
-  <!DOCTYPE html>
-  <html lang="en">
-    <head>
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1">
-      <title>Snakelet</title>
-      <meta name="theme-color" content="#0f172a">
-      ${injectOverlayScript ? '<script defer src="/_fridge/home-overlay.js"></script>' : ''}
-      <style>
-        html, body { margin: 0; height: 100%; overflow: hidden; }
-        body { font-family: "Space Grotesk", system-ui, sans-serif; background: #f4f6fb; }
-        #snakelet-root { height: 100vh; }
-      </style>
-    </head>
-    <body>
-      <div id="snakelet-root"></div>
-      <script>
-        (function () {
-          var el = document.getElementById('snakelet-root');
-          if (!el) return;
-          el.id = 'serpentine-root';
-        })();
-      </script>
-      <script defer src="/public/js/snakelet.bundle.js"></script>
-    </body>
-  </html>
-`;
-
-const renderSerpentineHtml = (injectOverlayScript) => `
-  <!DOCTYPE html>
-  <html lang="en">
-    <head>
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1">
-      <title>Serpentine</title>
-      <meta name="theme-color" content="#0f172a">
-      ${injectOverlayScript ? '<script defer src="/_fridge/home-overlay.js"></script>' : ''}
-      <style>
-        html, body { margin: 0; height: 100%; overflow: hidden; }
-        body { font-family: "Space Grotesk", system-ui, sans-serif; background: #f4f6fb; }
-        #serpentine-root { height: 100vh; }
-      </style>
-    </head>
-    <body>
-      <div style="position:fixed;top:8px;right:10px;z-index:9999;padding:4px 8px;border-radius:999px;background:#111827;color:#e5e7eb;font:600 11px/1.2 monospace;letter-spacing:.04em;">SERPENTINE DIAGONAL V2</div>
-      <div id="serpentine-root"></div>
-      <script defer src="/public/js/serpentine-demo.bundle.js"></script>
     </body>
   </html>
 `;
@@ -1979,14 +1927,6 @@ app.get('/', (req, res) => {
 
 app.get('/settings', (req, res) => {
   res.send(renderSettingsHtml(shouldInjectForHost(req)));
-});
-
-app.get('/snakelet', (req, res) => {
-  res.send(renderSnakeletHtml(shouldInjectForHost(req)));
-});
-
-app.get('/serpentine', (req, res) => {
-  res.send(renderSerpentineHtml(shouldInjectForHost(req)));
 });
 
 app.get('/warning', (req, res) => {
@@ -2048,8 +1988,8 @@ app.get('/_fridge/home-overlay.js', (req, res) => {
     const a = document.createElement('a');
     a.id = 'fridge-home-overlay';
     a.href = 'http://fridge.local/';
-    a.setAttribute('aria-label', 'Back to fridge homepage');
-    a.title = 'Back to fridge homepage';
+    a.setAttribute('aria-label', 'Back to fridge dashboard');
+    a.title = 'Back to fridge dashboard';
     a.style.cssText = [
       'position:fixed','right:14px','bottom:14px','z-index:2147483647',
       'width:46px','height:46px','display:flex','align-items:center','justify-content:center',
@@ -2099,7 +2039,7 @@ app.get('/api/icon-proxy', async (req, res) => {
     const response = await fetch(parsed.toString(), {
       method: 'GET',
       redirect: 'follow',
-      headers: { 'User-Agent': 'node-home-icon-proxy/1.0' }
+      headers: { 'User-Agent': 'dashboard-icon-proxy/1.0' }
     });
     if (!response.ok) {
       return res.status(404).send('Icon not found');
@@ -2282,9 +2222,6 @@ app.get('/:shortcut', (req, res) => {
   const requested = normalizeShortcut(req.params.shortcut);
   if (!requested) {
     return res.redirect('/');
-  }
-  if (requested.toLowerCase() === 'snakelet') {
-    return res.redirect(302, '/snakelet');
   }
 
   const requestedLower = requested.toLowerCase();

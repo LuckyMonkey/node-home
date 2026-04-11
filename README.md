@@ -19,9 +19,11 @@ Homepage + warning/portal redirects for `http://fridge.local/` (runs in the `nod
 - `public/js/app-shared.js`: shared browser helpers (`localStorage` JSON wrappers, selectors, name sanitizer).
 - `public/js/homepage.js`: homepage behavior (ordering, hide/show, block move controls, icon loading/cache, sound, profile sync, MOTD).
 - `public/js/settings.js`: settings page behavior (profile name save + hostname CRUD).
-- `public/js/dashboard-homepage.bundle.js`: dashboard homepage cards rendered with the shared serpentine layout/movement engine.
+- `public/js/dashboard-homepage.bundle.js`: dashboard homepage cards rendered from the standalone `/home/fridge/serpentine-homepage` source.
+- `public/js/dashboard-react.bundle.js`: dashboard control drawer bundle built from `frontend/dashboard-controls.tsx`.
 - The dashboard leader card is the profile-name hero itself, with hourly greeting variants instead of a separate pinned header card.
 - Cross-column dashboard moves use an elevated rail-style arc with temporary z-index lift so cards clear neighboring lanes before settling.
+- `snakelet` is retired; the shared serpentine code now lives in `/home/fridge/serpentine-homepage` instead of inside this repo.
 - `index.js` now renders markup and bootstrap JSON only; page logic lives in static scripts.
 
 ## Performance Notes
@@ -43,8 +45,8 @@ Container requirements in compose:
 ## Development Reload Behavior
 
 - `docker-compose.yml` mounts the project directory into `/app`.
-- The container runs `node --watch index.js`, so backend code changes auto-reload without rebuilding the image.
-- CSS/static file updates are served directly from the bind mount and appear on refresh.
+- The container runs `npm run dev`, which starts `node --watch index.js` plus esbuild watch processes for the dashboard bundles.
+- Backend, TSX, CSS, and static-file changes now flow through the bind mount and watcher processes; refresh the page instead of rebuilding the image.
 
 ## Route Overview
 

@@ -4,8 +4,8 @@
     "link": "gmail.com"
   },
   {
-    "name": "ChatGBT",
-    "link": "openai.com/blog/chatgpt"
+    "name": "ChatGPT",
+    "link": "https://chatgpt.com"
   },
   {
     "name": "KimCartoon",
@@ -100,12 +100,6 @@
     "link": "fridge.taila8bd9.ts.net/incidents",
     "shortcut": "incidents",
     "destination": "fridge.taila8bd9.ts.net/incidents"
-  },
-  {
-    "name": "Snakelet",
-    "link": "fridge.taila8bd9.ts.net/snakelet",
-    "shortcut": "snakelet",
-    "destination": "fridge.taila8bd9.ts.net/snakelet"
   },
   {
     "name": "Rocket.Chat",

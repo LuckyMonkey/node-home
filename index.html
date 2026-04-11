@@ -21,6 +21,15 @@
     .cta { margin:16px 0 0; }
     .cta a { display:inline-block; padding:6px 12px; border-radius:4px; border:1px solid #334155; color:#0f172a; text-decoration:none; font-weight:600; letter-spacing:.04em; text-transform:uppercase; font-size:11px; background:#ffffff; }
     .cta a:hover { background:#f8fafc; }
+    .recent { margin:18px auto 0; max-width:860px; text-align:left; }
+    .recent[hidden] { display:none; }
+    .recent h2 { margin:0 0 10px; font-size:12px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); }
+    .recent-list { display:grid; gap:8px; }
+    .recent-item { display:flex; justify-content:space-between; align-items:center; gap:14px; text-decoration:none; color:#0f172a; padding:10px 12px; border:1px solid rgba(15,23,42,.12); border-radius:8px; background:#f8fafc; }
+    .recent-item:hover,.recent-item:focus-visible { background:#f1f5f9; outline:none; }
+    .recent-name { display:block; font-weight:700; font-size:13px; }
+    .recent-meta { display:block; margin-top:2px; color:var(--muted); font-size:12px; }
+    .recent-open { color:#0f172a; font-size:11px; letter-spacing:.08em; text-transform:uppercase; font-weight:700; white-space:nowrap; }
     @media (max-width:1080px){ .wall{grid-template-columns:repeat(4,minmax(100px,1fr));} }
     @media (max-width:680px){ .wall{grid-template-columns:repeat(3,minmax(80px,1fr)); gap:6px; padding:6px;} .tile{border-radius:6px; min-height:135px;} }
   </style>
@@ -33,6 +42,10 @@
       <h1>WARNING THE NODE YOU ARE ATTEMPTING TO ACCESS IS THE PROPERTY OF FRIDGE.RUN. UNAUTHORIZED ACCESS BEYOND THIS POINT IS STRICTLY PROHIBITED.</h1>
       <p class="legal">IF YOU PROCEED YOU ARE IN VIOLATION OF COMPUTER FRAUD AND ABUSE ACT 18 U.S.C. § 1030 AND WILL BE FORCIBLY DISCONNECTED BY THIS NODE'S ANTI-INTRUSION SECURITY SOFTWARE. THANK YOU FOR NOT HACKING!</p>
       <p class="cta"><a href="./links.html">Proceed</a></p>
+      <section class="recent" id="recentShares" hidden>
+        <h2>Recent Shares</h2>
+        <div class="recent-list" id="recentList"></div>
+      </section>
     </section>
   </main>
   <script>
@@ -57,6 +70,28 @@
         }, { once: true });
         tile.appendChild(video);
         wall.appendChild(tile);
+      }
+
+      const storageKey = 'fridge.run.recent-shares.v1';
+      const recentShares = document.getElementById('recentShares');
+      const recentList = document.getElementById('recentList');
+
+      try {
+        const entries = JSON.parse(window.localStorage.getItem(storageKey) || '[]');
+        if (Array.isArray(entries) && entries.length) {
+          recentShares.hidden = false;
+          recentList.innerHTML = entries.slice(0, 4).map((entry) => `
+            <a class="recent-item" href="${entry.bridgeUrl || '/file?h=' + encodeURIComponent(entry.shareId)}">
+              <span>
+                <span class="recent-name">${entry.fileName || entry.slug || entry.shareId}</span>
+                <span class="recent-meta">${entry.shareId} • ${entry.sizeLabel || 'Unknown size'}</span>
+              </span>
+              <span class="recent-open">Open</span>
+            </a>
+          `).join('');
+        }
+      } catch {
+        recentShares.hidden = true;
       }
     })();
   </script>

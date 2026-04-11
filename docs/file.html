@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Fridge.Run Share Bridge</title>
+  <title>Fridge.Run Share</title>
   <meta name="robots" content="noindex">
   <style>
     :root {
@@ -59,6 +59,7 @@
       color: var(--muted);
       line-height: 1.55;
     }
+    .file,
     .slug,
     .target {
       margin: 1rem 0 0;
@@ -72,6 +73,53 @@
       word-break: break-word;
     }
     .target { color: var(--accent); }
+    .recent {
+      margin-top: 1.35rem;
+      padding-top: 1.1rem;
+      border-top: 1px solid var(--line);
+      text-align: left;
+    }
+    .recent[hidden] {
+      display: none;
+    }
+    .recent h2 {
+      margin: 0 0 0.7rem;
+      font-size: 0.94rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .recent-list {
+      display: grid;
+      gap: 0.65rem;
+    }
+    .recent-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.8rem;
+      align-items: center;
+      padding: 0.8rem 0.9rem;
+      border-radius: 0.9rem;
+      background: rgba(8, 18, 33, 0.7);
+      border: 1px solid var(--line);
+      color: var(--text);
+      text-decoration: none;
+    }
+    .recent-name {
+      display: block;
+      font-weight: 600;
+    }
+    .recent-meta {
+      display: block;
+      margin-top: 0.18rem;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+    .recent-open {
+      white-space: nowrap;
+      color: var(--accent);
+      font-weight: 600;
+    }
     a {
       color: var(--accent);
     }
@@ -127,51 +175,168 @@
   <main>
     <img src="/logo.png" alt="Fridge logo">
     <h1>Fridge.run Share</h1>
-    <p id="status">Preparing a live handoff to the fridge share service.</p>
-    <div class="slug" id="slugDisplay">Waiting for share slug…</div>
+    <p id="status">Resolving the live share from the fridge.</p>
+    <div class="file" id="fileDisplay">Looking up shared file…</div>
+    <div class="slug" id="slugDisplay">Waiting for share id…</div>
     <div class="target" id="targetDisplay">Destination host: pending</div>
     <div class="spinner" aria-hidden="true"></div>
     <div class="actions">
       <a class="button primary" id="fallback" href="/">Open share manually</a>
       <a class="button" href="/links.html">Return home</a>
     </div>
-    <p class="meta" id="meta">You are leaving the static fridge.run page and opening the live fridge-hosted file.</p>
+    <p class="meta" id="meta">You are leaving the static fridge.run page and opening a file served live from the fridge.</p>
+    <section class="recent" id="recentShares" hidden>
+      <h2>Recently Shared</h2>
+      <div class="recent-list" id="recentList"></div>
+    </section>
   </main>
   <script>
     (() => {
       const bridgeOrigin = 'https://proc-muslim-situations-mit.trycloudflare.com';
+      const recentStorageKey = 'fridge.run.recent-shares.v1';
       const fallback = document.getElementById('fallback');
       const status = document.getElementById('status');
+      const fileDisplay = document.getElementById('fileDisplay');
       const slugDisplay = document.getElementById('slugDisplay');
       const targetDisplay = document.getElementById('targetDisplay');
       const meta = document.getElementById('meta');
+      const recentShares = document.getElementById('recentShares');
+      const recentList = document.getElementById('recentList');
       const rawQuery = window.location.search || '';
       const params = new URLSearchParams(rawQuery);
-      const keyedSlug = params.get('slug') || params.get('id') || params.get('file') || '';
       const directQuery = rawQuery.startsWith('?') ? rawQuery.slice(1) : '';
-      const slug = keyedSlug || directQuery;
+      const bareQuery = directQuery && !directQuery.includes('=') ? decodeURIComponent(directQuery) : '';
+      const shareId = (params.get('h') || params.get('hash') || params.get('share') || params.get('id') || (bareQuery && /^[a-f0-9]{12,64}$/i.test(bareQuery) ? bareQuery : '') || '').trim().toLowerCase();
+      const legacySlug = (params.get('slug') || params.get('file') || (!shareId ? bareQuery : '') || '').trim();
 
-      if (!slug) {
-        status.textContent = 'No share slug was provided.';
-        slugDisplay.textContent = 'Missing slug';
+      const formatBytes = (size) => {
+        if (!Number.isFinite(size) || size < 0) {
+          return 'Unknown size';
+        }
+        const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+        let value = size;
+        let unitIndex = 0;
+        while (value >= 1024 && unitIndex < units.length - 1) {
+          value /= 1024;
+          unitIndex += 1;
+        }
+        const digits = value >= 100 || unitIndex === 0 ? 0 : value >= 10 ? 1 : 2;
+        return `${value.toFixed(digits)} ${units[unitIndex]}`;
+      };
+
+      const loadRecentShares = () => {
+        try {
+          return JSON.parse(window.localStorage.getItem(recentStorageKey) || '[]');
+        } catch {
+          return [];
+        }
+      };
+
+      const saveRecentShares = (entries) => {
+        try {
+          window.localStorage.setItem(recentStorageKey, JSON.stringify(entries));
+        } catch {
+          // ignore storage failures
+        }
+      };
+
+      const rememberShare = (entry) => {
+        const next = [
+          entry,
+          ...loadRecentShares().filter((item) => item.shareId !== entry.shareId)
+        ].slice(0, 8);
+        saveRecentShares(next);
+        renderRecentShares(next);
+      };
+
+      const renderRecentShares = (entries = loadRecentShares()) => {
+        if (!entries.length) {
+          recentShares.hidden = true;
+          recentList.innerHTML = '';
+          return;
+        }
+        recentShares.hidden = false;
+        recentList.innerHTML = entries.map((entry) => `
+          <a class="recent-item" href="${entry.bridgeUrl}">
+            <span>
+              <span class="recent-name">${entry.fileName}</span>
+              <span class="recent-meta">${entry.shareId} • ${entry.sizeLabel || 'Unknown size'}</span>
+            </span>
+            <span class="recent-open">Open</span>
+          </a>
+        `).join('');
+      };
+
+      renderRecentShares();
+
+      if (!shareId && !legacySlug) {
+        status.textContent = 'No share reference was provided.';
+        fileDisplay.textContent = 'Missing shared file';
+        slugDisplay.textContent = 'Missing share id';
         targetDisplay.textContent = 'Destination host: unavailable';
-        meta.textContent = 'Use a fridge.run file URL that includes a share slug.';
+        meta.textContent = 'Use a fridge.run file URL that includes a share id.';
         fallback.href = '/links.html';
         fallback.textContent = 'Open access portal';
         return;
       }
 
-      const target = keyedSlug
-        ? `${bridgeOrigin}/file?${encodeURIComponent(keyedSlug)}`
-        : `${bridgeOrigin}/file${rawQuery}`;
+      if (!shareId) {
+        const legacyTarget = `${bridgeOrigin}/file?${encodeURIComponent(legacySlug)}`;
+        status.textContent = 'Opening a legacy share link from the fridge.';
+        fileDisplay.textContent = `File slug: ${legacySlug}`;
+        slugDisplay.textContent = 'Legacy share link';
+        targetDisplay.textContent = `Destination host: ${new URL(legacyTarget).host}`;
+        meta.textContent = 'This link uses the older slug format. It will still open normally.';
+        fallback.href = legacyTarget;
+        fallback.textContent = 'Open share manually';
+        window.setTimeout(() => window.location.replace(legacyTarget), 900);
+        return;
+      }
 
-      status.textContent = 'Opening a file that is being served live from the fridge.';
-      slugDisplay.textContent = `Share slug: ${slug}`;
-      targetDisplay.textContent = `Destination host: ${new URL(target).host}`;
+      const metadataUrl = `${bridgeOrigin}/api/public-shares/${encodeURIComponent(shareId)}`;
+      status.textContent = 'Resolving the file details before redirecting.';
+      fileDisplay.textContent = 'Looking up file name…';
+      slugDisplay.textContent = `Share id: ${shareId}`;
+      targetDisplay.textContent = `Destination host: ${new URL(bridgeOrigin).host}`;
       meta.textContent = 'If the redirect does not happen automatically, use the manual open button below.';
-      fallback.href = target;
-      fallback.textContent = 'Open share manually';
-      window.setTimeout(() => window.location.replace(target), 900);
+
+      window.fetch(metadataUrl, { mode: 'cors', credentials: 'omit' })
+        .then(async (response) => {
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            throw new Error(payload.error || 'share lookup failed');
+          }
+          const target = `${bridgeOrigin}/file?h=${encodeURIComponent(payload.shareId || shareId)}`;
+          const bridgeUrl = `/file?h=${encodeURIComponent(payload.shareId || shareId)}`;
+          status.textContent = 'Opening a file that is being served live from the fridge.';
+          fileDisplay.textContent = `File: ${payload.fileName || payload.slug || 'Unknown file'}`;
+          slugDisplay.textContent = `Share id: ${payload.shareId || shareId}`;
+          targetDisplay.textContent = `Destination host: ${new URL(target).host}`;
+          meta.textContent = `${payload.mimeType || 'Unknown type'} • ${formatBytes(Number(payload.sizeBytes))}`;
+          fallback.href = target;
+          fallback.textContent = 'Open share manually';
+          rememberShare({
+            shareId: payload.shareId || shareId,
+            slug: payload.slug || '',
+            fileName: payload.fileName || payload.slug || 'Unknown file',
+            mimeType: payload.mimeType || '',
+            sizeBytes: Number(payload.sizeBytes) || 0,
+            sizeLabel: formatBytes(Number(payload.sizeBytes)),
+            bridgeUrl,
+            directUrl: target,
+            seenAt: new Date().toISOString()
+          });
+          window.setTimeout(() => window.location.replace(target), 900);
+        })
+        .catch((error) => {
+          status.textContent = 'Share lookup failed.';
+          fileDisplay.textContent = 'Unable to resolve shared file';
+          slugDisplay.textContent = `Share id: ${shareId}`;
+          targetDisplay.textContent = `Destination host: ${new URL(bridgeOrigin).host}`;
+          meta.textContent = error instanceof Error ? error.message : 'The fridge share service could not resolve this link.';
+          fallback.href = `${bridgeOrigin}/file?h=${encodeURIComponent(shareId)}`;
+          fallback.textContent = 'Try manual open';
+        });
     })();
   </script>
 </body>

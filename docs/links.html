@@ -23,6 +23,18 @@
     .tag { background:linear-gradient(180deg,var(--accent),var(--accent2)); color:#fff; font-weight:700; font-size:12px; letter-spacing:.04em; text-transform:uppercase; border-radius:999px; padding:7px 10px; white-space:nowrap; }
     .back { display:inline-block; margin-top:20px; color:var(--muted); text-decoration:none; font-size:13px; letter-spacing:.06em; text-transform:uppercase; }
     .back:hover { color:var(--text); }
+    .recent { margin-top:26px; padding-top:18px; border-top:1px solid rgba(255,255,255,.12); }
+    .recent[hidden] { display:none; }
+    .recent h2 { margin:0 0 12px; font-size:13px; color:var(--muted); letter-spacing:.12em; text-transform:uppercase; }
+    .recent-list { display:grid; gap:10px; }
+    .recent-item { display:flex; align-items:center; justify-content:space-between; gap:14px; text-decoration:none; color:var(--text); padding:12px 14px; border:1px solid rgba(255,255,255,.12); border-radius:12px; background:rgba(255,255,255,.03); }
+    .recent-item:hover,.recent-item:focus-visible { border-color:rgba(255,255,255,.28); background:rgba(255,255,255,.08); outline:none; }
+    .recent-name { display:block; font-weight:650; }
+    .recent-meta { display:block; margin-top:3px; font-size:12px; color:var(--muted); }
+    .recent-open { color:var(--accent); font-weight:700; white-space:nowrap; }
+    .recent-actions { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px; }
+    .ghost { appearance:none; border:1px solid rgba(255,255,255,.16); background:rgba(255,255,255,.04); color:var(--muted); border-radius:999px; padding:7px 11px; font:inherit; cursor:pointer; }
+    .ghost:hover { color:var(--text); border-color:rgba(255,255,255,.28); }
   </style>
 </head>
 <body>
@@ -37,8 +49,61 @@
         <a class="link" href="https://docs.fridge.run" target="_blank" rel="noopener noreferrer"><span class="left"><span class="name">Documentation</span><span class="meta">Technical docs and operational references</span></span><span class="tag">Docs</span></a>
         <a class="link" href="https://fridge.run/security" target="_blank" rel="noopener noreferrer"><span class="left"><span class="name">Security Policy</span><span class="meta">Access controls and legal terms</span></span><span class="tag">Policy</span></a>
       </nav>
+      <section class="recent" id="recentShares" hidden>
+        <div class="recent-actions">
+          <h2>Recent Shares</h2>
+          <button class="ghost" id="clearRecent" type="button">Clear</button>
+        </div>
+        <div class="recent-list" id="recentList"></div>
+      </section>
       <a class="back" href="./index.html">Return to Warning Screen</a>
     </section>
   </main>
+  <script>
+    (() => {
+      const storageKey = 'fridge.run.recent-shares.v1';
+      const recentShares = document.getElementById('recentShares');
+      const recentList = document.getElementById('recentList');
+      const clearRecent = document.getElementById('clearRecent');
+
+      const loadRecentShares = () => {
+        try {
+          return JSON.parse(window.localStorage.getItem(storageKey) || '[]');
+        } catch {
+          return [];
+        }
+      };
+
+      const render = () => {
+        const entries = loadRecentShares();
+        if (!entries.length) {
+          recentShares.hidden = true;
+          recentList.innerHTML = '';
+          return;
+        }
+        recentShares.hidden = false;
+        recentList.innerHTML = entries.map((entry) => `
+          <a class="recent-item" href="${entry.bridgeUrl || '/file?h=' + encodeURIComponent(entry.shareId)}">
+            <span>
+              <span class="recent-name">${entry.fileName || entry.slug || entry.shareId}</span>
+              <span class="recent-meta">${entry.shareId} • ${entry.sizeLabel || 'Unknown size'}</span>
+            </span>
+            <span class="recent-open">Open</span>
+          </a>
+        `).join('');
+      };
+
+      clearRecent.addEventListener('click', () => {
+        try {
+          window.localStorage.removeItem(storageKey);
+        } catch {
+          // ignore storage failures
+        }
+        render();
+      });
+
+      render();
+    })();
+  </script>
 </body>
 </html>

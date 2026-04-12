@@ -56,6 +56,7 @@
     </section>
   </main>
 
+  <script src="/fridge-share-config.js"></script>
   <script src="/fridge-share-bridge.js"></script>
   <script>
     (() => {
@@ -90,7 +91,7 @@
         targetDisplay.textContent = `Destination host: ${new URL(legacyTarget).host}`;
         meta.textContent = 'This link uses the older slug format. It will still open normally.';
         fallback.href = legacyTarget;
-        window.setTimeout(() => window.location.replace(legacyTarget), 900);
+          window.setTimeout(() => window.location.replace(legacyTarget), (window.__FRIDGE_SHARE_CONFIG__ && window.__FRIDGE_SHARE_CONFIG__.redirectDelayMs) || 650);
         return;
       }
 
@@ -120,7 +121,7 @@
             bridgeUrl: `/file?h=${encodeURIComponent(resolvedId)}`,
             redirectUrl: `/redirect/?h=${encodeURIComponent(resolvedId)}`
           });
-          window.setTimeout(() => window.location.replace(target), 900);
+          window.setTimeout(() => window.location.replace(target), (window.__FRIDGE_SHARE_CONFIG__ && window.__FRIDGE_SHARE_CONFIG__.redirectDelayMs) || 650);
         })
         .catch((error) => {
           status.textContent = 'Share lookup failed.';

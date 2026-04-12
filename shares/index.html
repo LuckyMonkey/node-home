@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fridge.run Recent Shares</title>
+  <meta name="theme-color" content="#050505">
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="/fridge-share-shell.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="masthead">
+      <img src="/logo.png" alt="Fridge logo">
+      <div>
+        <p class="eyebrow">Fridge.run Share</p>
+        <h1>Recent Shares</h1>
+        <p class="sub">The portal and lookup page stay focused. Share history lives here.</p>
+      </div>
+    </header>
+
+    <nav class="nav" aria-label="Page navigation">
+      <a href="/links.html">Portal</a>
+      <a href="/share/">Share Lookup</a>
+      <a href="/redirect/">Redirect</a>
+      <a href="/docs/">Docs</a>
+      <a href="/status/">Status</a>
+      <a href="/login/">IAM / Login</a>
+    </nav>
+
+    <section class="panel">
+      <div class="action-row" style="margin-bottom:14px">
+        <button class="button" id="refreshButton" type="button">Refresh</button>
+        <button class="button" id="clearButton" type="button">Clear local history</button>
+      </div>
+      <div class="notice" id="notice" hidden></div>
+      <div class="share-list" id="recentList"></div>
+      <div class="share-empty" id="emptyState" hidden>No recent shares are stored yet. Open a file by hash and it will show up here.</div>
+    </section>
+  </main>
+
+  <script src="/fridge-share-bridge.js"></script>
+  <script>
+    (() => {
+      const bridge = window.FridgeShareBridge;
+      const bridgeOrigin = bridge.detectBridgeOrigin();
+      const list = document.getElementById('recentList');
+      const emptyState = document.getElementById('emptyState');
+      const notice = document.getElementById('notice');
+      const refreshButton = document.getElementById('refreshButton');
+      const clearButton = document.getElementById('clearButton');
+
+      const render = (entries) => {
+        bridge.renderRecentShares(list, entries, {
+          emptyState,
+          onDeleteLocal: (entry) => {
+            const next = bridge.deleteRecentShare(entry.shareId);
+            render(next.map((item) => bridge.normalizeRecentEntry(item, { bridgeOrigin })).filter(Boolean));
+            bridge.setNotice(notice, `Removed ${entry.fileName || entry.slug || entry.shareId} from local history.`);
+          }
+        });
+      };
+
+      const load = async () => {
+        bridge.setNotice(notice, '');
+        const localEntries = bridge.loadRecentShares().map((entry) => bridge.normalizeRecentEntry(entry, { bridgeOrigin })).filter(Boolean);
+        render(localEntries);
+        try {
+          const remoteEntries = await bridge.fetchRecentShares(bridgeOrigin, 20);
+          const merged = bridge.mergeRecentShares(remoteEntries, { bridgeOrigin });
+          bridge.saveRecentShares(merged);
+          render(merged);
+        } catch (error) {
+          if (!localEntries.length) {
+            bridge.setNotice(notice, error instanceof Error ? error.message : 'Recent shares are unavailable right now.', true);
+          }
+        }
+      };
+
+      refreshButton.addEventListener('click', () => {
+        load().catch(() => {});
+      });
+
+      clearButton.addEventListener('click', () => {
+        bridge.saveRecentShares([]);
+        render([]);
+        bridge.setNotice(notice, 'Local recent-share history cleared.');
+      });
+
+      load().catch(() => {});
+    })();
+  </script>
+</body>
+</html>

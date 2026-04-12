@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fridge.run Share Lookup</title>
+  <meta name="theme-color" content="#dce8f7">
+  <link rel="stylesheet" href="/fridge-share-shell.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="masthead">
+      <img src="/logo.png" alt="Fridge logo">
+      <div>
+        <p class="eyebrow">Fridge.run Share</p>
+        <h1>Share Lookup</h1>
+        <p class="sub">Paste a short share hash to download the file directly or preview the redirect handoff.</p>
+      </div>
+    </header>
+
+    <nav class="nav" aria-label="Page navigation">
+      <a href="/links.html">Portal</a>
+      <a href="/shares/">Recent Shares</a>
+      <a href="/redirect/">Redirect</a>
+      <a href="/docs/">Docs</a>
+      <a href="/status/">Status</a>
+      <a href="/login/">IAM / Login</a>
+    </nav>
+
+    <section class="panel">
+      <div class="notice" id="notice" hidden></div>
+      <form class="lookup" method="get" action="/file">
+        <label for="shareHash">
+          Share hash
+          <input id="shareHash" name="h" type="text" placeholder="example: 3jyv4k63s1" autocapitalize="off" autocomplete="off" spellcheck="false">
+        </label>
+        <div class="action-row">
+          <button class="button primary" type="submit">Download</button>
+          <button class="button" type="submit" formaction="/redirect/">Preview Redirect</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel">
+      <p class="footer-note">Accepted routes: <span class="mono">/file?h=&lt;hash&gt;</span>, <span class="mono">/redirect?h=&lt;hash&gt;</span>, <span class="mono">/f/&lt;slug&gt;</span></p>
+    </section>
+  </main>
+
+  <script src="/fridge-share-bridge.js"></script>
+  <script>
+    (() => {
+      const bridge = window.FridgeShareBridge;
+      const bridgeOrigin = bridge.detectBridgeOrigin();
+      const selector = bridge.parseShareSelector();
+      const input = document.getElementById('shareHash');
+      const notice = document.getElementById('notice');
+      if (selector.shareId) {
+        input.value = selector.shareId;
+      }
+      if (selector.legacySlug) {
+        bridge.setNotice(notice, 'Legacy slugs still work through /f/<slug> and /file?<slug>, but new links use the shorter hash format.');
+      }
+    })();
+  </script>
+</body>
+</html>

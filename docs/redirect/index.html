@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fridge.run Redirect</title>
+  <meta name="theme-color" content="#dce8f7">
+  <meta name="robots" content="noindex">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0a1223;
+      --panel: rgba(12, 24, 42, 0.9);
+      --line: rgba(156, 194, 255, 0.16);
+      --text: #eff4ff;
+      --muted: #9bb0d4;
+      --accent: #9cc2ff;
+      font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at top right, rgba(57, 102, 255, 0.22), transparent 30%),
+        linear-gradient(180deg, #07101c, #0d1830 58%, #0a1223);
+      color: var(--text);
+    }
+    main {
+      width: min(92vw, 34rem);
+      padding: 1.4rem 1.2rem;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 1rem;
+    }
+    h1 {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+    p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .stack {
+      display: grid;
+      gap: 0.85rem;
+    }
+    .file {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .mono {
+      font-family: "IBM Plex Mono", "SFMono-Regular", monospace;
+      word-break: break-word;
+      color: var(--accent);
+    }
+    .actions {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-top: 0.15rem;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.72rem 0.95rem;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(15, 30, 53, 0.9);
+      color: var(--text);
+      font-weight: 600;
+    }
+    .button.primary {
+      background: linear-gradient(180deg, rgba(130, 180, 255, 0.24), rgba(72, 127, 214, 0.18));
+      border-color: rgba(162, 197, 255, 0.34);
+    }
+    .notice {
+      padding: 0.85rem 0.95rem;
+      border: 1px solid var(--line);
+      border-radius: 0.8rem;
+      background: rgba(8, 18, 33, 0.7);
+      color: var(--muted);
+    }
+    .notice.error {
+      color: #ffd7d7;
+      border-color: rgba(255, 140, 140, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="stack" id="lookupPanel">
+      <h1>Fridge.run redirect</h1>
+      <div class="notice" id="notice" hidden></div>
+      <p>Enter a share hash.</p>
+      <form method="get" action="/redirect/" class="stack">
+        <input id="shareHash" name="h" type="text" placeholder="example: 3jyv4k63s1" autocapitalize="off" autocomplete="off" spellcheck="false">
+        <div class="actions">
+          <button class="button primary" type="submit">Continue</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="stack" id="resultPanel" hidden>
+      <h1 id="status">Resolving destination…</h1>
+      <div class="file" id="fileDisplay">Looking up file name…</div>
+      <p id="slugDisplay">Waiting for share id…</p>
+      <p class="mono" id="targetDisplay">Destination pending</p>
+      <div class="actions">
+        <a class="button primary" id="fallback" href="/">Open directly</a>
+      </div>
+      <p id="meta">You will be redirected automatically.</p>
+    </div>
+  </main>
+
+  <script src="/fridge-share-bridge.js"></script>
+  <script>
+    (() => {
+      const bridge = window.FridgeShareBridge;
+      const bridgeOrigin = bridge.detectBridgeOrigin();
+      const selector = bridge.parseShareSelector();
+      const lookupPanel = document.getElementById('lookupPanel');
+      const resultPanel = document.getElementById('resultPanel');
+      const notice = document.getElementById('notice');
+      const status = document.getElementById('status');
+      const fileDisplay = document.getElementById('fileDisplay');
+      const slugDisplay = document.getElementById('slugDisplay');
+      const targetDisplay = document.getElementById('targetDisplay');
+      const fallback = document.getElementById('fallback');
+      const meta = document.getElementById('meta');
+      const input = document.getElementById('shareHash');
+
+      if (!selector.shareId) {
+        lookupPanel.hidden = false;
+        resultPanel.hidden = true;
+        if (selector.legacySlug) {
+          bridge.setNotice(notice, 'Legacy slugs are still valid, but the redirect preview expects a short hash.', true);
+        }
+        return;
+      }
+
+      input.value = selector.shareId;
+      lookupPanel.hidden = true;
+      resultPanel.hidden = false;
+      status.textContent = 'Resolving the requested share and handing the browser off to the live file URL.';
+      slugDisplay.textContent = `Share hash: ${selector.shareId}`;
+      targetDisplay.textContent = `Destination host: ${new URL(bridgeOrigin).host}`;
+
+      bridge.fetchShareMetadata(bridgeOrigin, selector.shareId)
+        .then((payload) => {
+          const resolvedId = payload.shareId || selector.shareId;
+          const target = payload.slug
+            ? bridge.buildBridgePathUrl(bridgeOrigin, payload.slug)
+            : bridge.buildRedirectUrl(bridgeOrigin, resolvedId);
+          status.textContent = 'Redirecting';
+          fileDisplay.textContent = payload.fileName || payload.slug || resolvedId;
+          slugDisplay.textContent = `Hash ${resolvedId}`;
+          targetDisplay.textContent = `Destination: ${target}`;
+          fallback.href = target;
+          meta.textContent = 'Opening the direct file route.';
+          bridge.rememberShare({
+            shareId: resolvedId,
+            slug: payload.slug || '',
+            fileName: payload.fileName || payload.slug || resolvedId,
+            mimeType: payload.mimeType || '',
+            sizeBytes: Number(payload.sizeBytes) || 0,
+            sizeLabel: payload.sizeLabel || bridge.formatBytes(Number(payload.sizeBytes)),
+            bridgeUrl: `/file?h=${encodeURIComponent(resolvedId)}`,
+            redirectUrl: `/redirect/?h=${encodeURIComponent(resolvedId)}`
+          });
+          window.setTimeout(() => window.location.replace(target), 900);
+        })
+        .catch((error) => {
+          status.textContent = 'Share lookup failed';
+          fileDisplay.textContent = 'Unable to resolve shared file';
+          meta.textContent = error instanceof Error ? error.message : 'The fridge share service could not resolve this link.';
+          fallback.href = `${bridgeOrigin}/file?h=${encodeURIComponent(selector.shareId)}`;
+        });
+    })();
+  </script>
+</body>
+</html>

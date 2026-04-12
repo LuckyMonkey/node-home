@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fridge.run Status</title>
+  <meta name="theme-color" content="#dce8f7">
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="/fridge-share-shell.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="masthead">
+      <img src="/logo.png" alt="Fridge logo">
+      <div>
+        <p class="eyebrow">Fridge.run Share</p>
+        <h1>Status</h1>
+        <p class="sub">Bridge and share-service health for the current hash-first file flow.</p>
+      </div>
+    </header>
+
+    <nav class="nav" aria-label="Page navigation">
+      <a href="/links.html">Portal</a>
+      <a href="/share">Share Lookup</a>
+      <a href="/shares">Recent Shares</a>
+      <a href="/docs">Docs</a>
+    </nav>
+
+    <section class="panel">
+      <div class="notice" id="notice" hidden></div>
+      <div class="grid" id="statusGrid">
+        <div class="card-link">
+          <span class="card-kicker">Dashboard</span>
+          <span class="card-title" id="dashboardHealth">Checking…</span>
+          <span class="card-copy" id="dashboardDetail">Waiting for local API health.</span>
+        </div>
+        <div class="card-link">
+          <span class="card-kicker">Share Service</span>
+          <span class="card-title" id="shareHealth">Checking…</span>
+          <span class="card-copy" id="shareDetail">Waiting for recent-share proxy response.</span>
+        </div>
+        <div class="card-link">
+          <span class="card-kicker">Recent Hashes</span>
+          <span class="card-title" id="recentCount">Checking…</span>
+          <span class="card-copy" id="recentDetail">Waiting for recent-share count.</span>
+        </div>
+        <div class="card-link">
+          <span class="card-kicker">Bridge Host</span>
+          <span class="card-title" id="bridgeHost">Checking…</span>
+          <span class="card-copy" id="bridgeDetail">Waiting for bridge origin detection.</span>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/fridge-share-bridge.js"></script>
+  <script>
+    (() => {
+      const bridge = window.FridgeShareBridge;
+      const bridgeOrigin = bridge.detectBridgeOrigin();
+      const notice = document.getElementById('notice');
+
+      const setCard = (titleId, detailId, title, detail) => {
+        document.getElementById(titleId).textContent = title;
+        document.getElementById(detailId).textContent = detail;
+      };
+
+      setCard('bridgeHost', 'bridgeDetail', new URL(bridgeOrigin).host, `Resolved bridge origin: ${bridgeOrigin}`);
+
+      Promise.allSettled([
+        window.fetch('/api/health').then((response) => response.json()),
+        bridge.fetchRecentShares(bridgeOrigin, 12)
+      ]).then(([dashboardResult, shareResult]) => {
+        if (dashboardResult.status === 'fulfilled' && dashboardResult.value && dashboardResult.value.ok) {
+          setCard('dashboardHealth', 'dashboardDetail', 'OK', 'Dashboard bridge API responded normally.');
+        } else {
+          setCard('dashboardHealth', 'dashboardDetail', 'Unavailable', 'Dashboard API health check failed.');
+        }
+
+        if (shareResult.status === 'fulfilled') {
+          const entries = Array.isArray(shareResult.value) ? shareResult.value : [];
+          setCard('shareHealth', 'shareDetail', 'OK', 'Recent-share proxy responded from the fridge-share service.');
+          setCard('recentCount', 'recentDetail', String(entries.length), entries.length ? `Newest hash: ${entries[0].shareId}` : 'No recent active shares were returned.');
+        } else {
+          setCard('shareHealth', 'shareDetail', 'Unavailable', 'Recent-share proxy failed.');
+          setCard('recentCount', 'recentDetail', 'Unknown', 'Could not load recent-share history.');
+          bridge.setNotice(notice, shareResult.reason instanceof Error ? shareResult.reason.message : 'Share service status is unavailable right now.', true);
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

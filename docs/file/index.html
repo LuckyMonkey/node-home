@@ -1,341 +1,133 @@
 <!doctype html>
-<!-- fridge-share-pages-bridge -->
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Fridge.Run Share</title>
+  <title>Fridge.run Share</title>
+  <meta name="theme-color" content="#dce8f7">
   <meta name="robots" content="noindex">
-  <style>
-    :root {
-      color-scheme: dark;
-      --bg: #07101c;
-      --panel: rgba(12, 24, 42, 0.78);
-      --text: #eff4ff;
-      --muted: #9bb0d4;
-      --line: rgba(149, 182, 242, 0.18);
-      --accent: #9cc2ff;
-      --glow: rgba(78, 146, 255, 0.24);
-      font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
-      background: var(--bg);
-      color: var(--text);
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      min-height: 100vh;
-      display: grid;
-      place-items: center;
-      background:
-        radial-gradient(circle at top right, rgba(57, 102, 255, 0.28), transparent 30%),
-        radial-gradient(circle at bottom left, rgba(51, 181, 255, 0.12), transparent 26%),
-        linear-gradient(180deg, #07101c, #0d1830 58%, #0a1223);
-    }
-    main {
-      width: min(92vw, 38rem);
-      padding: 2rem 1.6rem;
-      text-align: center;
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 1.4rem;
-      backdrop-filter: blur(18px);
-      box-shadow: 0 1.2rem 3rem rgba(0, 0, 0, 0.35);
-    }
-    img {
-      width: min(10rem, 34vw);
-      aspect-ratio: 1 / 1;
-      object-fit: contain;
-      display: block;
-      margin: 0 auto 1.25rem;
-      filter: drop-shadow(0 0 1.3rem var(--glow));
-    }
-    h1 {
-      margin: 0 0 0.45rem;
-      font-size: clamp(1.8rem, 4vw, 2.7rem);
-      letter-spacing: -0.03em;
-    }
-    p {
-      margin: 0.6rem 0;
-      color: var(--muted);
-      line-height: 1.55;
-    }
-    .file,
-    .slug,
-    .target {
-      margin: 1rem 0 0;
-      padding: 0.85rem 0.95rem;
-      background: rgba(8, 18, 33, 0.7);
-      border: 1px solid var(--line);
-      border-radius: 0.9rem;
-      color: var(--text);
-      font-family: "IBM Plex Mono", "SFMono-Regular", monospace;
-      font-size: 0.94rem;
-      word-break: break-word;
-    }
-    .target { color: var(--accent); }
-    .recent {
-      margin-top: 1.35rem;
-      padding-top: 1.1rem;
-      border-top: 1px solid var(--line);
-      text-align: left;
-    }
-    .recent[hidden] {
-      display: none;
-    }
-    .recent h2 {
-      margin: 0 0 0.7rem;
-      font-size: 0.94rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-    .recent-list {
-      display: grid;
-      gap: 0.65rem;
-    }
-    .recent-item {
-      display: flex;
-      justify-content: space-between;
-      gap: 0.8rem;
-      align-items: center;
-      padding: 0.8rem 0.9rem;
-      border-radius: 0.9rem;
-      background: rgba(8, 18, 33, 0.7);
-      border: 1px solid var(--line);
-      color: var(--text);
-      text-decoration: none;
-    }
-    .recent-name {
-      display: block;
-      font-weight: 600;
-    }
-    .recent-meta {
-      display: block;
-      margin-top: 0.18rem;
-      color: var(--muted);
-      font-size: 0.82rem;
-    }
-    .recent-open {
-      white-space: nowrap;
-      color: var(--accent);
-      font-weight: 600;
-    }
-    a {
-      color: var(--accent);
-    }
-    .actions {
-      display: flex;
-      justify-content: center;
-      gap: 0.8rem;
-      flex-wrap: wrap;
-      margin-top: 1.35rem;
-    }
-    .button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 12rem;
-      padding: 0.8rem 1rem;
-      border-radius: 999px;
-      border: 1px solid var(--line);
-      background: rgba(15, 30, 53, 0.9);
-      color: var(--text);
-      text-decoration: none;
-      font-weight: 600;
-    }
-    .button.primary {
-      background: linear-gradient(180deg, rgba(130, 180, 255, 0.24), rgba(72, 127, 214, 0.18));
-      border-color: rgba(162, 197, 255, 0.34);
-    }
-    .meta {
-      margin-top: 1rem;
-      font-size: 0.92rem;
-      color: var(--muted);
-    }
-    .spinner {
-      width: 2.5rem;
-      height: 2.5rem;
-      margin: 1.3rem auto 0;
-      border-radius: 50%;
-      border: 0.28rem solid rgba(156, 194, 255, 0.15);
-      border-top-color: rgba(156, 194, 255, 0.95);
-      animation: spin 0.9s linear infinite;
-    }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-    @media (max-width: 640px) {
-      main {
-        padding: 1.5rem 1.1rem;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="/fridge-share-shell.css">
 </head>
 <body>
-  <main>
-    <img src="/logo.png" alt="Fridge logo">
-    <h1>Fridge.run Share</h1>
-    <p id="status">Resolving the live share from the fridge.</p>
-    <div class="file" id="fileDisplay">Looking up shared file…</div>
-    <div class="slug" id="slugDisplay">Waiting for share id…</div>
-    <div class="target" id="targetDisplay">Destination host: pending</div>
-    <div class="spinner" aria-hidden="true"></div>
-    <div class="actions">
-      <a class="button primary" id="fallback" href="/">Open share manually</a>
-      <a class="button" href="/links.html">Return home</a>
-    </div>
-    <p class="meta" id="meta">You are leaving the static fridge.run page and opening a file served live from the fridge.</p>
-    <section class="recent" id="recentShares" hidden>
-      <h2>Recently Shared</h2>
-      <div class="recent-list" id="recentList"></div>
+  <main class="shell">
+    <header class="masthead">
+      <img src="/logo.png" alt="Fridge logo">
+      <div>
+        <p class="eyebrow">Fridge.run Share</p>
+        <h1>Share Download</h1>
+        <p class="sub" id="status">Paste a short share hash or open a file link directly.</p>
+      </div>
+    </header>
+
+    <nav class="nav" aria-label="Page navigation">
+      <a href="/links.html">Portal</a>
+      <a href="/share">Share Lookup</a>
+      <a href="/shares">Recent Shares</a>
+      <a href="/docs">Docs</a>
+      <a href="/status">Status</a>
+      <a href="/login">IAM / Login</a>
+    </nav>
+
+    <section class="panel" id="lookupPanel">
+      <form class="lookup" method="get" action="/file">
+        <label for="shareHash">
+          Share hash
+          <input id="shareHash" name="h" type="text" placeholder="example: 3jyv4k63s1" autocapitalize="off" autocomplete="off" spellcheck="false">
+        </label>
+        <div class="action-row">
+          <button class="button primary" type="submit">Download</button>
+          <button class="button" type="submit" formaction="/redirect">Preview Redirect</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel" id="resultPanel" hidden>
+      <div class="redirect-target">
+        <div class="card-kicker" style="color:#dbe8ff">Resolving</div>
+        <div class="card-title" id="fileDisplay" style="color:#fff">Looking up file name…</div>
+        <div class="muted" id="slugDisplay">Waiting for share id…</div>
+        <div class="muted" id="targetDisplay">Destination host: pending</div>
+      </div>
+      <p class="meta-line" id="meta" style="margin:14px 0 0">If the download does not start automatically, use the manual open button below.</p>
+      <div class="action-row" style="margin-top:14px">
+        <a class="button primary" id="fallback" href="/share">Open manually</a>
+        <a class="button" href="/share">Enter another hash</a>
+      </div>
     </section>
   </main>
+
+  <script src="/fridge-share-bridge.js"></script>
   <script>
     (() => {
-      const bridgeOrigin = 'https://proc-muslim-situations-mit.trycloudflare.com';
-      const recentStorageKey = 'fridge.run.recent-shares.v1';
-      const fallback = document.getElementById('fallback');
+      const bridge = window.FridgeShareBridge;
+      const bridgeOrigin = bridge.detectBridgeOrigin();
+      const selector = bridge.parseShareSelector();
+      const lookupPanel = document.getElementById('lookupPanel');
+      const resultPanel = document.getElementById('resultPanel');
       const status = document.getElementById('status');
       const fileDisplay = document.getElementById('fileDisplay');
       const slugDisplay = document.getElementById('slugDisplay');
       const targetDisplay = document.getElementById('targetDisplay');
       const meta = document.getElementById('meta');
-      const recentShares = document.getElementById('recentShares');
-      const recentList = document.getElementById('recentList');
-      const rawQuery = window.location.search || '';
-      const params = new URLSearchParams(rawQuery);
-      const directQuery = rawQuery.startsWith('?') ? rawQuery.slice(1) : '';
-      const bareQuery = directQuery && !directQuery.includes('=') ? decodeURIComponent(directQuery) : '';
-      const shareId = (params.get('h') || params.get('hash') || params.get('share') || params.get('id') || (bareQuery && /^[a-f0-9]{12,64}$/i.test(bareQuery) ? bareQuery : '') || '').trim().toLowerCase();
-      const legacySlug = (params.get('slug') || params.get('file') || (!shareId ? bareQuery : '') || '').trim();
+      const fallback = document.getElementById('fallback');
+      const input = document.getElementById('shareHash');
 
-      const formatBytes = (size) => {
-        if (!Number.isFinite(size) || size < 0) {
-          return 'Unknown size';
-        }
-        const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-        let value = size;
-        let unitIndex = 0;
-        while (value >= 1024 && unitIndex < units.length - 1) {
-          value /= 1024;
-          unitIndex += 1;
-        }
-        const digits = value >= 100 || unitIndex === 0 ? 0 : value >= 10 ? 1 : 2;
-        return `${value.toFixed(digits)} ${units[unitIndex]}`;
-      };
-
-      const loadRecentShares = () => {
-        try {
-          return JSON.parse(window.localStorage.getItem(recentStorageKey) || '[]');
-        } catch {
-          return [];
-        }
-      };
-
-      const saveRecentShares = (entries) => {
-        try {
-          window.localStorage.setItem(recentStorageKey, JSON.stringify(entries));
-        } catch {
-          // ignore storage failures
-        }
-      };
-
-      const rememberShare = (entry) => {
-        const next = [
-          entry,
-          ...loadRecentShares().filter((item) => item.shareId !== entry.shareId)
-        ].slice(0, 8);
-        saveRecentShares(next);
-        renderRecentShares(next);
-      };
-
-      const renderRecentShares = (entries = loadRecentShares()) => {
-        if (!entries.length) {
-          recentShares.hidden = true;
-          recentList.innerHTML = '';
-          return;
-        }
-        recentShares.hidden = false;
-        recentList.innerHTML = entries.map((entry) => `
-          <a class="recent-item" href="${entry.bridgeUrl}">
-            <span>
-              <span class="recent-name">${entry.fileName}</span>
-              <span class="recent-meta">${entry.shareId} • ${entry.sizeLabel || 'Unknown size'}</span>
-            </span>
-            <span class="recent-open">Open</span>
-          </a>
-        `).join('');
-      };
-
-      renderRecentShares();
-
-      if (!shareId && !legacySlug) {
-        status.textContent = 'No share reference was provided.';
-        fileDisplay.textContent = 'Missing shared file';
-        slugDisplay.textContent = 'Missing share id';
-        targetDisplay.textContent = 'Destination host: unavailable';
-        meta.textContent = 'Use a fridge.run file URL that includes a share id.';
-        fallback.href = '/links.html';
-        fallback.textContent = 'Open access portal';
+      if (!selector.shareId && !selector.legacySlug) {
+        lookupPanel.hidden = false;
+        resultPanel.hidden = true;
         return;
       }
 
-      if (!shareId) {
-        const legacyTarget = `${bridgeOrigin}/file?${encodeURIComponent(legacySlug)}`;
+      lookupPanel.hidden = true;
+      resultPanel.hidden = false;
+      input.value = selector.shareId || '';
+
+      if (!selector.shareId && selector.legacySlug) {
+        const legacyTarget = `${bridgeOrigin}/file?${encodeURIComponent(selector.legacySlug)}`;
         status.textContent = 'Opening a legacy share link from the fridge.';
-        fileDisplay.textContent = `File slug: ${legacySlug}`;
+        fileDisplay.textContent = selector.legacySlug;
         slugDisplay.textContent = 'Legacy share link';
         targetDisplay.textContent = `Destination host: ${new URL(legacyTarget).host}`;
         meta.textContent = 'This link uses the older slug format. It will still open normally.';
         fallback.href = legacyTarget;
-        fallback.textContent = 'Open share manually';
         window.setTimeout(() => window.location.replace(legacyTarget), 900);
         return;
       }
 
-      const metadataUrl = `${bridgeOrigin}/api/public-shares/${encodeURIComponent(shareId)}`;
-      status.textContent = 'Resolving the file details before redirecting.';
-      fileDisplay.textContent = 'Looking up file name…';
-      slugDisplay.textContent = `Share id: ${shareId}`;
+      status.textContent = 'Resolving the file details before download.';
+      slugDisplay.textContent = `Share hash: ${selector.shareId}`;
       targetDisplay.textContent = `Destination host: ${new URL(bridgeOrigin).host}`;
-      meta.textContent = 'If the redirect does not happen automatically, use the manual open button below.';
+      meta.textContent = 'If the download does not start automatically, use the manual open button below.';
 
-      window.fetch(metadataUrl, { mode: 'cors', credentials: 'omit' })
-        .then(async (response) => {
-          const payload = await response.json().catch(() => ({}));
-          if (!response.ok) {
-            throw new Error(payload.error || 'share lookup failed');
-          }
-          const target = `${bridgeOrigin}/file?h=${encodeURIComponent(payload.shareId || shareId)}`;
-          const bridgeUrl = `/file?h=${encodeURIComponent(payload.shareId || shareId)}`;
-          status.textContent = 'Opening a file that is being served live from the fridge.';
-          fileDisplay.textContent = `File: ${payload.fileName || payload.slug || 'Unknown file'}`;
-          slugDisplay.textContent = `Share id: ${payload.shareId || shareId}`;
-          targetDisplay.textContent = `Destination host: ${new URL(target).host}`;
-          meta.textContent = `${payload.mimeType || 'Unknown type'} • ${formatBytes(Number(payload.sizeBytes))}`;
+      bridge.fetchShareMetadata(bridgeOrigin, selector.shareId)
+        .then((payload) => {
+          const resolvedId = payload.shareId || selector.shareId;
+          const target = payload.slug
+            ? bridge.buildBridgePathUrl(bridgeOrigin, payload.slug)
+            : bridge.buildRedirectUrl(bridgeOrigin, resolvedId);
+          fileDisplay.textContent = payload.fileName || payload.slug || resolvedId;
+          slugDisplay.textContent = `Share hash: ${resolvedId}`;
+          targetDisplay.textContent = `Destination: ${target}`;
+          meta.textContent = `${payload.mimeType || 'Unknown type'} • ${payload.sizeLabel || bridge.formatBytes(Number(payload.sizeBytes))}`;
           fallback.href = target;
-          fallback.textContent = 'Open share manually';
-          rememberShare({
-            shareId: payload.shareId || shareId,
+          bridge.rememberShare({
+            shareId: resolvedId,
             slug: payload.slug || '',
-            fileName: payload.fileName || payload.slug || 'Unknown file',
+            fileName: payload.fileName || payload.slug || resolvedId,
             mimeType: payload.mimeType || '',
             sizeBytes: Number(payload.sizeBytes) || 0,
-            sizeLabel: formatBytes(Number(payload.sizeBytes)),
-            bridgeUrl,
-            directUrl: target,
-            seenAt: new Date().toISOString()
+            sizeLabel: payload.sizeLabel || bridge.formatBytes(Number(payload.sizeBytes)),
+            bridgeUrl: `/file?h=${encodeURIComponent(resolvedId)}`,
+            redirectUrl: `/redirect?h=${encodeURIComponent(resolvedId)}`
           });
           window.setTimeout(() => window.location.replace(target), 900);
         })
         .catch((error) => {
           status.textContent = 'Share lookup failed.';
           fileDisplay.textContent = 'Unable to resolve shared file';
-          slugDisplay.textContent = `Share id: ${shareId}`;
           targetDisplay.textContent = `Destination host: ${new URL(bridgeOrigin).host}`;
           meta.textContent = error instanceof Error ? error.message : 'The fridge share service could not resolve this link.';
-          fallback.href = `${bridgeOrigin}/file?h=${encodeURIComponent(shareId)}`;
-          fallback.textContent = 'Try manual open';
+          fallback.href = `${bridgeOrigin}/file?h=${encodeURIComponent(selector.shareId)}`;
         });
     })();
   </script>

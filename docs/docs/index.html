@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fridge.run Docs</title>
+  <meta name="theme-color" content="#dce8f7">
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="/fridge-share-shell.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="masthead">
+      <img src="/logo.png" alt="Fridge logo">
+      <div>
+        <p class="eyebrow">Fridge.run Share</p>
+        <h1>Docs</h1>
+        <p class="sub">Current operator-facing notes for the hash-first share bridge, compatibility routes, and local history behavior.</p>
+      </div>
+    </header>
+
+    <nav class="nav" aria-label="Page navigation">
+      <a href="/links.html">Portal</a>
+      <a href="/share">Share Lookup</a>
+      <a href="/shares">Recent Shares</a>
+      <a href="/status">Status</a>
+    </nav>
+
+    <section class="panel">
+      <div class="grid">
+        <div class="card-link">
+          <span class="card-kicker">Primary</span>
+          <span class="card-title">Hash-first links</span>
+          <span class="card-copy"><span class="mono">/file?h=&lt;shareId&gt;</span> is the primary public bridge shape. <span class="mono">/redirect?h=&lt;shareId&gt;</span> remains the browser handoff page.</span>
+        </div>
+        <div class="card-link">
+          <span class="card-kicker">Compatibility</span>
+          <span class="card-title">Slug routes still work</span>
+          <span class="card-copy"><span class="mono">/f/&lt;slug&gt;</span>, <span class="mono">/file/&lt;slug&gt;</span>, and the older query style are still accepted for compatibility and older links.</span>
+        </div>
+        <div class="card-link">
+          <span class="card-kicker">History</span>
+          <span class="card-title">Saved recent share hashes</span>
+          <span class="card-copy">Browser-local recent history merges with remote recent shares from the fridge-share service so the portal can restore what was opened recently.</span>
+        </div>
+        <div class="card-link">
+          <span class="card-kicker">Legacy</span>
+          <span class="card-title">Old ids are preserved</span>
+          <span class="card-copy">The fridge-share service recomputes a canonical short <span class="mono">shareId</span> and preserves older ids in <span class="mono">legacyShareIds</span> so older links still resolve.</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="notice">
+        <strong>Current public limitation.</strong> The browser bridge works today, but direct raw byte serving from the root <span class="mono">fridge.run</span> hostname still needs a real edge proxy or tunnel in front of the fridge service.
+      </div>
+      <p class="footer-note">Use <a href="/status">/status</a> for the live bridge health view, or <a href="/shares">/shares</a> to inspect the current recent-share list.</p>
+    </section>
+  </main>
+</body>
+</html>

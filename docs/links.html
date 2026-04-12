@@ -42,12 +42,14 @@
     <section class="card">
       <p class="eyebrow">Fridge.Run Network</p>
       <h1>Access Portal</h1>
-      <p class="sub">Central launch surface for infrastructure, docs, and operational tools.</p>
+      <p class="sub">Central launch surface for live share lookup, redirect preview, docs, and bridge status.</p>
       <nav class="stack" aria-label="Primary links">
-        <a class="link" href="https://fridge.run" target="_blank" rel="noopener noreferrer"><span class="left"><span class="name">Fridge.Run Home</span><span class="meta">Primary public entrypoint</span></span><span class="tag">Open</span></a>
-        <a class="link" href="https://status.fridge.run" target="_blank" rel="noopener noreferrer"><span class="left"><span class="name">Service Status</span><span class="meta">Availability and incident updates</span></span><span class="tag">Status</span></a>
-        <a class="link" href="https://docs.fridge.run" target="_blank" rel="noopener noreferrer"><span class="left"><span class="name">Documentation</span><span class="meta">Technical docs and operational references</span></span><span class="tag">Docs</span></a>
-        <a class="link" href="https://fridge.run/security" target="_blank" rel="noopener noreferrer"><span class="left"><span class="name">Security Policy</span><span class="meta">Access controls and legal terms</span></span><span class="tag">Policy</span></a>
+        <a class="link" href="/share"><span class="left"><span class="name">Share Lookup</span><span class="meta">Open a share by short hash</span></span><span class="tag">Share</span></a>
+        <a class="link" href="/shares"><span class="left"><span class="name">Recent Shares</span><span class="meta">Browse saved and mirrored share history</span></span><span class="tag">Recent</span></a>
+        <a class="link" href="/redirect"><span class="left"><span class="name">Redirect Preview</span><span class="meta">Preview the direct handoff target</span></span><span class="tag">Route</span></a>
+        <a class="link" href="/docs"><span class="left"><span class="name">Documentation</span><span class="meta">Hash bridge and tunnel notes</span></span><span class="tag">Docs</span></a>
+        <a class="link" href="/status"><span class="left"><span class="name">Bridge Status</span><span class="meta">Current bridge health and share origin checks</span></span><span class="tag">Status</span></a>
+        <a class="link" href="/login"><span class="left"><span class="name">Login</span><span class="meta">Authentication and IAM surface</span></span><span class="tag">IAM</span></a>
       </nav>
       <section class="recent" id="recentShares" hidden>
         <div class="recent-actions">
@@ -97,7 +99,6 @@
         try {
           window.localStorage.removeItem(storageKey);
         } catch {
-          // ignore storage failures
         }
         render();
       });

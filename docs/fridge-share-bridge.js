@@ -14,11 +14,18 @@ function isPublicFridgeHost(hostname) {
   return hostname === 'fridge.run' || hostname.endsWith('.fridge.run');
 }
 
+function isShareOriginHost(hostname) {
+  return hostname === 'share.fridge.run';
+}
+
 function detectBridgeOrigin() {
   const metaOrigin = normalizeOrigin(document.querySelector('meta[name="fridge-share-origin"]')?.content || '');
   if (metaOrigin) return metaOrigin;
-  if (isLocalHost(window.location.hostname) || isPublicFridgeHost(window.location.hostname)) {
+  if (isLocalHost(window.location.hostname) || isShareOriginHost(window.location.hostname)) {
     return normalizeOrigin(window.location.origin);
+  }
+  if (isPublicFridgeHost(window.location.hostname)) {
+    return DEFAULT_PUBLIC_BRIDGE_ORIGIN;
   }
   return DEFAULT_PUBLIC_BRIDGE_ORIGIN;
 }
@@ -70,6 +77,14 @@ function saveRecentShares(entries) {
   }
 }
 
+function deleteRecentShare(shareId) {
+  const normalizedShareId = String(shareId || '').trim().toLowerCase();
+  if (!normalizedShareId) return loadRecentShares();
+  const next = loadRecentShares().filter((entry) => String(entry?.shareId || '').trim().toLowerCase() !== normalizedShareId);
+  saveRecentShares(next);
+  return next;
+}
+
 function rememberShare(entry) {
   const shareId = String(entry.shareId || '').trim().toLowerCase();
   if (!shareId) return;
@@ -97,7 +112,7 @@ function buildBridgePathUrl(bridgeOrigin, slug) {
 }
 
 function buildRedirectUrl(baseOrigin, shareId) {
-  return `${normalizeOrigin(baseOrigin)}/redirect?h=${encodeURIComponent(shareId)}`;
+  return `${normalizeOrigin(baseOrigin)}/redirect/?h=${encodeURIComponent(shareId)}`;
 }
 
 function normalizeRecentEntry(entry, options = {}) {
@@ -193,6 +208,18 @@ function renderRecentShares(container, entries, options = {}) {
     redirect.href = entry.redirectUrl || `/redirect/?h=${encodeURIComponent(shareId)}`;
     redirect.textContent = 'Redirect';
     actions.append(download, redirect);
+    if (typeof options.onDeleteLocal === 'function') {
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'ghost';
+      remove.textContent = 'Remove';
+      remove.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        options.onDeleteLocal(entry);
+      });
+      actions.append(remove);
+    }
     row.append(meta, actions);
     container.appendChild(row);
   }
@@ -204,6 +231,7 @@ window.FridgeShareBridge = {
   buildBridgePathUrl,
   buildRedirectUrl,
   detectBridgeOrigin,
+  deleteRecentShare,
   fetchRecentShares,
   fetchShareMetadata,
   formatBytes,

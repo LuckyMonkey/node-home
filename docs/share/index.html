@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Fridge.run Share Lookup</title>
-  <meta name="theme-color" content="#dce8f7">
+  <meta name="theme-color" content="#050505">
   <link rel="stylesheet" href="/fridge-share-shell.css">
 </head>
 <body>
@@ -14,7 +14,7 @@
       <div>
         <p class="eyebrow">Fridge.run Share</p>
         <h1>Share Lookup</h1>
-        <p class="sub">Paste a short share hash to download the file directly or preview the redirect handoff.</p>
+        <p class="sub">Paste a short hash. Download jumps to the fridge file. Redirect shows the handoff page and QR first.</p>
       </div>
     </header>
 
@@ -32,17 +32,17 @@
       <form class="lookup" method="get" action="/file">
         <label for="shareHash">
           Share hash
-          <input id="shareHash" name="h" type="text" placeholder="example: 3jyv4k63s1" autocapitalize="off" autocomplete="off" spellcheck="false">
+          <input id="shareHash" name="h" type="text" placeholder="example: 5rmhmv1j" autocapitalize="off" autocomplete="off" spellcheck="false">
         </label>
         <div class="action-row">
           <button class="button primary" type="submit">Download</button>
-          <button class="button" type="submit" formaction="/redirect/">Preview Redirect</button>
+          <button class="button" type="submit" formaction="/redirect/">Show Redirect</button>
         </div>
       </form>
     </section>
 
     <section class="panel">
-      <p class="footer-note">Accepted routes: <span class="mono">/file?h=&lt;hash&gt;</span>, <span class="mono">/redirect?h=&lt;hash&gt;</span>, <span class="mono">/f/&lt;slug&gt;</span></p>
+      <p class="footer-note"><span class="mono">/file?h=&lt;hash&gt;</span> opens the file. <span class="mono">/redirect/?h=&lt;hash&gt;</span> opens the redirect page. <span class="mono">/f/&lt;slug&gt;</span> is the clean fridge path.</p>
     </section>
   </main>
 

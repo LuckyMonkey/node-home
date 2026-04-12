@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Fridge.run Share</title>
-  <meta name="theme-color" content="#dce8f7">
+  <meta name="theme-color" content="#050505">
   <meta name="robots" content="noindex">
   <link rel="stylesheet" href="/fridge-share-shell.css">
 </head>
@@ -15,7 +15,7 @@
       <div>
         <p class="eyebrow">Fridge.run Share</p>
         <h1>Share Download</h1>
-        <p class="sub" id="status">Paste a short share hash or open a file link directly.</p>
+        <p class="sub" id="status">Short hash in, real fridge file out.</p>
       </div>
     </header>
 
@@ -32,23 +32,23 @@
       <form class="lookup" method="get" action="/file">
         <label for="shareHash">
           Share hash
-          <input id="shareHash" name="h" type="text" placeholder="example: 3jyv4k63s1" autocapitalize="off" autocomplete="off" spellcheck="false">
+          <input id="shareHash" name="h" type="text" placeholder="example: 5rmhmv1j" autocapitalize="off" autocomplete="off" spellcheck="false">
         </label>
         <div class="action-row">
           <button class="button primary" type="submit">Download</button>
-          <button class="button" type="submit" formaction="/redirect/">Preview Redirect</button>
+          <button class="button" type="submit" formaction="/redirect/">Show Redirect</button>
         </div>
       </form>
     </section>
 
     <section class="panel" id="resultPanel" hidden>
       <div class="redirect-target">
-        <div class="card-kicker" style="color:#dbe8ff">Resolving</div>
+        <div class="card-kicker">Resolving</div>
         <div class="card-title" id="fileDisplay" style="color:#fff">Looking up file name…</div>
         <div class="muted" id="slugDisplay">Waiting for share id…</div>
         <div class="muted" id="targetDisplay">Destination host: pending</div>
       </div>
-      <p class="meta-line" id="meta" style="margin:14px 0 0">If the download does not start automatically, use the manual open button below.</p>
+      <p class="meta-line" id="meta" style="margin:14px 0 0">Opening the direct fridge path.</p>
       <div class="action-row" style="margin-top:14px">
         <a class="button primary" id="fallback" href="/share/">Open manually</a>
         <a class="button" href="/share/">Enter another hash</a>
@@ -94,19 +94,19 @@
         return;
       }
 
-      status.textContent = 'Resolving the file details before download.';
+      status.textContent = 'Resolving the fridge mirror target.';
       slugDisplay.textContent = `Share hash: ${selector.shareId}`;
       targetDisplay.textContent = `Destination host: ${new URL(bridgeOrigin).host}`;
-      meta.textContent = 'If the download does not start automatically, use the manual open button below.';
+      meta.textContent = 'This route skips the preview page and jumps to the file itself.';
 
       bridge.fetchShareMetadata(bridgeOrigin, selector.shareId)
         .then((payload) => {
           const resolvedId = payload.shareId || selector.shareId;
           const target = payload.slug
             ? bridge.buildBridgePathUrl(bridgeOrigin, payload.slug)
-            : bridge.buildRedirectUrl(bridgeOrigin, resolvedId);
+            : bridge.buildBridgeFileUrl(bridgeOrigin, resolvedId);
           fileDisplay.textContent = payload.fileName || payload.slug || resolvedId;
-          slugDisplay.textContent = `Share hash: ${resolvedId}`;
+          slugDisplay.textContent = `Short hash: ${resolvedId}`;
           targetDisplay.textContent = `Destination: ${target}`;
           meta.textContent = `${payload.mimeType || 'Unknown type'} • ${payload.sizeLabel || bridge.formatBytes(Number(payload.sizeBytes))}`;
           fallback.href = target;

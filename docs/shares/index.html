@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Fridge.run Recent Shares</title>
-  <meta name="theme-color" content="#dce8f7">
+  <meta name="theme-color" content="#050505">
   <meta name="robots" content="noindex">
   <link rel="stylesheet" href="/fridge-share-shell.css">
 </head>
@@ -51,7 +51,14 @@
       const clearButton = document.getElementById('clearButton');
 
       const render = (entries) => {
-        bridge.renderRecentShares(list, entries, { emptyState });
+        bridge.renderRecentShares(list, entries, {
+          emptyState,
+          onDeleteLocal: (entry) => {
+            const next = bridge.deleteRecentShare(entry.shareId);
+            render(next.map((item) => bridge.normalizeRecentEntry(item, { bridgeOrigin })).filter(Boolean));
+            bridge.setNotice(notice, `Removed ${entry.fileName || entry.slug || entry.shareId} from local history.`);
+          }
+        });
       };
 
       const load = async () => {

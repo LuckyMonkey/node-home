@@ -35,6 +35,13 @@
     .recent-actions { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:10px; }
     .ghost { appearance:none; border:1px solid rgba(255,255,255,.16); background:rgba(255,255,255,.04); color:var(--muted); border-radius:999px; padding:7px 11px; font:inherit; cursor:pointer; }
     .ghost:hover { color:var(--text); border-color:rgba(255,255,255,.28); }
+    .share-row { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:14px; padding:12px 14px; border:1px solid rgba(255,255,255,.12); border-radius:12px; background:rgba(255,255,255,.03); }
+    .share-meta { display:grid; gap:3px; min-width:0; }
+    .share-name { display:block; font-weight:650; overflow-wrap:anywhere; }
+    .share-detail { display:block; margin-top:3px; font-size:12px; color:var(--muted); }
+    .share-actions { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; }
+    .button { appearance:none; border:1px solid rgba(255,255,255,.16); background:rgba(255,255,255,.04); color:var(--text); border-radius:999px; padding:7px 11px; font:inherit; cursor:pointer; text-decoration:none; font-weight:700; }
+    .button.primary { background:#f2f2f2; color:#050505; border-color:#f2f2f2; }
   </style>
 </head>
 <body>
@@ -61,45 +68,33 @@
       <a class="back" href="./index.html">Return to Warning Screen</a>
     </section>
   </main>
+  <script src="/fridge-share-bridge.js"></script>
   <script>
     (() => {
-      const storageKey = 'fridge.run.recent-shares.v1';
+      const bridge = window.FridgeShareBridge;
+      const bridgeOrigin = bridge.detectBridgeOrigin();
       const recentShares = document.getElementById('recentShares');
       const recentList = document.getElementById('recentList');
       const clearRecent = document.getElementById('clearRecent');
 
-      const loadRecentShares = () => {
-        try {
-          return JSON.parse(window.localStorage.getItem(storageKey) || '[]');
-        } catch {
-          return [];
-        }
-      };
-
       const render = () => {
-        const entries = loadRecentShares();
+        const entries = bridge.loadRecentShares().map((entry) => bridge.normalizeRecentEntry(entry, { bridgeOrigin })).filter(Boolean);
         if (!entries.length) {
           recentShares.hidden = true;
-          recentList.innerHTML = '';
+          recentList.textContent = '';
           return;
         }
         recentShares.hidden = false;
-        recentList.innerHTML = entries.map((entry) => `
-          <a class="recent-item" href="${entry.bridgeUrl || '/file?h=' + encodeURIComponent(entry.shareId)}">
-            <span>
-              <span class="recent-name">${entry.fileName || entry.slug || entry.shareId}</span>
-              <span class="recent-meta">${entry.shareId} • ${entry.sizeLabel || 'Unknown size'}</span>
-            </span>
-            <span class="recent-open">Open</span>
-          </a>
-        `).join('');
+        bridge.renderRecentShares(recentList, entries, {
+          onDeleteLocal: (entry) => {
+            bridge.deleteRecentShare(entry.shareId);
+            render();
+          }
+        });
       };
 
       clearRecent.addEventListener('click', () => {
-        try {
-          window.localStorage.removeItem(storageKey);
-        } catch {
-        }
+        bridge.saveRecentShares([]);
         render();
       });
 

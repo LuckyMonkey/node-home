@@ -1,4 +1,5 @@
-const DEFAULT_PUBLIC_BRIDGE_ORIGIN = 'https://share.fridge.run';
+const runtimeConfig = window.__FRIDGE_SHARE_CONFIG__ || {};
+const DEFAULT_PUBLIC_BRIDGE_ORIGIN = normalizeOrigin(runtimeConfig.origin || 'https://share.fridge.run');
 const RECENT_STORAGE_KEY = 'fridge.run.recent-shares.v2';
 
 function normalizeOrigin(value) {
@@ -19,6 +20,8 @@ function isShareOriginHost(hostname) {
 }
 
 function detectBridgeOrigin() {
+  const globalOrigin = normalizeOrigin(runtimeConfig.origin || '');
+  if (globalOrigin) return globalOrigin;
   const metaOrigin = normalizeOrigin(document.querySelector('meta[name="fridge-share-origin"]')?.content || '');
   if (metaOrigin) return metaOrigin;
   if (isLocalHost(window.location.hostname) || isShareOriginHost(window.location.hostname)) {

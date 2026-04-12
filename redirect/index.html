@@ -9,50 +9,48 @@
   <link rel="stylesheet" href="/fridge-share-shell.css">
 </head>
 <body>
-  <main class="shell">
+  <main class="shell" style="width:min(720px,100%);min-height:100vh;align-content:center">
     <div class="stack" id="lookupPanel">
-      <section class="panel">
-      <p class="eyebrow">Fridge.run Redirect</p>
-      <h1>Redirect</h1>
-      <div class="notice" id="notice" hidden></div>
-      <p class="meta-line">Resolve the short hash, show the direct file target, then hand off to the fridge redirect page with the QR.</p>
-      <form method="get" action="/redirect/" class="stack">
-        <input id="shareHash" name="h" type="text" placeholder="example: 5rmhmv1j" autocapitalize="off" autocomplete="off" spellcheck="false">
-        <div class="actions">
-          <button class="button primary" type="submit">Continue</button>
-        </div>
-      </form>
-      </section>
+      <div>
+        <form method="get" action="/redirect/" class="lookup">
+          <label for="shareHash">
+            Share hash
+            <input id="shareHash" name="h" type="text" placeholder="example: 5rmhmv1j" autocapitalize="off" autocomplete="off" spellcheck="false">
+          </label>
+          <div class="action-row">
+            <button class="button primary" type="submit">Continue</button>
+          </div>
+        </form>
+        <div class="notice" id="notice" hidden style="margin-top:12px"></div>
+      </div>
     </div>
 
     <div class="stack" id="resultPanel" hidden>
-      <section class="panel">
-        <div class="redirect-target">
-          <div class="card-kicker" id="status">Redirect</div>
-          <div class="card-title" id="fileDisplay" style="color:#fff">Looking up file name…</div>
-          <div class="muted" id="slugDisplay">Waiting for share id…</div>
-          <div class="muted" id="targetDisplay">Destination pending</div>
-        </div>
+      <div>
+        <div class="eyebrow" id="status">Resolving</div>
+        <h1 id="fileDisplay">Looking up file name…</h1>
+        <p class="sub" id="targetDisplay">Destination pending</p>
+        <p class="meta-line" id="meta">You will be redirected automatically.</p>
         <div class="action-row" style="margin-top:14px">
           <a class="button primary" id="fallback" href="/">Open directly</a>
         </div>
-        <p class="meta-line" id="meta" style="margin-top:14px">You will be redirected automatically.</p>
-      </section>
+      </div>
     </div>
   </main>
 
+  <script src="/fridge-share-config.js"></script>
   <script src="/fridge-share-bridge.js"></script>
   <script>
     (() => {
       const bridge = window.FridgeShareBridge;
       const bridgeOrigin = bridge.detectBridgeOrigin();
+      const redirectDelayMs = (window.__FRIDGE_SHARE_CONFIG__ && window.__FRIDGE_SHARE_CONFIG__.redirectDelayMs) || 650;
       const selector = bridge.parseShareSelector();
       const lookupPanel = document.getElementById('lookupPanel');
       const resultPanel = document.getElementById('resultPanel');
       const notice = document.getElementById('notice');
       const status = document.getElementById('status');
       const fileDisplay = document.getElementById('fileDisplay');
-      const slugDisplay = document.getElementById('slugDisplay');
       const targetDisplay = document.getElementById('targetDisplay');
       const fallback = document.getElementById('fallback');
       const meta = document.getElementById('meta');
@@ -70,8 +68,7 @@
       input.value = selector.shareId;
       lookupPanel.hidden = true;
       resultPanel.hidden = false;
-      status.textContent = 'Resolving the short hash and opening the fridge redirect page.';
-      slugDisplay.textContent = `Short hash: ${selector.shareId}`;
+      status.textContent = 'Resolving';
       targetDisplay.textContent = `Destination host: ${new URL(bridgeOrigin).host}`;
 
       bridge.fetchShareMetadata(bridgeOrigin, selector.shareId)
@@ -83,10 +80,9 @@
           const target = bridge.buildRedirectUrl(bridgeOrigin, resolvedId);
           status.textContent = 'Redirecting';
           fileDisplay.textContent = payload.fileName || payload.slug || resolvedId;
-          slugDisplay.textContent = `Short hash: ${resolvedId}`;
-          targetDisplay.textContent = `Direct file: ${fileTarget}`;
+          targetDisplay.textContent = fileTarget;
           fallback.href = target;
-          meta.textContent = 'Opening the fridge redirect page, which will show the QR and then continue to the file.';
+          meta.textContent = 'Opening the fridge redirect page for the direct file handoff.';
           bridge.rememberShare({
             shareId: resolvedId,
             slug: payload.slug || '',
@@ -97,7 +93,7 @@
             bridgeUrl: `/file?h=${encodeURIComponent(resolvedId)}`,
             redirectUrl: `/redirect/?h=${encodeURIComponent(resolvedId)}`
           });
-          window.setTimeout(() => window.location.replace(target), 900);
+          window.setTimeout(() => window.location.replace(target), redirectDelayMs);
         })
         .catch((error) => {
           status.textContent = 'Share lookup failed';

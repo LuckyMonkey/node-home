@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fridge.run Redirect</title>
+  <meta name="theme-color" content="#050505">
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="/fridge-share-shell.css">
+</head>
+<body>
+  <main class="shell">
+    <div class="stack" id="lookupPanel">
+      <section class="panel">
+      <p class="eyebrow">Fridge.run Redirect</p>
+      <h1>Redirect</h1>
+      <div class="notice" id="notice" hidden></div>
+      <p class="meta-line">Resolve the short hash, show the direct file target, then hand off to the fridge redirect page with the QR.</p>
+      <form method="get" action="/redirect/" class="stack">
+        <input id="shareHash" name="h" type="text" placeholder="example: 5rmhmv1j" autocapitalize="off" autocomplete="off" spellcheck="false">
+        <div class="actions">
+          <button class="button primary" type="submit">Continue</button>
+        </div>
+      </form>
+      </section>
+    </div>
+
+    <div class="stack" id="resultPanel" hidden>
+      <section class="panel">
+        <div class="redirect-target">
+          <div class="card-kicker" id="status">Redirect</div>
+          <div class="card-title" id="fileDisplay" style="color:#fff">Looking up file name…</div>
+          <div class="muted" id="slugDisplay">Waiting for share id…</div>
+          <div class="muted" id="targetDisplay">Destination pending</div>
+        </div>
+        <div class="action-row" style="margin-top:14px">
+          <a class="button primary" id="fallback" href="/">Open directly</a>
+        </div>
+        <p class="meta-line" id="meta" style="margin-top:14px">You will be redirected automatically.</p>
+      </section>
+    </div>
+  </main>
+
+  <script src="/fridge-share-bridge.js"></script>
+  <script>
+    (() => {
+      const bridge = window.FridgeShareBridge;
+      const bridgeOrigin = bridge.detectBridgeOrigin();
+      const selector = bridge.parseShareSelector();
+      const lookupPanel = document.getElementById('lookupPanel');
+      const resultPanel = document.getElementById('resultPanel');
+      const notice = document.getElementById('notice');
+      const status = document.getElementById('status');
+      const fileDisplay = document.getElementById('fileDisplay');
+      const slugDisplay = document.getElementById('slugDisplay');
+      const targetDisplay = document.getElementById('targetDisplay');
+      const fallback = document.getElementById('fallback');
+      const meta = document.getElementById('meta');
+      const input = document.getElementById('shareHash');
+
+      if (!selector.shareId) {
+        lookupPanel.hidden = false;
+        resultPanel.hidden = true;
+        if (selector.legacySlug) {
+          bridge.setNotice(notice, 'Legacy slugs are still valid, but the redirect preview expects a short hash.', true);
+        }
+        return;
+      }
+
+      input.value = selector.shareId;
+      lookupPanel.hidden = true;
+      resultPanel.hidden = false;
+      status.textContent = 'Resolving the short hash and opening the fridge redirect page.';
+      slugDisplay.textContent = `Short hash: ${selector.shareId}`;
+      targetDisplay.textContent = `Destination host: ${new URL(bridgeOrigin).host}`;
+
+      bridge.fetchShareMetadata(bridgeOrigin, selector.shareId)
+        .then((payload) => {
+          const resolvedId = payload.shareId || selector.shareId;
+          const fileTarget = payload.slug
+            ? bridge.buildBridgePathUrl(bridgeOrigin, payload.slug)
+            : bridge.buildBridgeFileUrl(bridgeOrigin, resolvedId);
+          const target = bridge.buildRedirectUrl(bridgeOrigin, resolvedId);
+          status.textContent = 'Redirecting';
+          fileDisplay.textContent = payload.fileName || payload.slug || resolvedId;
+          slugDisplay.textContent = `Short hash: ${resolvedId}`;
+          targetDisplay.textContent = `Direct file: ${fileTarget}`;
+          fallback.href = target;
+          meta.textContent = 'Opening the fridge redirect page, which will show the QR and then continue to the file.';
+          bridge.rememberShare({
+            shareId: resolvedId,
+            slug: payload.slug || '',
+            fileName: payload.fileName || payload.slug || resolvedId,
+            mimeType: payload.mimeType || '',
+            sizeBytes: Number(payload.sizeBytes) || 0,
+            sizeLabel: payload.sizeLabel || bridge.formatBytes(Number(payload.sizeBytes)),
+            bridgeUrl: `/file?h=${encodeURIComponent(resolvedId)}`,
+            redirectUrl: `/redirect/?h=${encodeURIComponent(resolvedId)}`
+          });
+          window.setTimeout(() => window.location.replace(target), 900);
+        })
+        .catch((error) => {
+          status.textContent = 'Share lookup failed';
+          fileDisplay.textContent = 'Unable to resolve shared file';
+          meta.textContent = error instanceof Error ? error.message : 'The fridge share service could not resolve this link.';
+          fallback.href = `${bridgeOrigin}/file?h=${encodeURIComponent(selector.shareId)}`;
+        });
+    })();
+  </script>
+</body>
+</html>

@@ -103,7 +103,7 @@
       <h1>Fridge.run redirect</h1>
       <div class="notice" id="notice" hidden></div>
       <p>Enter a share hash.</p>
-      <form method="get" action="/redirect" class="stack">
+      <form method="get" action="/redirect/" class="stack">
         <input id="shareHash" name="h" type="text" placeholder="example: 3jyv4k63s1" autocapitalize="off" autocomplete="off" spellcheck="false">
         <div class="actions">
           <button class="button primary" type="submit">Continue</button>
@@ -176,7 +176,7 @@
             sizeBytes: Number(payload.sizeBytes) || 0,
             sizeLabel: payload.sizeLabel || bridge.formatBytes(Number(payload.sizeBytes)),
             bridgeUrl: `/file?h=${encodeURIComponent(resolvedId)}`,
-            redirectUrl: `/redirect?h=${encodeURIComponent(resolvedId)}`
+            redirectUrl: `/redirect/?h=${encodeURIComponent(resolvedId)}`
           });
           window.setTimeout(() => window.location.replace(target), 900);
         })

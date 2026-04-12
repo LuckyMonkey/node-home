@@ -113,7 +113,7 @@ function normalizeRecentEntry(entry, options = {}) {
     sizeBytes: Number(entry.sizeBytes) || 0,
     sizeLabel: entry.sizeLabel || formatBytes(Number(entry.sizeBytes)),
     bridgeUrl: entry.bridgeUrl || (bridgeOrigin ? buildBridgeFileUrl(bridgeOrigin, shareId) : `/file?h=${encodeURIComponent(shareId)}`),
-    redirectUrl: entry.redirectUrl || (bridgeOrigin ? buildRedirectUrl(bridgeOrigin, shareId) : `/redirect?h=${encodeURIComponent(shareId)}`),
+    redirectUrl: entry.redirectUrl || (bridgeOrigin ? buildRedirectUrl(bridgeOrigin, shareId) : `/redirect/?h=${encodeURIComponent(shareId)}`),
     seenAt: entry.seenAt || entry.updatedAt || entry.createdAt || new Date().toISOString()
   };
 }
@@ -190,7 +190,7 @@ function renderRecentShares(container, entries, options = {}) {
     download.textContent = 'Download';
     const redirect = document.createElement('a');
     redirect.className = 'button';
-    redirect.href = entry.redirectUrl || `/redirect?h=${encodeURIComponent(shareId)}`;
+    redirect.href = entry.redirectUrl || `/redirect/?h=${encodeURIComponent(shareId)}`;
     redirect.textContent = 'Redirect';
     actions.append(download, redirect);
     row.append(meta, actions);

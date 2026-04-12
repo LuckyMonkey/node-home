@@ -21,11 +21,11 @@
 
     <nav class="nav" aria-label="Page navigation">
       <a href="/links.html">Portal</a>
-      <a href="/share">Share Lookup</a>
-      <a href="/shares">Recent Shares</a>
-      <a href="/docs">Docs</a>
-      <a href="/status">Status</a>
-      <a href="/login">IAM / Login</a>
+      <a href="/share/">Share Lookup</a>
+      <a href="/shares/">Recent Shares</a>
+      <a href="/docs/">Docs</a>
+      <a href="/status/">Status</a>
+      <a href="/login/">IAM / Login</a>
     </nav>
 
     <section class="panel" id="lookupPanel">
@@ -36,7 +36,7 @@
         </label>
         <div class="action-row">
           <button class="button primary" type="submit">Download</button>
-          <button class="button" type="submit" formaction="/redirect">Preview Redirect</button>
+          <button class="button" type="submit" formaction="/redirect/">Preview Redirect</button>
         </div>
       </form>
     </section>
@@ -50,8 +50,8 @@
       </div>
       <p class="meta-line" id="meta" style="margin:14px 0 0">If the download does not start automatically, use the manual open button below.</p>
       <div class="action-row" style="margin-top:14px">
-        <a class="button primary" id="fallback" href="/share">Open manually</a>
-        <a class="button" href="/share">Enter another hash</a>
+        <a class="button primary" id="fallback" href="/share/">Open manually</a>
+        <a class="button" href="/share/">Enter another hash</a>
       </div>
     </section>
   </main>
@@ -118,7 +118,7 @@
             sizeBytes: Number(payload.sizeBytes) || 0,
             sizeLabel: payload.sizeLabel || bridge.formatBytes(Number(payload.sizeBytes)),
             bridgeUrl: `/file?h=${encodeURIComponent(resolvedId)}`,
-            redirectUrl: `/redirect?h=${encodeURIComponent(resolvedId)}`
+            redirectUrl: `/redirect/?h=${encodeURIComponent(resolvedId)}`
           });
           window.setTimeout(() => window.location.replace(target), 900);
         })

@@ -4,22 +4,22 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Fridge.run Route Bridge</title>
-  <meta name="theme-color" content="#dce8f7">
+  <meta name="theme-color" content="#050505">
   <meta name="robots" content="noindex">
   <link rel="stylesheet" href="/fridge-share-shell.css">
 </head>
 <body>
-  <main class="shell">
+  <main class="shell" style="min-height:100vh;align-content:center">
     <section class="panel">
       <div class="redirect-target">
         <div class="card-title" id="status" style="color:#fff">Checking route…</div>
-        <div class="muted" id="pathDisplay">Share path: pending</div>
-        <div class="muted" id="targetDisplay">Destination host: pending</div>
+        <div class="muted" id="pathDisplay">Route: pending</div>
+        <div class="muted" id="targetDisplay">Destination: pending</div>
       </div>
       <div class="action-row" style="margin-top:14px">
         <a class="button primary" id="fallback" href="/links.html">Open access portal</a>
       </div>
-      <p class="meta-line" id="meta" style="margin:14px 0 0">Share routes are handed off to the live fridge share host.</p>
+      <p class="meta-line" id="meta" style="margin:14px 0 0">Share routes are handed off to the live fridge-backed origin.</p>
     </section>
   </main>
 
@@ -35,8 +35,7 @@
       const meta = document.getElementById('meta');
       const { pathname, search } = window.location;
 
-      const routeLabel = `${pathname}${search || ''}`;
-      pathDisplay.textContent = `Share path: ${routeLabel}`;
+      pathDisplay.textContent = `Route: ${pathname}${search || ''}`;
 
       let target = '';
       if (pathname === '/file' || pathname === '/file/' || pathname === '/file.html') {
@@ -57,8 +56,8 @@
 
       if (!target) {
         status.textContent = 'Route not found.';
-        targetDisplay.textContent = 'Destination host: unavailable';
-        meta.textContent = 'Only fridge share routes are redirected from this bridge page.';
+        targetDisplay.textContent = 'Destination: unavailable';
+        meta.textContent = 'Open the portal for the live share surfaces.';
         return;
       }
 
@@ -66,8 +65,8 @@
       targetDisplay.textContent = `Destination: ${target}`;
       fallback.href = target;
       fallback.textContent = 'Open directly';
-      meta.textContent = 'Opening the live fridge-backed route.';
-      window.setTimeout(() => window.location.replace(target), 500);
+      meta.textContent = 'Opening the resolved route.';
+      window.setTimeout(() => window.location.replace(target), 120);
     })();
   </script>
 </body>

@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pixel Snakes Background</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0c0d10;
+      --panel: rgba(20, 22, 28, 0.84);
+      --line: rgba(255, 255, 255, 0.12);
+      --text: #f3f2ec;
+      --muted: rgba(243, 242, 236, 0.68);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background:
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.045), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(255, 255, 255, 0.03), transparent 20%),
+        linear-gradient(180deg, #060709, var(--bg) 48%, #050607);
+      color: var(--text);
+      font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+    }
+
+    body {
+      position: relative;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    #pixelSnakes {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    main {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .panel {
+      width: min(42rem, 100%);
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: var(--panel);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2.1rem, 7vw, 4.8rem);
+      line-height: 0.96;
+      letter-spacing: -0.05em;
+    }
+
+    p {
+      margin: 14px 0 0;
+      max-width: 34rem;
+      line-height: 1.5;
+      color: var(--muted);
+      font-size: 0.98rem;
+    }
+
+    code {
+      font-family: "IBM Plex Mono", "SFMono-Regular", monospace;
+      font-size: 0.95em;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="pixelSnakes" aria-hidden="true"></canvas>
+
+  <main>
+    <section class="panel">
+      <p class="eyebrow">Standalone Extract</p>
+      <h1>Pixel Snakes</h1>
+      <p>
+        This is the animated background effect lifted out of the homepage dashboard.
+        Your friend can use this page directly or copy the <code>&lt;canvas&gt;</code>,
+        styles, and script into their own site.
+      </p>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const CELL_SIZE = 22;
+      const STEP_MS = 240;
+      const FOOD_COUNT = 14;
+      const MAX_SNAKES = 5;
+      const DPR_CAP = 1.5;
+      const DIRECTIONS = [
+        { x: 1, y: 0 },
+        { x: -1, y: 0 },
+        { x: 0, y: 1 },
+        { x: 0, y: -1 }
+      ];
+
+      const canvas = document.getElementById('pixelSnakes');
+      const context = canvas.getContext('2d');
+
+      if (!context) {
+        return;
+      }
+
+      const mod = (value, size) => ((value % size) + size) % size;
+
+      const wrapDelta = (next, prev, span) => {
+        let delta = next - prev;
+        if (delta > span / 2) delta -= span;
+        if (delta < -span / 2) delta += span;
+        return delta;
+      };
+
+      const leftTurn = (dir) => ({ x: -dir.y, y: dir.x });
+      const rightTurn = (dir) => ({ x: dir.y, y: -dir.x });
+      const samePoint = (a, b) => a.x === b.x && a.y === b.y;
+      const randomInt = (max) => Math.floor(Math.random() * max);
+      const randomCell = (cols, rows) => ({ x: randomInt(cols), y: randomInt(rows) });
+
+      const movePoint = (point, dir, cols, rows) => ({
+        x: mod(point.x + dir.x, cols),
+        y: mod(point.y + dir.y, rows)
+      });
+
+      const toroidalDistance = (a, b, cols, rows) => {
+        const dx = Math.min(Math.abs(a.x - b.x), cols - Math.abs(a.x - b.x));
+        const dy = Math.min(Math.abs(a.y - b.y), rows - Math.abs(a.y - b.y));
+        return dx + dy;
+      };
+
+      const buildQuietZone = (cols, rows) => {
+        const width = Math.max(8, Math.floor(cols * 0.42));
+        const height = Math.max(7, Math.floor(rows * 0.38));
+        const left = Math.floor((cols - width) / 2);
+        const top = Math.floor(rows * 0.18);
+        return { left, right: left + width, top, bottom: top + height };
+      };
+
+      const isInsideQuietZone = (point, quietZone) =>
+        point.x >= quietZone.left &&
+        point.x < quietZone.right &&
+        point.y >= quietZone.top &&
+        point.y < quietZone.bottom;
+
+      const collectOccupied = (snakes) =>
+        new Set(snakes.flatMap((snake) => snake.segments.map((segment) => `${segment.x}:${segment.y}`)));
+
+      const spawnFreeCell = (cols, rows, snakes, foods, quietZone) => {
+        const occupied = collectOccupied(snakes);
+        for (const food of foods) {
+          occupied.add(`${food.x}:${food.y}`);
+        }
+        for (let attempts = 0; attempts < 120; attempts += 1) {
+          const cell = randomCell(cols, rows);
+          if (!occupied.has(`${cell.x}:${cell.y}`) && (attempts > 70 || !isInsideQuietZone(cell, quietZone))) {
+            return cell;
+          }
+        }
+        return randomCell(cols, rows);
+      };
+
+      const buildSnake = (cols, rows, origin, dir, length) => {
+        const segments = Array.from({ length }, (_, index) => ({
+          x: mod(origin.x - dir.x * index, cols),
+          y: mod(origin.y - dir.y * index, rows)
+        }));
+        return {
+          segments,
+          prevSegments: segments.map((segment) => ({ ...segment })),
+          dir,
+          length
+        };
+      };
+
+      const createWorld = (cols, rows, quietZone) => {
+        const snakes = [];
+        const snakeCount = Math.min(MAX_SNAKES, Math.max(3, Math.floor((cols * rows) / 620) + 1));
+
+        for (let index = 0; index < snakeCount; index += 1) {
+          let snake = null;
+          for (let attempts = 0; attempts < 60 && !snake; attempts += 1) {
+            const dir = DIRECTIONS[randomInt(DIRECTIONS.length)];
+            const origin = randomCell(cols, rows);
+            const candidate = buildSnake(cols, rows, origin, dir, 4 + (index % 2));
+            const occupied = collectOccupied(snakes);
+            const blocked = candidate.segments.some(
+              (segment) => occupied.has(`${segment.x}:${segment.y}`) || (attempts < 40 && isInsideQuietZone(segment, quietZone))
+            );
+            if (!blocked) {
+              snake = candidate;
+            }
+          }
+          if (snake) {
+            snakes.push(snake);
+          }
+        }
+
+        const foods = [];
+        for (let index = 0; index < FOOD_COUNT; index += 1) {
+          foods.push(spawnFreeCell(cols, rows, snakes, foods, quietZone));
+        }
+
+        return { snakes, foods };
+      };
+
+      const scoreDirection = (head, dir, foods, snake, cols, rows, quietZone) => {
+        const next = movePoint(head, dir, cols, rows);
+        const hitsSelf = snake.segments.slice(0, -1).some((segment) => samePoint(segment, next));
+        if (hitsSelf) {
+          return Number.POSITIVE_INFINITY;
+        }
+        let bestFoodDistance = Number.POSITIVE_INFINITY;
+        for (const food of foods) {
+          bestFoodDistance = Math.min(bestFoodDistance, toroidalDistance(next, food, cols, rows));
+        }
+        const centerPenalty = isInsideQuietZone(next, quietZone) ? 4.5 : 0;
+        return bestFoodDistance + centerPenalty;
+      };
+
+      const chooseDirection = (snake, foods, cols, rows, quietZone) => {
+        const head = snake.segments[0];
+        const options = [snake.dir, leftTurn(snake.dir), rightTurn(snake.dir)];
+        const scored = options
+          .map((dir) => ({ dir, score: scoreDirection(head, dir, foods, snake, cols, rows, quietZone) }))
+          .sort((a, b) => a.score - b.score);
+
+        if (scored.length === 0) {
+          return snake.dir;
+        }
+        if (Math.random() < 0.72 || scored.length === 1) {
+          return scored[0].dir;
+        }
+        return scored[Math.min(1, scored.length - 1)].dir;
+      };
+
+      let width = 0;
+      let height = 0;
+      let cols = 0;
+      let rows = 0;
+      let quietZone = { left: 0, right: 0, top: 0, bottom: 0 };
+      let snakes = [];
+      let foods = [];
+      let lastStepAt = performance.now();
+      let frame = 0;
+
+      const resetWorld = () => {
+        cols = Math.max(18, Math.floor(width / CELL_SIZE));
+        rows = Math.max(12, Math.floor(height / CELL_SIZE));
+        quietZone = buildQuietZone(cols, rows);
+        const world = createWorld(cols, rows, quietZone);
+        snakes = world.snakes;
+        foods = world.foods;
+        lastStepAt = performance.now();
+      };
+
+      const resize = () => {
+        width = Math.max(1, window.innerWidth);
+        height = Math.max(1, window.innerHeight);
+        const dpr = Math.min(window.devicePixelRatio || 1, DPR_CAP);
+        canvas.width = Math.round(width * dpr);
+        canvas.height = Math.round(height * dpr);
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
+        context.setTransform(dpr, 0, 0, dpr, 0, 0);
+        context.imageSmoothingEnabled = false;
+        resetWorld();
+      };
+
+      const logicStep = () => {
+        snakes = snakes.map((snake) => {
+          const dir = chooseDirection(snake, foods, cols, rows, quietZone);
+          const nextHead = movePoint(snake.segments[0], dir, cols, rows);
+          const ateIndex = foods.findIndex((food) => samePoint(food, nextHead));
+          const nextLength = ateIndex >= 0 ? Math.min(snake.length + 1, 7) : snake.length;
+          const nextSegments = [nextHead, ...snake.segments].slice(0, nextLength);
+
+          if (ateIndex >= 0) {
+            foods.splice(ateIndex, 1);
+            foods.push(spawnFreeCell(cols, rows, snakes, foods, quietZone));
+          }
+
+          return {
+            segments: nextSegments,
+            prevSegments: snake.segments.map((segment) => ({ ...segment })),
+            dir,
+            length: nextLength
+          };
+        });
+      };
+
+      const drawRect = (x, y, size, color) => {
+        context.fillStyle = color;
+        context.fillRect(Math.round(x - size / 2), Math.round(y - size / 2), size, size);
+      };
+
+      const render = (now) => {
+        if (width <= 0 || height <= 0) {
+          frame = window.requestAnimationFrame(render);
+          return;
+        }
+
+        while (now - lastStepAt >= STEP_MS) {
+          logicStep();
+          lastStepAt += STEP_MS;
+        }
+
+        const progress = Math.min(1, (now - lastStepAt) / STEP_MS);
+        context.clearRect(0, 0, width, height);
+
+        for (const food of foods) {
+          const x = food.x * CELL_SIZE + CELL_SIZE * 0.5;
+          const y = food.y * CELL_SIZE + CELL_SIZE * 0.5;
+          drawRect(x, y, 4, '#c9c4ae');
+        }
+
+        snakes.forEach((snake, snakeIndex) => {
+          snake.segments.forEach((segment, segmentIndex) => {
+            const previous = snake.prevSegments[segmentIndex] ?? snake.prevSegments[snake.prevSegments.length - 1] ?? segment;
+            const deltaX = wrapDelta(segment.x, previous.x, cols);
+            const deltaY = wrapDelta(segment.y, previous.y, rows);
+            const gridX = mod(previous.x + deltaX * progress, cols);
+            const gridY = mod(previous.y + deltaY * progress, rows);
+            const x = gridX * CELL_SIZE + CELL_SIZE * 0.5;
+            const y = gridY * CELL_SIZE + CELL_SIZE * 0.5;
+            const isHead = segmentIndex === 0;
+            const size = isHead ? 7 : 6;
+            const color = isHead ? (snakeIndex % 2 === 0 ? '#b8b092' : '#b4ab8d') : '#cfc8b0';
+            drawRect(x, y, size, color);
+          });
+        });
+
+        frame = window.requestAnimationFrame(render);
+      };
+
+      window.addEventListener('resize', resize, { passive: true });
+      resize();
+      frame = window.requestAnimationFrame(render);
+
+      window.addEventListener('beforeunload', () => {
+        window.cancelAnimationFrame(frame);
+      }, { once: true });
+    })();
+  </script>
+</body>
+</html>

@@ -17,12 +17,13 @@
         <div class="muted" id="targetDisplay">Destination: pending</div>
       </div>
       <div class="action-row" style="margin-top:14px">
-        <a class="button primary" id="fallback" href="/links.html">Open access portal</a>
+        <a class="button primary" id="fallback" href="/links.html">Open portal</a>
       </div>
       <p class="meta-line" id="meta" style="margin:14px 0 0">Share routes are handed off to the live fridge-backed origin.</p>
     </section>
   </main>
 
+  <script src="/fridge-share-config.js"></script>
   <script src="/fridge-share-bridge.js"></script>
   <script>
     (() => {
@@ -52,6 +53,16 @@
         target = `${bridgeOrigin}${pathname}${search}`;
       } else if (pathname.startsWith('/file/')) {
         target = `${bridgeOrigin}${pathname}${search}`;
+      } else if (pathname === '/share' || pathname === '/share/') {
+        target = '/share/';
+      } else if (pathname === '/shares' || pathname === '/shares/') {
+        target = '/shares/';
+      } else if (pathname === '/status' || pathname === '/status/') {
+        target = '/status/';
+      } else if (pathname === '/login' || pathname === '/login/') {
+        target = '/login/';
+      } else if (pathname === '/docs' || pathname === '/docs/') {
+        target = '/docs/';
       }
 
       if (!target) {

@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>fridge.run — Node Dashboard</title>
+  <meta name="description" content="Live-ish status for the fridge node: disks, service health, backup quorum and package state.">
+  <meta name="theme-color" content="#020202">
+  <link rel="icon" href="../logo.png">
+  <link rel="stylesheet" href="../fridge-share-shell.css">
+</head>
+<body>
+  <div class="shell">
+
+    <header class="masthead">
+      <img src="../logo.png" alt="">
+      <div>
+        <p class="eyebrow">fridge.run</p>
+        <h1 style="margin:0;font-size:clamp(19px,2.4vw,26px);">Node Dashboard</h1>
+        <p style="margin:4px 0 0;font-size:13px;color:var(--muted);">
+          Mac mini (Macmini6,1) · DNS, ingress, chat and backup quorum for the house
+        </p>
+      </div>
+    </header>
+
+    <nav class="nav" aria-label="Site">
+      <a href="../">Notice</a>
+      <a href="./" aria-current="page">Dashboard</a>
+      <a href="../status/">Status</a>
+      <a href="../shares/">Shares</a>
+      <a href="../links.html">Portal</a>
+      <a href="../docs/">Docs</a>
+    </nav>
+
+    <!-- freshness: this is a committed snapshot, not a live poll. Say so. -->
+    <section class="panel" aria-live="polite">
+      <p class="eyebrow">Snapshot</p>
+      <p style="margin:0;font-size:14px;" id="freshness">Loading status…</p>
+      <p class="note" id="freshnessNote">
+        This page reads <code>status.json</code>, a snapshot committed to the repository.
+        It is not a live connection to the node. The age is shown above so you can judge it.
+      </p>
+    </section>
+
+    <!-- headline numbers: stat tiles, no chart needed -->
+    <section class="grid grid-3" id="statTiles" aria-label="Key metrics"></section>
+
+    <!-- magnitude: single-hue meters, escalating to status colors at thresholds -->
+    <section class="panel">
+      <p class="eyebrow">Storage</p>
+      <div class="grid grid-2" id="disks"></div>
+      <p class="note">
+        Two SATA SSDs. <b>sdb</b> (256&nbsp;GB) holds the OS and is the only drive this
+        Mac will boot. <b>sda</b> (128&nbsp;GB, <code>/srv/backup</code>) hangs off the
+        old optical-drive header via a ribbon mod and cannot boot — by firmware design,
+        not misconfiguration.
+      </p>
+    </section>
+
+    <!-- state: every pill carries a text label, never colour alone -->
+    <section class="panel">
+      <p class="eyebrow">Service health</p>
+      <ul class="svc-list" id="services"></ul>
+      <p class="note">
+        Health is measured <b>functionally</b> — each service is probed to see whether it
+        actually answers, rather than asking Docker whether a container is running. A
+        container that is "up" but no longer serving is a failure, and this catches it.
+      </p>
+    </section>
+
+    <section class="panel">
+      <p class="eyebrow">Backup quorum</p>
+      <div id="backup"></div>
+      <p class="note">
+        Irreplaceable photographs are replicated from the One Touch drive to the node.
+        Quorum is currently <b>2 copies</b> (One Touch + fridge). <code>frostbyte</code> is
+        a laptop with no capacity for the full set and holds only small critical items.
+      </p>
+    </section>
+
+    <section class="panel">
+      <p class="eyebrow">Portals</p>
+      <div class="portals" id="portals"></div>
+    </section>
+
+    <footer class="foot">
+      <p style="margin:0 0 6px;">
+        Regenerate this snapshot with <code>tools/collect-fridge-status.sh &gt; status.json</code>,
+        then commit. The collector is read-only and needs no elevated privileges.
+      </p>
+      <p style="margin:0;">
+        Writes and uploads are <b>not</b> available here. This page is public and static,
+        so it cannot enforce identity — see <a href="../docs/">the docs</a> for the planned
+        IAM boundary.
+      </p>
+    </footer>
+
+  </div>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const fmtBytes = (n) => {
+        if (!Number.isFinite(n)) return '—';
+        const u = ['B', 'KB', 'MB', 'GB', 'TB'];
+        let i = 0, v = n;
+        while (v >= 1024 && i < u.length - 1) { v /= 1024; i += 1; }
+        return v.toFixed(v >= 100 || i === 0 ? 0 : 1) + ' ' + u[i];
+      };
+
+      const ageText = (iso) => {
+        const then = new Date(iso).getTime();
+        if (!Number.isFinite(then)) return 'unknown age';
+        const mins = Math.round((Date.now() - then) / 60000);
+        if (mins < 1) return 'just now';
+        if (mins < 60) return mins + ' min ago';
+        const hrs = Math.round(mins / 60);
+        if (hrs < 48) return hrs + ' h ago';
+        return Math.round(hrs / 24) + ' days ago';
+      };
+
+      // magnitude -> single hue, escalating to reserved status steps
+      const band = (pct) => (pct >= 90 ? 'crit' : pct >= 75 ? 'warn' : '');
+
+      const el = (tag, cls, text) => {
+        const n = document.createElement(tag);
+        if (cls) n.className = cls;
+        if (text !== undefined) n.textContent = text;
+        return n;
+      };
+
+      const tile = (label, value, sub) => {
+        const t = el('article', 'tile-stat');
+        t.append(el('p', 'label', label), el('p', 'value', value));
+        if (sub) t.append(el('p', 'sub', sub));
+        return t;
+      };
+
+      fetch('../status.json', { cache: 'no-store' })
+        .then((r) => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then((d) => {
+          // ---- freshness -------------------------------------------------
+          document.getElementById('freshness').textContent =
+            'Generated ' + ageText(d.generated) + ' · ' + new Date(d.generated).toLocaleString();
+
+          // ---- headline tiles --------------------------------------------
+          const tiles = document.getElementById('statTiles');
+          const h = d.host || {};
+          const mem = h.memory || {};
+          const memPct = mem.totalMb ? Math.round(mem.usedMb / mem.totalMb * 100) : null;
+          const svc = d.services || [];
+          const upCount = svc.filter((s) => s.status === 'up').length;
+
+          tiles.append(
+            tile('Uptime', h.uptime || '—', h.os || ''),
+            tile('Services up', upCount + ' / ' + svc.length, 'functional probes'),
+            tile('Load average', h.load || '—', '1m / 5m / 15m'),
+            tile('Memory', memPct === null ? '—' : memPct + '%',
+                 mem.totalMb ? (mem.usedMb + ' of ' + mem.totalMb + ' MB') : ''),
+            tile('Packages held', String((d.packages || {}).held ?? '—'),
+                 'deliberate, boot-critical'),
+            tile('Updates pending', String((d.packages || {}).upgradable ?? '—'),
+                 'staged upgrade required')
+          );
+
+          // ---- disks -----------------------------------------------------
+          const disks = document.getElementById('disks');
+          (d.disks || []).forEach((disk) => {
+            const card = el('article', 'tile-stat');
+            card.append(el('p', 'label', disk.mount));
+            card.append(el('p', 'value', disk.percent + '%'));
+            card.append(el('p', 'sub', fmtBytes(disk.usedBytes) + ' of ' + fmtBytes(disk.totalBytes) +
+                                      ' · ' + fmtBytes(disk.totalBytes - disk.usedBytes) + ' free'));
+            const m = el('div', 'meter ' + band(disk.percent));
+            const fill = el('i');
+            fill.style.width = Math.max(1, Math.min(100, disk.percent)) + '%';
+            m.append(fill);
+            card.append(m);
+            disks.append(card);
+          });
+
+          // ---- services (label + dot, never colour alone) ----------------
+          const list = document.getElementById('services');
+          svc.forEach((s) => {
+            const li = el('li');
+            li.append(el('span', 'svc-name', s.name));
+            li.append(el('span', 'pill ' + (s.status === 'up' ? 'up' : 'down'),
+                         s.status === 'up' ? 'Responding' : 'No response'));
+            list.append(li);
+          });
+
+          // ---- backup ----------------------------------------------------
+          const b = d.backup || {};
+          const done = b.photographsFiles || 0;
+          const total = b.photographsTotal || 0;
+          const pct = total ? Math.round(done / total * 1000) / 10 : 0;
+          const wrap = document.getElementById('backup');
+          const card = el('article', 'tile-stat');
+          card.append(el('p', 'label', 'Photographs replicated'));
+          card.append(el('p', 'value', pct + '%'));
+          card.append(el('p', 'sub', done.toLocaleString() + ' of ' + total.toLocaleString() +
+                                     ' files · ' + (b.source || '') + ' → ' + (b.target || '')));
+          const m = el('div', 'meter');
+          const fill = el('i');
+          fill.style.width = Math.max(1, Math.min(100, pct)) + '%';
+          m.append(fill);
+          card.append(m);
+          wrap.append(card);
+
+          // ---- portals ---------------------------------------------------
+          const portals = [
+            { name: 'Rocket.Chat', meta: 'Team chat', href: 'http://192.168.1.98:3000/', reach: 'tailnet' },
+            { name: 'Pi-hole', meta: 'DNS & blocking', href: 'http://192.168.1.98/admin/', reach: 'tailnet' },
+            { name: 'copyparty', meta: 'File shares', href: 'http://192.168.1.98:3923/', reach: 'tailnet' },
+            { name: 'Tracker stats', meta: 'BitTorrent quorum', href: 'http://192.168.1.98:6969/stats', reach: 'tailnet' },
+            { name: 'Node status', meta: 'Public status page', href: '../status/' },
+            { name: 'Shares', meta: 'Recent published files', href: '../shares/' }
+          ];
+          const pbox = document.getElementById('portals');
+          portals.forEach((p) => {
+            const a = el('a', 'portal');
+            a.href = p.href;
+            if (p.reach) a.dataset.reach = p.reach;
+            a.append(el('span', 'portal-name', p.name), el('span', 'portal-meta', p.meta));
+            pbox.append(a);
+          });
+        })
+        .catch((err) => {
+          document.getElementById('freshness').textContent = 'Could not load status.json';
+          document.getElementById('freshnessNote').textContent =
+            'The snapshot file is missing or invalid (' + err.message + '). ' +
+            'Run tools/collect-fridge-status.sh > status.json and commit it.';
+        });
+    })();
+  </script>
+</body>
+</html>

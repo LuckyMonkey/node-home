@@ -1,0 +1,80 @@
+{
+  "generated": "2026-09-17T18:21:03+00:00",
+  "host": {
+    "name": "fridge",
+    "uptime": "4 weeks, 5 days, 3 hours, 53 minutes",
+    "kernel": "5.15.0-177-generic",
+    "os": "Ubuntu 22.04.5 LTS",
+    "load": "0.59 0.54 0.56",
+    "memory": {
+      "usedMb": 2073,
+      "totalMb": 15895
+    }
+  },
+  "disks": [
+    {
+      "mount": "/",
+      "totalBytes": 168503205888,
+      "usedBytes": 20001288192,
+      "percent": 11.9
+    },
+    {
+      "mount": "/srv/data",
+      "totalBytes": 79120011264,
+      "usedBytes": 24576,
+      "percent": 0.0
+    },
+    {
+      "mount": "/srv/backup",
+      "totalBytes": 125425008640,
+      "usedBytes": 42449182720,
+      "percent": 33.8
+    },
+    {
+      "mount": "/boot",
+      "totalBytes": 2040373248,
+      "usedBytes": 272105472,
+      "percent": 13.3
+    }
+  ],
+  "services": [
+    {
+      "name": "dns-pihole",
+      "status": "up"
+    },
+    {
+      "name": "dns-blocking",
+      "status": "up"
+    },
+    {
+      "name": "caddy-http",
+      "status": "up"
+    },
+    {
+      "name": "rocketchat",
+      "status": "up"
+    },
+    {
+      "name": "tracker",
+      "status": "up"
+    },
+    {
+      "name": "ssh",
+      "status": "up"
+    }
+  ],
+  "backup": {
+    "photographsFiles": 13855,
+    "photographsTotal": 35119,
+    "source": "One Touch/Photos/Photographs",
+    "target": "fridge:/srv/backup/photos"
+  },
+  "packages": {
+    "held": 34,
+    "upgradable": 31
+  },
+  "tracker": {
+    "service": "active",
+    "torrents": 0
+  }
+}

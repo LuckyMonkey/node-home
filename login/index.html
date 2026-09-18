@@ -3,36 +3,93 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Fridge.run IAM</title>
-  <meta name="theme-color" content="#dce8f7">
-  <meta name="robots" content="noindex">
-  <link rel="stylesheet" href="/fridge-share-shell.css">
+  <title>fridge.run — Sign in</title>
+  <meta name="description" content="Sign in to the fridge node admin surface.">
+  <meta name="theme-color" content="#020202">
+  <link rel="icon" href="../logo.png">
+  <link rel="stylesheet" href="../fridge-share-shell.css">
+  <style>
+    body { display: grid; place-items: center; min-height: 100vh; }
+    .signin { width: min(620px, 94vw); text-align: center; }
+    /* The button art is opaque RGB on black, which sits invisibly on the
+       dark surface. Sized by width so the 3:1 artwork keeps its proportions. */
+    .fridge-btn {
+      display: inline-block; width: min(440px, 82vw);
+      border: 0; background: none; padding: 0; cursor: pointer;
+      border-radius: 14px; line-height: 0;
+      transition: transform .12s ease, filter .12s ease;
+    }
+    .fridge-btn img { width: 100%; height: auto; border-radius: 14px; display: block; }
+    .fridge-btn:hover, .fridge-btn:focus-visible { transform: translateY(-2px); filter: brightness(1.08); }
+    .fridge-btn:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
+    .fridge-btn[disabled] { cursor: not-allowed; filter: grayscale(.85) brightness(.6); transform: none; }
+    @media (prefers-reduced-motion: reduce) { .fridge-btn { transition: none; } }
+  </style>
 </head>
 <body>
-  <main class="shell">
-    <header class="masthead">
-      <img src="/logo.png" alt="Fridge logo">
-      <div>
-        <p class="eyebrow">Fridge.run IAM</p>
-        <h1>Login Placeholder</h1>
-        <p class="sub">Reserved for the future shared auth layer. The share flow remains public for now.</p>
-      </div>
-    </header>
-
-    <nav class="nav" aria-label="Page navigation">
-      <a href="/links.html">Portal</a>
-      <a href="/share/">Share Lookup</a>
-      <a href="/shares/">Recent Shares</a>
-      <a href="/redirect/">Redirect</a>
-      <a href="/docs/">Docs</a>
-      <a href="/status/">Status</a>
-    </nav>
-
+  <main class="signin">
     <section class="panel">
-      <div class="notice">
-        <strong>Reserved surface.</strong> IAM and shared login are not active yet.
-      </div>
+      <p class="eyebrow">fridge.run · Identity</p>
+      <h1 style="margin:0 0 6px;font-size:clamp(19px,2.4vw,25px);">Sign in to the node</h1>
+      <p style="margin:0 0 22px;font-size:13.5px;color:var(--muted);">
+        Reading the dashboard needs no account. Signing in is for changing things.
+      </p>
+
+      <button class="fridge-btn" id="signin" type="button">
+        <picture>
+          <source srcset="../media/login-with-fridge@2x.webp 2x, ../media/login-with-fridge.webp 1x" type="image/webp">
+          <img src="../media/login-with-fridge.png"
+               srcset="../media/login-with-fridge@2x.png 2x, ../media/login-with-fridge.png 1x"
+               alt="Login with fridge.run" width="600" height="200">
+        </picture>
+      </button>
+
+      <p class="note" id="explain">
+        This hands you to <b>Google</b>, which authenticates you, and then to the
+        node's Apps Script endpoint. That endpoint reads the identity
+        <b>Google</b> supplies server-side and checks it against an allowlist
+        before returning anything. It fails closed: an unknown account — or an
+        unset allowlist — denies access.
+        <br><br>
+        This page is static and therefore cannot enforce identity itself, so it
+        doesn't try to. Nothing here is a security control, and knowing the
+        endpoint URL grants nothing on its own. The check happens server-side,
+        where your browser cannot reach it.
+      </p>
+
+      <p style="margin:16px 0 0;font-size:13px;">
+        <a href="../dashboard/">← Back to the dashboard</a> (no sign-in needed)
+      </p>
     </section>
   </main>
+
+  <script src="../fridge-iam-config.js"></script>
+  <script>
+    (() => {
+      'use strict';
+      const cfg = window.__FRIDGE_IAM__ || {};
+      const btn = document.getElementById('signin');
+      const explain = document.getElementById('explain');
+
+      if (!cfg.endpoint) {
+        btn.disabled = true;
+        btn.setAttribute('aria-disabled', 'true');
+        explain.innerHTML =
+          '<b>Identity is not wired up yet.</b> No Apps Script endpoint is configured, ' +
+          'so this button has nothing to hand you to. Set <code>endpoint</code> in ' +
+          '<code>fridge-iam-config.js</code> to the deployed web app URL. ' +
+          'Until then the button is disabled rather than pretending to sign you in.';
+        return;
+      }
+
+      btn.addEventListener('click', () => {
+        // Hand off to Apps Script. Google performs the actual authentication;
+        // the script verifies the resulting identity server-side.
+        const url = new URL(cfg.endpoint);
+        url.searchParams.set('from', location.origin + location.pathname);
+        window.location.assign(url.toString());
+      });
+    })();
+  </script>
 </body>
 </html>

@@ -1,13 +1,13 @@
 {
-  "generated": "2026-09-17T18:21:03+00:00",
+  "generated": "2026-09-18T01:16:33+00:00",
   "host": {
     "name": "fridge",
-    "uptime": "4 weeks, 5 days, 3 hours, 53 minutes",
+    "uptime": "4 weeks, 5 days, 10 hours, 48 minutes",
     "kernel": "5.15.0-177-generic",
     "os": "Ubuntu 22.04.5 LTS",
-    "load": "0.59 0.54 0.56",
+    "load": "0.08 0.07 0.08",
     "memory": {
-      "usedMb": 2073,
+      "usedMb": 2082,
       "totalMb": 15895
     }
   },
@@ -15,7 +15,7 @@
     {
       "mount": "/",
       "totalBytes": 168503205888,
-      "usedBytes": 20001288192,
+      "usedBytes": 20003229696,
       "percent": 11.9
     },
     {
@@ -27,8 +27,8 @@
     {
       "mount": "/srv/backup",
       "totalBytes": 125425008640,
-      "usedBytes": 42449182720,
-      "percent": 33.8
+      "usedBytes": 96325685248,
+      "percent": 76.8
     },
     {
       "mount": "/boot",
@@ -64,7 +64,7 @@
     }
   ],
   "backup": {
-    "photographsFiles": 13855,
+    "photographsFiles": 35119,
     "photographsTotal": 35119,
     "source": "One Touch/Photos/Photographs",
     "target": "fridge:/srv/backup/photos"

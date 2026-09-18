@@ -218,19 +218,27 @@
       }
 
       var groups = Array.isArray(me.groups) ? me.groups : [];
-      var frag = '<span class="email"></span>';
-      el.innerHTML = frag
+      // Who may create, as opposed to merely open. Mirrors the node's own rule;
+      // this copy only decides wording, never access - the node decides that.
+      var mayCreate = groups.some(function (g) { return g === 'owner' || g === 'bestFriend'; });
+
+      el.innerHTML = '<span class="email"></span>'
         + groups.map(function () { return '<span class="group"></span>'; }).join('')
-        + '<span class="act"><a href="../login/">Switch user</a></span>'
+        + '<span class="act">'
+        +   (groups.length ? '<a href="https://go.fridge.run/">Sharing panel</a> &nbsp; ' : '')
+        +   '<a href="../login/">Switch user</a>'
+        + '</span>'
         + '<span class="said"></span>';
       // textContent throughout: claims come from a token, and a token is data.
       el.querySelector('.email').textContent = me.email;
       var chips = el.querySelectorAll('.group');
       groups.forEach(function (g, i) { chips[i].textContent = g; });
-      el.querySelector('.said').textContent = groups.length
-        ? 'No panels are provisioned for ' + groups.join(' or ') + ' yet. When they exist they will '
-          + 'be served from the node itself, not from this page.'
-        : 'You are signed in but belong to no group yet, so nothing is assigned to you.';
+      el.querySelector('.said').textContent = !groups.length
+        ? 'You are signed in but belong to no group yet, so nothing is assigned to you.'
+        : mayCreate
+          ? 'Your sharing panel and chat are served from the node itself, not from this page.'
+          : 'You can open links and files shared with you. Creating them is limited to the '
+            + 'owner and bestFriend.';
       el.hidden = false;
     })();
 

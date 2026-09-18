@@ -16,7 +16,7 @@
 window.__FRIDGE_IAM__ = Object.assign(
   {
     // e.g. 'https://script.google.com/macros/s/AKfycb.../exec'
-    endpoint: '',
+    endpoint: 'https://script.google.com/macros/s/AKfycbzp_s0qlMPrYVVHwQ_zv_jZs_i1K2Iptqlazm9I_q-OwJ01FdIpB1kJhDD50NqGgXxT/exec',
     // Shown to the user so it is obvious which identity system is in play.
     providerName: 'Google'
   },

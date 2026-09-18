@@ -4,8 +4,8 @@
 // A static page CANNOT enforce identity - anything it checks in JavaScript can
 // be bypassed by reading the source. So this page does not pretend to.
 //
-// Instead the "Login with fridge.run" button hands off to a Google Apps Script
-// web app, which authenticates against Google server-side. The script reads
+// Instead the "Login with fridge.run" button hands off to Keycloak at
+// auth.fridge.run, which authenticates server-side and issues a session. The script reads
 // Session.getEffectiveUser().getEmail() - a value the browser cannot forge -
 // and checks it against an allowlist before returning anything or accepting a
 // write. The trust boundary is Apps Script, not this page.
@@ -16,9 +16,9 @@
 window.__FRIDGE_IAM__ = Object.assign(
   {
     // e.g. 'https://script.google.com/macros/s/AKfycb.../exec'
-    endpoint: 'https://script.google.com/macros/s/AKfycbzp_s0qlMPrYVVHwQ_zv_jZs_i1K2Iptqlazm9I_q-OwJ01FdIpB1kJhDD50NqGgXxT/exec',
+    endpoint: 'https://auth.fridge.run/',
     // Shown to the user so it is obvious which identity system is in play.
-    providerName: 'Google'
+    providerName: 'fridge.run'
   },
   window.__FRIDGE_IAM__ || {}
 );

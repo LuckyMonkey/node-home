@@ -3,6 +3,23 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- SHORT-LINK SHIM. Runs before anything else in the document, so a share
+       link never pays for the video wall.
+
+       This apex is GitHub Pages: static. It cannot look up a hash, cannot check
+       whether you are signed in, and cannot serve a file - so it does none of
+       those things. It only recognises the SHAPE of a code and hands it to the
+       node, which holds the actual table and the actual session. Nothing secret
+       is here, because there is nothing here to keep secret.
+
+       The URL people paste stays short: fridge.run?l=dN7 -->
+  <script>
+  (function () {
+    var m = /[?&]([lf])=([23456789abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ]{3})(?:&|$)/.exec(location.search);
+    if (m) { location.replace('https://go.fridge.run/' + m[1] + '/' + m[2]); }
+  })();
+  </script>
   <title>fridge.run — Restricted Node</title>
   <meta name="description" content="Access notice for fridge.run, a self-hosted home infrastructure node.">
   <meta name="theme-color" content="#020202">

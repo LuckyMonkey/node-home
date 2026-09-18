@@ -3,82 +3,29 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Fridge.run Route Bridge</title>
-  <meta name="theme-color" content="#050505">
-  <meta name="robots" content="noindex">
+  <title>fridge.run — Not Found</title>
+  <meta name="theme-color" content="#020202">
+  <link rel="icon" href="/logo.png">
   <link rel="stylesheet" href="/fridge-share-shell.css">
+  <style>
+    body { display: grid; place-items: center; min-height: 100vh; }
+    .box { width: min(560px, 92vw); text-align: center; }
+    .box h1 { margin: 0; font-size: clamp(19px, 2.4vw, 28px); text-transform: uppercase; letter-spacing: 0.05em; }
+    .box p { color: var(--muted); font-size: 13px; line-height: 1.65; margin: 14px 0 22px; }
+    .box .btn { text-decoration: none; }
+  </style>
 </head>
 <body>
-  <main class="shell" style="min-height:100vh;align-content:center">
-    <section class="panel">
-      <div class="redirect-target">
-        <div class="card-title" id="status" style="color:#fff">Checking route…</div>
-        <div class="muted" id="pathDisplay">Route: pending</div>
-        <div class="muted" id="targetDisplay">Destination: pending</div>
-      </div>
-      <div class="action-row" style="margin-top:14px">
-        <a class="button primary" id="fallback" href="/links.html">Open portal</a>
-      </div>
-      <p class="meta-line" id="meta" style="margin:14px 0 0">Share routes are handed off to the live fridge-backed origin.</p>
-    </section>
+  <main class="box">
+    <h1>404 &mdash; Not Found</h1>
+    <p>
+      That page is not here. The file-sharing routes this site used to carry were
+      removed along with the temporary bridge that served them.
+    </p>
+    <p>
+      <a class="btn btn-ghost" href="/">fridge.run</a>
+      <a class="btn btn-ghost" href="/status/">Node status</a>
+    </p>
   </main>
-
-  <script src="/fridge-share-config.js"></script>
-  <script src="/fridge-share-bridge.js"></script>
-  <script>
-    (() => {
-      const bridge = window.FridgeShareBridge;
-      const bridgeOrigin = bridge.detectBridgeOrigin();
-      const status = document.getElementById('status');
-      const pathDisplay = document.getElementById('pathDisplay');
-      const targetDisplay = document.getElementById('targetDisplay');
-      const fallback = document.getElementById('fallback');
-      const meta = document.getElementById('meta');
-      const { pathname, search } = window.location;
-
-      pathDisplay.textContent = `Route: ${pathname}${search || ''}`;
-
-      let target = '';
-      if (pathname === '/file' || pathname === '/file/' || pathname === '/file.html') {
-        const selector = bridge.parseShareSelector(search);
-        if (selector.shareId) {
-          target = bridge.buildBridgeFileUrl(bridgeOrigin, selector.shareId);
-        }
-      } else if (pathname === '/redirect' || pathname === '/redirect/' || pathname === '/redirect.html') {
-        const selector = bridge.parseShareSelector(search);
-        if (selector.shareId) {
-          target = bridge.buildRedirectUrl(bridgeOrigin, selector.shareId);
-        }
-      } else if (pathname.startsWith('/f/')) {
-        target = `${bridgeOrigin}${pathname}${search}`;
-      } else if (pathname.startsWith('/file/')) {
-        target = `${bridgeOrigin}${pathname}${search}`;
-      } else if (pathname === '/share' || pathname === '/share/') {
-        target = '/share/';
-      } else if (pathname === '/shares' || pathname === '/shares/') {
-        target = '/shares/';
-      } else if (pathname === '/status' || pathname === '/status/') {
-        target = '/status/';
-      } else if (pathname === '/login' || pathname === '/login/') {
-        target = '/login/';
-      } else if (pathname === '/docs' || pathname === '/docs/') {
-        target = '/docs/';
-      }
-
-      if (!target) {
-        status.textContent = 'Route not found.';
-        targetDisplay.textContent = 'Destination: unavailable';
-        meta.textContent = 'Open the portal for the live share surfaces.';
-        return;
-      }
-
-      status.textContent = 'Redirecting';
-      targetDisplay.textContent = `Destination: ${target}`;
-      fallback.href = target;
-      fallback.textContent = 'Open directly';
-      meta.textContent = 'Opening the resolved route.';
-      window.setTimeout(() => window.location.replace(target), 120);
-    })();
-  </script>
 </body>
 </html>

@@ -44,11 +44,10 @@
       <p class="legal">IF YOU PROCEED YOU ARE IN VIOLATION OF COMPUTER FRAUD AND ABUSE ACT 18 U.S.C. § 1030 AND WILL BE FORCIBLY DISCONNECTED BY THIS NODE'S ANTI-INTRUSION SECURITY SOFTWARE. THANK YOU FOR NOT HACKING!</p>
 
       <p class="cta">
-        <!-- IAM HOOK. This is the intended sign-in point. It hands off to Google
-             via Apps Script, which authorises server-side. Until an endpoint is
-             configured in fridge-iam-config.js it links to the sign-in page,
-             which says plainly that identity is not yet wired up.
-             See docs/architecture/iam.md. -->
+        <!-- Sign-in. Identity is Keycloak on this node's own domain; Google is not
+             involved. The button starts an OpenID Connect authorization-code flow
+             with PKCE (see login/) that returns here, to fridge.run - it is not a
+             bare link into Keycloak's own account console. -->
         <a class="fridge-btn" href="./login/" data-iam-hook="signin"
            aria-label="Login with fridge.run">
           <picture>
@@ -59,15 +58,13 @@
           </picture>
         </a>
       </p>
+      <!-- The only surface offered to an anonymous visitor. Dashboards and group
+           panels are deliberately NOT linked from here: they live behind identity,
+           on the node, and are not part of the public site. -->
       <p class="secondary">
-        <a class="btn btn-ghost" href="./dashboard/">Dashboard</a>
         <a class="btn btn-ghost" href="./status/">Node status</a>
       </p>
 
-      <section class="recent" id="recentShares" hidden>
-        <h2>Recent shares on this device</h2>
-        <ul class="svc-list" id="recentList"></ul>
-      </section>
     </section>
   </main>
 
@@ -121,31 +118,6 @@
         }
       }
 
-      // ---- recent shares (per-browser only) ------------------------------
-      const KEY = 'fridge.run.recent-shares.v1';
-      const box = document.getElementById('recentShares');
-      const list = document.getElementById('recentList');
-      let entries = [];
-      try {
-        entries = JSON.parse(window.localStorage.getItem(KEY) || '[]');
-      } catch (err) {
-        entries = [];
-      }
-      if (Array.isArray(entries) && entries.length && box && list) {
-        entries.slice(0, 5).forEach((entry) => {
-          const li = document.createElement('li');
-          const a = document.createElement('a');
-          a.className = 'svc-name';
-          a.textContent = String(entry.name || entry.shareId || 'share');
-          a.href = entry.bridgeUrl || ('./file?h=' + encodeURIComponent(entry.shareId || ''));
-          const meta = document.createElement('span');
-          meta.className = 'portal-meta';
-          meta.textContent = entry.when ? new Date(entry.when).toLocaleString() : '';
-          li.append(a, meta);
-          list.appendChild(li);
-        });
-        box.hidden = false;
-      }
     })();
   </script>
 </body>

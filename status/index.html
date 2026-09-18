@@ -3,91 +3,191 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Fridge.run Status</title>
-  <meta name="theme-color" content="#dce8f7">
-  <meta name="robots" content="noindex">
-  <link rel="stylesheet" href="/fridge-share-shell.css">
+  <title>fridge.run — Node Status</title>
+  <meta name="description" content="Live service status for the fridge.run node.">
+  <meta name="theme-color" content="#020202">
+  <link rel="icon" href="../logo.png">
+  <link rel="stylesheet" href="../fridge-share-shell.css">
+  <style>
+    /* Status palette. These four are RESERVED for state and are never used as
+       decoration, so a colour on this page always means something. Chosen for
+       legibility on the dark surface (--bg #020202 / --panel #0c0c0c). */
+    :root {
+      --ok: #3fb950;
+      --warn: #d29922;
+      --down: #f85149;
+      --unknown: #8b949e;
+    }
+    body { min-height: 100vh; }
+    .wrap { width: min(760px, 94vw); margin: 0 auto; padding: 42px 0 60px; }
+
+    .head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .head h1 { margin: 0; font-size: clamp(19px, 2.3vw, 26px); text-transform: uppercase; letter-spacing: 0.04em; }
+    .head a { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; text-decoration: none; }
+    .head a:hover { color: var(--ink); }
+
+    /* The headline verdict. Its dot is decorative only - the WORDS carry it. */
+    .summary {
+      margin: 22px 0 0; padding: 18px 20px;
+      background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .summary .big { font-size: clamp(15px, 1.8vw, 19px); font-weight: 600; }
+    .summary .when { margin-left: auto; font-size: 12px; color: var(--muted); text-align: right; }
+
+    .list { margin: 14px 0 0; padding: 0; list-style: none; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--panel); }
+    .row { display: flex; align-items: center; gap: 13px; padding: 13px 18px; border-top: 1px solid var(--line); }
+    .row:first-child { border-top: 0; }
+    .row .name { font-size: 14px; }
+    .row .detail { margin-left: auto; font-size: 12px; color: var(--muted); text-align: right; }
+
+    /* State is carried THREE ways - colour, glyph shape, and a text label - so
+       it survives colour-blindness, greyscale printing and forced-colors mode. */
+    .light { width: 1.05em; text-align: center; font-size: 13px; line-height: 1; flex: none; }
+    .state { font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; min-width: 92px; }
+    .s-ok      .light, .s-ok      .state { color: var(--ok); }
+    .s-warn    .light, .s-warn    .state { color: var(--warn); }
+    .s-down    .light, .s-down    .state { color: var(--down); }
+    .s-unknown .light, .s-unknown .state { color: var(--unknown); }
+
+    .note { margin: 20px 0 0; font-size: 12px; line-height: 1.65; color: var(--muted); }
+    .note code { color: var(--ink); }
+    .skeleton { color: var(--muted); font-size: 13px; padding: 20px 18px; }
+
+    @media (max-width: 560px) {
+      .row { flex-wrap: wrap; gap: 8px 12px; }
+      .row .detail { margin-left: 0; width: 100%; text-align: left; }
+      .state { min-width: 0; }
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .row { transition: background .2s ease; }
+    }
+  </style>
 </head>
 <body>
-  <main class="shell">
-    <header class="masthead">
-      <img src="/logo.png" alt="Fridge logo">
-      <div>
-        <p class="eyebrow">Fridge.run Share</p>
-        <h1>Status</h1>
-        <p class="sub">Bridge and share-service health for the current hash-first file flow.</p>
-      </div>
-    </header>
+  <main class="wrap">
+    <div class="head">
+      <h1>Node Status</h1>
+      <a href="../">&larr; fridge.run</a>
+    </div>
 
-    <nav class="nav" aria-label="Page navigation">
-      <a href="/links.html">Portal</a>
-      <a href="/share/">Share Lookup</a>
-      <a href="/shares/">Recent Shares</a>
-      <a href="/docs/">Docs</a>
-    </nav>
+    <div class="summary" id="summary">
+      <span class="light" id="sumLight" aria-hidden="true">&#9679;</span>
+      <span class="big" id="sumText">Checking&hellip;</span>
+      <span class="when" id="sumWhen"></span>
+    </div>
 
-    <section class="panel">
-      <div class="notice" id="notice" hidden></div>
-      <div class="grid" id="statusGrid">
-        <div class="card-link">
-          <span class="card-kicker">Dashboard</span>
-          <span class="card-title" id="dashboardHealth">Checking…</span>
-          <span class="card-copy" id="dashboardDetail">Waiting for local API health.</span>
-        </div>
-        <div class="card-link">
-          <span class="card-kicker">Share Service</span>
-          <span class="card-title" id="shareHealth">Checking…</span>
-          <span class="card-copy" id="shareDetail">Waiting for recent-share proxy response.</span>
-        </div>
-        <div class="card-link">
-          <span class="card-kicker">Recent Hashes</span>
-          <span class="card-title" id="recentCount">Checking…</span>
-          <span class="card-copy" id="recentDetail">Waiting for recent-share count.</span>
-        </div>
-        <div class="card-link">
-          <span class="card-kicker">Bridge Host</span>
-          <span class="card-title" id="bridgeHost">Checking…</span>
-          <span class="card-copy" id="bridgeDetail">Waiting for bridge origin detection.</span>
-        </div>
-      </div>
-    </section>
+    <ul class="list" id="list" aria-live="polite" aria-busy="true">
+      <li class="skeleton">Contacting the node&hellip;</li>
+    </ul>
+
+    <p class="note">
+      These lights are measured on the node itself, once a minute, and served from it
+      directly &mdash; this page is static and cannot invent a reading. If the node is
+      off or unreachable, the lights go grey rather than green. Service names and
+      up/down state are all that is published here.
+    </p>
   </main>
 
-  <script src="/fridge-share-bridge.js"></script>
   <script>
-    (() => {
-      const bridge = window.FridgeShareBridge;
-      const bridgeOrigin = bridge.detectBridgeOrigin();
-      const notice = document.getElementById('notice');
+  (function () {
+    var ENDPOINT = 'https://auth.fridge.run/status.json';
+    var REFRESH = 30000;
 
-      const setCard = (titleId, detailId, title, detail) => {
-        document.getElementById(titleId).textContent = title;
-        document.getElementById(detailId).textContent = detail;
-      };
+    // glyph + label per state. Shape and word both differ, so colour is never
+    // the only signal.
+    var LOOK = {
+      ok:      { glyph: '●', label: 'Operational' },  // filled circle
+      warn:    { glyph: '▲', label: 'Degraded'    },  // triangle
+      down:    { glyph: '■', label: 'Down'        },  // square
+      unknown: { glyph: '○', label: 'Unknown'     }   // hollow circle
+    };
 
-      setCard('bridgeHost', 'bridgeDetail', new URL(bridgeOrigin).host, `Resolved bridge origin: ${bridgeOrigin}`);
+    var listEl = document.getElementById('list');
+    var sumLight = document.getElementById('sumLight');
+    var sumText = document.getElementById('sumText');
+    var sumWhen = document.getElementById('sumWhen');
 
-      Promise.allSettled([
-        window.fetch('/api/health').then((response) => response.json()),
-        bridge.fetchRecentShares(bridgeOrigin, 12)
-      ]).then(([dashboardResult, shareResult]) => {
-        if (dashboardResult.status === 'fulfilled' && dashboardResult.value && dashboardResult.value.ok) {
-          setCard('dashboardHealth', 'dashboardDetail', 'OK', 'Dashboard bridge API responded normally.');
-        } else {
-          setCard('dashboardHealth', 'dashboardDetail', 'Unavailable', 'Dashboard API health check failed.');
-        }
+    function ago(then) {
+      var s = Math.max(0, Math.round((Date.now() - then) / 1000));
+      if (s < 60) return s + 's ago';
+      if (s < 3600) return Math.round(s / 60) + 'm ago';
+      if (s < 86400) return Math.round(s / 3600) + 'h ago';
+      return Math.round(s / 86400) + 'd ago';
+    }
 
-        if (shareResult.status === 'fulfilled') {
-          const entries = Array.isArray(shareResult.value) ? shareResult.value : [];
-          setCard('shareHealth', 'shareDetail', 'OK', 'Recent-share proxy responded from the fridge-share service.');
-          setCard('recentCount', 'recentDetail', String(entries.length), entries.length ? `Newest hash: ${entries[0].shareId}` : 'No recent active shares were returned.');
-        } else {
-          setCard('shareHealth', 'shareDetail', 'Unavailable', 'Recent-share proxy failed.');
-          setCard('recentCount', 'recentDetail', 'Unknown', 'Could not load recent-share history.');
-          bridge.setNotice(notice, shareResult.reason instanceof Error ? shareResult.reason.message : 'Share service status is unavailable right now.', true);
-        }
+    function paint(state, text, when) {
+      sumLight.textContent = LOOK[state].glyph;
+      document.getElementById('summary').className = 'summary s-' + state;
+      sumText.textContent = text;
+      sumWhen.textContent = when || '';
+    }
+
+    function rows(services) {
+      listEl.setAttribute('aria-busy', 'false');
+      listEl.innerHTML = '';
+      services.forEach(function (svc) {
+        var look = LOOK[svc.state] || LOOK.unknown;
+        var li = document.createElement('li');
+        li.className = 'row s-' + (LOOK[svc.state] ? svc.state : 'unknown');
+        var g = document.createElement('span');
+        g.className = 'light'; g.setAttribute('aria-hidden', 'true');
+        g.textContent = look.glyph;
+        var n = document.createElement('span');
+        n.className = 'name'; n.textContent = svc.name;
+        var s = document.createElement('span');
+        s.className = 'state'; s.textContent = look.label;
+        var d = document.createElement('span');
+        d.className = 'detail'; d.textContent = svc.detail || '';
+        li.appendChild(g); li.appendChild(n); li.appendChild(s); li.appendChild(d);
+        listEl.appendChild(li);
       });
-    })();
+    }
+
+    // Everything grey, with a reason. Used when the node cannot be reached, or
+    // when it can but its reading is too old to still be true.
+    function allUnknown(reason, when) {
+      paint('unknown', reason, when);
+      var names = ['Web ingress', 'Identity (Keycloak)', 'DNS filtering (Pi-hole)', 'Freezer node'];
+      rows(names.map(function (n) { return { name: n, state: 'unknown', detail: '' }; }));
+    }
+
+    function load() {
+      fetch(ENDPOINT, { cache: 'no-store' })
+        .then(function (r) {
+          if (!r.ok) throw new Error('http ' + r.status);
+          return r.json();
+        })
+        .then(function (doc) {
+          var gen = Date.parse(doc.generated);
+          var ttl = (doc.ttl || 120) * 1000;
+          // A stale document is not evidence of health. Past 3 intervals the
+          // probe has stopped running, so report that instead of the old values.
+          if (isFinite(gen) && Date.now() - gen > ttl * 3) {
+            allUnknown('Status is stale', 'last reading ' + ago(gen));
+            return;
+          }
+          var svcs = doc.services || [];
+          rows(svcs);
+          var down = svcs.filter(function (s) { return s.state === 'down'; }).length;
+          var warn = svcs.filter(function (s) { return s.state === 'warn'; }).length;
+          var when = isFinite(gen) ? 'checked ' + ago(gen) : '';
+          if (down) paint('down', down + ' service' + (down > 1 ? 's' : '') + ' down', when);
+          else if (warn) paint('warn', warn + ' service' + (warn > 1 ? 's' : '') + ' degraded', when);
+          else paint('ok', 'All systems operational', when);
+        })
+        .catch(function () {
+          // Could be the node, could be this browser. Say so rather than guess.
+          allUnknown('Node unreachable from here', '');
+        });
+    }
+
+    load();
+    setInterval(load, REFRESH);
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) load();
+    });
+  })();
   </script>
 </body>
 </html>

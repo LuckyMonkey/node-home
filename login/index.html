@@ -7,141 +7,28 @@
   <meta name="robots" content="noindex">
   <meta name="theme-color" content="#020202">
   <link rel="icon" href="../logo.png">
+  <!-- Sign-in moved to the panel, which performs the OpenID Connect exchange
+       SERVER-SIDE. This page used to run the flow in the browser with PKCE; that
+       worked, but it could only ever prove who you are - it could not gate
+       anything, because this site is static. The panel can do both, so there is
+       no reason to keep a second authentication implementation alive here.
+       This page stays only so older links still land somewhere sensible. -->
+  <meta http-equiv="refresh" content="0; url=https://go.fridge.run/">
+  <link rel="canonical" href="https://go.fridge.run/">
   <link rel="stylesheet" href="../fridge-shell.css">
   <style>
-    body { display: grid; place-items: center; min-height: 100vh; }
-    .box { width: min(520px, 92vw); text-align: center; }
-    .box h1 { margin: 0 0 10px; font-size: clamp(18px, 2.2vw, 24px); text-transform: uppercase; letter-spacing: 0.04em; }
-    .box p { color: var(--muted); font-size: 13px; line-height: 1.65; }
-    .err { color: #f85149; }
-    .spin { display: inline-block; width: 13px; height: 13px; border: 2px solid var(--line); border-top-color: var(--ink); border-radius: 50%; animation: s 0.8s linear infinite; vertical-align: -2px; margin-right: 8px; }
-    @keyframes s { to { transform: rotate(360deg); } }
-    @media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+    body { display:grid; place-items:center; min-height:100vh; }
+    .box { width:min(480px,92vw); text-align:center; }
+    .box h1 { margin:0 0 10px; font-size:clamp(17px,2.1vw,22px); text-transform:uppercase; letter-spacing:.04em; }
+    .box p { color:var(--muted); font-size:13px; line-height:1.6; }
   </style>
 </head>
 <body>
   <main class="box">
-    <h1 id="title">Signing in</h1>
-    <p id="msg"><span class="spin" aria-hidden="true"></span>Handing you to the identity provider&hellip;</p>
-    <p id="alt" hidden><a class="btn btn-ghost" href="../">Back to fridge.run</a></p>
+    <h1>Taking you to your panel</h1>
+    <p>Sign-in happens on the node.</p>
+    <p><a class="btn btn-ghost" href="https://go.fridge.run/">Continue</a></p>
   </main>
-
-  <script src="../fridge-iam-config.js"></script>
-  <script>
-  (function () {
-    'use strict';
-    var cfg = window.__FRIDGE_IAM__ || {};
-    var AUTH  = cfg.issuer + '/protocol/openid-connect/auth';
-    var TOKEN = cfg.issuer + '/protocol/openid-connect/token';
-    var SK = 'fridge.run.oidc.pkce.v1';
-
-    var title = document.getElementById('title');
-    var msg = document.getElementById('msg');
-    var alt = document.getElementById('alt');
-
-    function fail(heading, detail) {
-      title.textContent = heading;
-      msg.className = 'err';
-      msg.textContent = detail;
-      alt.hidden = false;
-    }
-
-    function b64url(bytes) {
-      var s = '';
-      var a = new Uint8Array(bytes);
-      for (var i = 0; i < a.length; i++) s += String.fromCharCode(a[i]);
-      return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-    }
-    function rand(n) { return b64url(crypto.getRandomValues(new Uint8Array(n))); }
-
-    // Start the authorization-code flow. The verifier never leaves this browser;
-    // only its SHA-256 hash is sent, so an intercepted code cannot be redeemed.
-    function begin() {
-      var verifier = rand(48);
-      var state = rand(16);
-      var nonce = rand(16);
-      try {
-        sessionStorage.setItem(SK, JSON.stringify({ verifier: verifier, state: state, nonce: nonce }));
-      } catch (e) {
-        fail('Sign-in unavailable', 'This browser is blocking session storage, which the sign-in flow needs to protect the exchange.');
-        return;
-      }
-      crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)).then(function (h) {
-        var u = new URL(AUTH);
-        u.searchParams.set('client_id', cfg.clientId);
-        u.searchParams.set('redirect_uri', cfg.redirectUri);
-        u.searchParams.set('response_type', 'code');
-        u.searchParams.set('scope', 'openid profile email');
-        u.searchParams.set('state', state);
-        u.searchParams.set('nonce', nonce);
-        u.searchParams.set('code_challenge', b64url(h));
-        u.searchParams.set('code_challenge_method', 'S256');
-        location.assign(u.toString());
-      }).catch(function () {
-        fail('Sign-in unavailable', 'This browser does not expose WebCrypto, which PKCE requires.');
-      });
-    }
-
-    function claims(jwt) {
-      try {
-        var p = jwt.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-        return JSON.parse(decodeURIComponent(escape(atob(p))));
-      } catch (e) { return null; }
-    }
-
-    function finish(code, returnedState) {
-      var saved;
-      try { saved = JSON.parse(sessionStorage.getItem(SK) || 'null'); } catch (e) { saved = null; }
-      if (!saved) { fail('Sign-in expired', 'Start again from fridge.run.'); return; }
-      // Reject a code that came back under a state we did not issue.
-      if (returnedState !== saved.state) { fail('Sign-in rejected', 'The response did not match this browser’s request.'); return; }
-      sessionStorage.removeItem(SK);
-
-      var body = new URLSearchParams();
-      body.set('grant_type', 'authorization_code');
-      body.set('client_id', cfg.clientId);
-      body.set('code', code);
-      body.set('redirect_uri', cfg.redirectUri);
-      body.set('code_verifier', saved.verifier);
-
-      fetch(TOKEN, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: body.toString()
-      }).then(function (r) {
-        if (!r.ok) throw new Error('token ' + r.status);
-        return r.json();
-      }).then(function (tok) {
-        var c = claims(tok.id_token || '');
-        if (!c) throw new Error('no id_token');
-        if (c.nonce !== saved.nonce) throw new Error('nonce mismatch');
-        // Identity for display only. Nothing on this static site is gated by it;
-        // the node enforces access itself. Tokens are not persisted - Keycloak's
-        // own SSO session is what makes the next visit silent.
-        try {
-          sessionStorage.setItem('fridge.run.identity.v1', JSON.stringify({
-            email: c.email || c.preferred_username || '',
-            name: c.name || '',
-            groups: c.groups || [],
-            at: Date.now()
-          }));
-        } catch (e) { /* display nicety only */ }
-        location.replace('../status/');
-      }).catch(function (e) {
-        fail('Sign-in failed', 'The identity provider did not complete the exchange (' + e.message + ').');
-      });
-    }
-
-    var q = new URLSearchParams(location.search);
-    if (q.get('error')) {
-      fail('Sign-in declined', q.get('error_description') || q.get('error'));
-    } else if (q.get('code')) {
-      title.textContent = 'Completing sign-in';
-      finish(q.get('code'), q.get('state'));
-    } else {
-      begin();
-    }
-  })();
-  </script>
+  <script>location.replace('https://go.fridge.run/');</script>
 </body>
 </html>

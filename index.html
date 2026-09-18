@@ -13,11 +13,12 @@
        node, which holds the actual table and the actual session. Nothing secret
        is here, because there is nothing here to keep secret.
 
-       The URL people paste stays short: fridge.run?l=dN7 -->
+       The URL people paste stays short: fridge.run?l=dN7, and the shape is
+       preserved on the way over: go.fridge.run?l=dN7 -->
   <script>
   (function () {
     var m = /[?&]([lf])=([23456789abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ]{3})(?:&|$)/.exec(location.search);
-    if (m) { location.replace('https://go.fridge.run/' + m[1] + '/' + m[2]); }
+    if (m) { location.replace('https://go.fridge.run/?' + m[1] + '=' + m[2]); }
   })();
   </script>
   <title>fridge.run — Restricted Node</title>
@@ -62,10 +63,11 @@
 
       <p class="cta">
         <!-- Sign-in. Identity is Keycloak on this node's own domain; Google is not
-             involved. The button starts an OpenID Connect authorization-code flow
-             with PKCE (see login/) that returns here, to fridge.run - it is not a
-             bare link into Keycloak's own account console. -->
-        <a class="fridge-btn" href="./login/" data-iam-hook="signin"
+             involved. This goes straight to the panel, which runs the OpenID
+             Connect exchange SERVER-SIDE and then shows you your links, files and
+             services. Signing in lands you somewhere useful - not on a settings
+             page, and not back here. -->
+        <a class="fridge-btn" href="https://go.fridge.run/" data-iam-hook="signin"
            aria-label="Login with fridge.run">
           <picture>
             <source srcset="./media/login-with-fridge@2x.webp 2x, ./media/login-with-fridge.webp 1x" type="image/webp">

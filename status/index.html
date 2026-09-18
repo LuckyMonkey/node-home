@@ -200,45 +200,17 @@
         });
     }
 
-    // ---- who is looking ---------------------------------------------------
-    // Display only. Nothing on this static site is gated by it - a GitHub Pages
-    // site cannot enforce anything, and pretending otherwise would be theatre.
-    // The node does its own enforcement.
-    (function identity() {
+    // ---- the sign-in strip ------------------------------------------------
+    // This page is static and genuinely cannot know who is reading it, so it does
+    // not guess. It used to render an identity out of sessionStorage left behind
+    // by a browser-side login; that only ever described this one tab, and showing
+    // a name here implied a gate this page cannot enforce. The lights are public;
+    // everything else lives behind the panel, which does the checking.
+    (function signInStrip() {
       var el = document.getElementById('who');
-      var me = null;
-      try { me = JSON.parse(sessionStorage.getItem('fridge.run.identity.v1') || 'null'); } catch (e) {}
-
-      if (!me || !me.email) {
-        el.innerHTML = '<span class="said">You are not signed in. These lights are public; '
-          + 'anything else on this network requires identity.</span>'
-          + '<span class="act"><a href="../login/">Sign in</a></span>';
-        el.hidden = false;
-        return;
-      }
-
-      var groups = Array.isArray(me.groups) ? me.groups : [];
-      // Who may create, as opposed to merely open. Mirrors the node's own rule;
-      // this copy only decides wording, never access - the node decides that.
-      var mayCreate = groups.some(function (g) { return g === 'owner' || g === 'bestFriend'; });
-
-      el.innerHTML = '<span class="email"></span>'
-        + groups.map(function () { return '<span class="group"></span>'; }).join('')
-        + '<span class="act">'
-        +   (groups.length ? '<a href="https://go.fridge.run/">Sharing panel</a> &nbsp; ' : '')
-        +   '<a href="../login/">Switch user</a>'
-        + '</span>'
-        + '<span class="said"></span>';
-      // textContent throughout: claims come from a token, and a token is data.
-      el.querySelector('.email').textContent = me.email;
-      var chips = el.querySelectorAll('.group');
-      groups.forEach(function (g, i) { chips[i].textContent = g; });
-      el.querySelector('.said').textContent = !groups.length
-        ? 'You are signed in but belong to no group yet, so nothing is assigned to you.'
-        : mayCreate
-          ? 'Your sharing panel and chat are served from the node itself, not from this page.'
-          : 'You can open links and files shared with you. Creating them is limited to the '
-            + 'owner and bestFriend.';
+      el.innerHTML = '<span class="said">These lights are public. Everything else on this '
+        + 'network - shared links, files, chat - is behind sign-in.</span>'
+        + '<span class="act"><a href="https://go.fridge.run/">Sign in</a></span>';
       el.hidden = false;
     })();
 

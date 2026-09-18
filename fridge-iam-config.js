@@ -1,23 +1,17 @@
-// Identity configuration for fridge.run
+// Identity for fridge.run.
 //
-// fridge.run is served by GitHub Pages: static files, no server-side code.
-// A static page CANNOT enforce identity - anything it checks in JavaScript can
-// be bypassed by reading the source. So this page does not pretend to.
+// Keycloak on this network's own domain - not Google, not a third-party IdP.
+// Keycloak is first in line: identity is resolved on the public internet, and
+// only then does SSH over the tailnet become relevant.
 //
-// Instead the "Login with fridge.run" button hands off to Keycloak at
-// auth.fridge.run, which authenticates server-side and issues a session. The script reads
-// Session.getEffectiveUser().getEmail() - a value the browser cannot forge -
-// and checks it against an allowlist before returning anything or accepting a
-// write. The trust boundary is Apps Script, not this page.
-//
-// Set this to the /exec URL of the deployed Apps Script web app.
-// Leave it empty and the button explains that IAM is not yet wired up, rather
-// than pretending to sign you in.
+// `clientId` names a PUBLIC OAuth client. That is not an oversight: this site is
+// static GitHub Pages and cannot keep a secret, so it is not given one. PKCE
+// (S256) is what protects the flow instead.
 window.__FRIDGE_IAM__ = Object.assign(
   {
-    // e.g. 'https://script.google.com/macros/s/AKfycb.../exec'
-    endpoint: 'https://auth.fridge.run/',
-    // Shown to the user so it is obvious which identity system is in play.
+    issuer: 'https://auth.fridge.run/realms/fridge',
+    clientId: 'fridge-run-web',
+    redirectUri: 'https://fridge.run/login/',
     providerName: 'fridge.run'
   },
   window.__FRIDGE_IAM__ || {}

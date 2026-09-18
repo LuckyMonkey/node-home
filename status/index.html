@@ -7,7 +7,7 @@
   <meta name="description" content="Live service status for the fridge.run node.">
   <meta name="theme-color" content="#020202">
   <link rel="icon" href="../logo.png">
-  <link rel="stylesheet" href="../fridge-share-shell.css">
+  <link rel="stylesheet" href="../fridge-shell.css">
   <style>
     /* Status palette. These four are RESERVED for state and are never used as
        decoration, so a colour on this page always means something. Chosen for
@@ -50,6 +50,22 @@
     .s-down    .light, .s-down    .state { color: var(--down); }
     .s-unknown .light, .s-unknown .state { color: var(--unknown); }
 
+    .who {
+      margin: 18px 0 0; padding: 13px 18px;
+      border: 1px solid var(--line); border-radius: 14px; background: var(--panel);
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      font-size: 13px;
+    }
+    .who .email { font-weight: 600; }
+    .who .group {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em;
+      color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px;
+    }
+    .who .said { color: var(--muted); font-size: 12px; flex-basis: 100%; line-height: 1.55; }
+    .who .act { margin-left: auto; }
+    .who a { color: var(--muted); text-decoration: none; font-size: 12px; text-transform: uppercase; letter-spacing: 0.07em; }
+    .who a:hover { color: var(--ink); }
+
     .note { margin: 20px 0 0; font-size: 12px; line-height: 1.65; color: var(--muted); }
     .note code { color: var(--ink); }
     .skeleton { color: var(--muted); font-size: 13px; padding: 20px 18px; }
@@ -70,6 +86,8 @@
       <h1>Node Status</h1>
       <a href="../">&larr; fridge.run</a>
     </div>
+
+    <div class="who" id="who" hidden></div>
 
     <div class="summary" id="summary">
       <span class="light" id="sumLight" aria-hidden="true">&#9679;</span>
@@ -181,6 +199,40 @@
           allUnknown('Node unreachable from here', '');
         });
     }
+
+    // ---- who is looking ---------------------------------------------------
+    // Display only. Nothing on this static site is gated by it - a GitHub Pages
+    // site cannot enforce anything, and pretending otherwise would be theatre.
+    // The node does its own enforcement.
+    (function identity() {
+      var el = document.getElementById('who');
+      var me = null;
+      try { me = JSON.parse(sessionStorage.getItem('fridge.run.identity.v1') || 'null'); } catch (e) {}
+
+      if (!me || !me.email) {
+        el.innerHTML = '<span class="said">You are not signed in. These lights are public; '
+          + 'anything else on this network requires identity.</span>'
+          + '<span class="act"><a href="../login/">Sign in</a></span>';
+        el.hidden = false;
+        return;
+      }
+
+      var groups = Array.isArray(me.groups) ? me.groups : [];
+      var frag = '<span class="email"></span>';
+      el.innerHTML = frag
+        + groups.map(function () { return '<span class="group"></span>'; }).join('')
+        + '<span class="act"><a href="../login/">Switch user</a></span>'
+        + '<span class="said"></span>';
+      // textContent throughout: claims come from a token, and a token is data.
+      el.querySelector('.email').textContent = me.email;
+      var chips = el.querySelectorAll('.group');
+      groups.forEach(function (g, i) { chips[i].textContent = g; });
+      el.querySelector('.said').textContent = groups.length
+        ? 'No panels are provisioned for ' + groups.join(' or ') + ' yet. When they exist they will '
+          + 'be served from the node itself, not from this page.'
+        : 'You are signed in but belong to no group yet, so nothing is assigned to you.';
+      el.hidden = false;
+    })();
 
     load();
     setInterval(load, REFRESH);

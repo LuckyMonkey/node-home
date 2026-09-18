@@ -75,6 +75,28 @@ explanation rather than pretending to work.
 
 # Test procedure
 
+## Offline first — the decision logic
+
+```sh
+node apps-script/test-authz.js
+```
+
+Apps Script cannot run locally, so this loads `Code.gs` with the Google globals
+stubbed and drives `doGet()` through every deployment scenario, asserting both
+the verdict and that denials leak nothing. 8 cases, including the bypass that
+this boundary previously had.
+
+It is a real regression test, not a formality: run against the pre-fix file
+(`git show be500cb:apps-script/Code.gs`) the bypass scenario resolves a stranger
+to `owner@example.com` and reports `authorised: YES`. Against the current file
+it resolves to `""` and denies.
+
+This covers the *logic*. It cannot cover Google's authentication — only the
+live `/exec` URL does that, below.
+
+## Live — the deployed boundary
+
+
 Run `selfTest()` from the editor first. It logs both identity calls, the
 allowlist size and whether `SHEET_ID` is set. Note its own caveat: **running
 from the editor you are always the owner**, so it cannot prove the deployed mode

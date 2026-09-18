@@ -6,6 +6,14 @@ no ports opened, no users created. The working Apps Script boundary is untouched
 Scope: how `charlie@fridge.run` becomes a *real* identity, and who is allowed to
 assert it.
 
+> **Amended 2026-09-17.** The first version of this document asserted that
+> authorization should be re-keyed from email to `(iss, sub)` "now, independent
+> of everything else". **That was wrong.** Verification against Google's
+> reference documentation established that the current architecture cannot
+> obtain a trustworthy caller `sub` at all. The claim is corrected in §1, §2,
+> the trust-chain section below, §8 and §9. The email allowlist stands
+> unchanged, for reasons now made explicit.
+
 ## The invariant
 
 ```
@@ -19,6 +27,34 @@ query parameter, a claimed email — may ever become authoritative identity.
 
 ---
 
+## The current trust chain (as deployed today)
+
+```
+Google deployment access control        who may invoke the script at all
+            │                           ("Who has access: Only myself")
+            ▼
+Session.getActiveUser().getEmail()      Google-verified caller email
+            │                           (server-side; never browser-supplied)
+            ▼
+fridge.run authorization                ALLOWLIST check in Apps Script
+                                        (fail closed)
+```
+
+**Both links are load-bearing.** The email allowlist is acceptable *only* in
+conjunction with Google's access control restricting invocation to the owner.
+Email is **not** treated as an immutable principal identifier, and this document
+does not claim it is one. It is a Google-verified attribute that happens to be
+sufficient while the set of possible callers is exactly one.
+
+Rules that hold regardless of architecture:
+
+- **Missing caller identity always means DENY.** A blank email is not "unknown,
+  proceed" — it is a denial. The code fails closed on blank precisely because
+  blank is what Google returns when it will not identify the caller.
+- **There must never be a fallback from caller identity to effective/executing
+  identity.** That substitution caused the bypass fixed in `bb46c71`, and it is
+  equally fatal at the token layer (see §1).
+
 ## 1. What was verified, and what was not
 
 Security-relevant claims, checked against primary sources on **2026-09-17**:
@@ -30,6 +66,9 @@ Security-relevant claims, checked against primary sources on **2026-09-17**:
 | OIDC `sub` is stable and never reassigned | [OIDC Core §2](https://openid.net/specs/openid-connect-core-1_0.html) | **Confirmed verbatim**: "A locally unique and **never reassigned** identifier within the Issuer for the End-User" |
 | Cloud Identity **Free**: custom domain, ~50 users, **no Gmail**, no cost | [Cloud Identity editions](https://docs.cloud.google.com/identity/docs/editions) | **Confirmed** |
 | Keycloak ≈1 GB RAM; Authentik ≈250–350 MB; Authelia <30 MB (forward-auth); Pocket ID ≈256 MB, passkey-first | vendor/comparison sources (secondary) | **Indicative, not primary.** Verify before committing |
+| Apps Script `Class User` exposes **no** subject identifier | [Class User](https://developers.google.com/apps-script/reference/base/user) | **Confirmed.** Only `getEmail()` and deprecated `getUserLoginId()`. No user id, no `sub` |
+| `ScriptApp.getIdentityToken()` identifies the **effective user**, needs `openid` scope (not default), may return `null` | [Class ScriptApp](https://developers.google.com/apps-script/reference/script/script-app) | **Confirmed.** Also true of `getOAuthToken()` |
+| Google: *"Don't use the `email` field as a unique identifier… Always use the `sub` field"*; `sub` *"never reused"*, *"never changed"*; `hd` *"must check this claim when restricting access"* | [Google OIDC](https://developers.google.com/identity/openid-connect/openid-connect) | **Confirmed verbatim** |
 
 **Not verified — do not rely on these as quoted:**
 
@@ -58,15 +97,31 @@ Conflating these is the central risk. They are independent.
 | **`email_verified` claim** | issuer asserts it checked control *at some past moment* | the issuer | Only as strong as the issuer, and **only about the past** |
 | **Domain ownership** | DNS control over `fridge.run` | whoever holds the registrar account | Foundational, but a different fact |
 
-**The rule that follows:** authorization must key on **`(iss, sub)`**, never on an
-email string. Email is a *label* that may be displayed and may be used for
-initial enrolment, never a key.
+**The rule that follows:** *where `(iss, sub)` is obtainable*, authorization must
+key on it rather than on an email string. Google states this directly: **"Don't
+use the `email` field as a unique identifier for a user. Always use the `sub`
+field."**
 
-> **This is a live defect.** `apps-script/Code.gs` currently keys `ALLOWLIST` on
-> lowercased email (`isAuthorised_`). It is safe *today* only because Google is
-> the sole issuer and controls the mailbox namespace. It becomes unsafe the
-> moment a second issuer exists, or an address is reassigned. Fixing this is the
-> recommended next step (§8).
+> ### Why this rule cannot be applied in the current architecture
+>
+> **`(iss, sub)` is unavailable as caller identity here.** Verified:
+>
+> 1. **`Session` exposes no immutable caller subject.** `Class User` has only
+>    `getEmail()` and a deprecated alias — no id, no `sub`.
+> 2. **`ScriptApp.getIdentityToken()` identifies the *effective user*, not the
+>    caller.** Under `Execute as: Me` the effective user is the **script owner**,
+>    so the token's `sub` is the **owner's** for *every* visitor. Treating it as
+>    caller identity would reproduce the `bb46c71` bypass exactly, at the token
+>    layer instead of the email layer. **It must not be used as caller identity
+>    under Execute-as-Me.**
+> 3. Obtaining a caller ID token therefore requires **both** an `openid` manifest
+>    scope **and** `Execute as: User accessing the web app`.
+>
+> So `apps-script/Code.gs` keying `ALLOWLIST` on lowercased email is **not a
+> defect to fix now**. It is the only caller-attributable identity the platform
+> offers, and it is sound *in combination with* Google restricting invocation to
+> the owner. What would be a defect is claiming email is an immutable principal
+> identifier. It is not, and nothing here relies on it being one.
 
 ### Today's DNS reality
 
@@ -83,7 +138,9 @@ adopting a Google-hosted mailbox would collide with the existing forwarding.
 charlie@fridge.run  ──►  Google (Cloud Identity Free, domain fridge.run)
                               │  authenticates, issues ID token / session
                               ▼
-                         Apps Script  ──►  authorizes on (iss, sub)
+                         Apps Script  ──►  authorizes on caller identity
+                                           (email today; (iss, sub) only if
+                                            deployed Execute-as-User — see §2)
                               ▼
                          fridge.run services
 ```
@@ -95,6 +152,7 @@ charlie@fridge.run  ──►  Google (Cloud Identity Free, domain fridge.run)
 | Issues sessions/tokens | Google |
 | Apps verify tokens | Google libraries / Apps Script's built-in identity |
 | Authorization & roles | **fridge.run**, in Apps Script (and later a roles store) |
+| Caller `(iss, sub)` available? | **Only** under `Execute as: User accessing`. Not under the currently recommended `Execute as: Me` |
 | Email address | Independent. Cloud Identity Free has **no Gmail**, so existing Namecheap MX forwarding can remain |
 | OIDC/OAuth2 | Yes, mature |
 | MFA / passkeys | Yes — Google supports passkeys and hardware keys today |
@@ -240,12 +298,33 @@ Reasoning specific to this environment, not in general:
 
 **Staged plan:**
 
-- **Stage 0 (now, independent of everything else).** Re-key authorization from
-  email to **`(iss, sub)`**. This is correct under *every* future architecture and
-  removes the latent defect described in §2.
+- **Stage 0 — WITHDRAWN.** This previously read "re-key authorization from email
+  to `(iss, sub)` now, independent of everything else". That is **not possible**
+  in the current architecture: `Session` exposes no caller subject, and
+  `ScriptApp.getIdentityToken()` returns the *effective* user — the owner — under
+  `Execute as: Me`. See §2. **Leave the email allowlist unchanged.** There is no
+  safe re-key available without first changing the deployment model, and that
+  change is not free (below).
 - **Stage 1 (when `charlie@fridge.run` is genuinely wanted).** Adopt **Cloud
   Identity Free**, after verifying domain verification needs no MX change. Keep
   Namecheap forwarding for mail. Identity and email stay separate.
+
+> ### Switching to `Execute as: User accessing` is a security architecture
+> ### change, not a deployment toggle
+>
+> It is the only way to obtain caller `(iss, sub)` — and it **removes a security
+> layer** while adding one. Today, two independent controls apply: Google refuses
+> to invoke the script for anyone but the owner, *and* the allowlist checks.
+> Under `Execute as: User accessing` + `Anyone with a Google Account`, Google's
+> caller restriction is **gone** and the allowlist becomes the sole control.
+>
+> It also changes the script's execution identity: it then runs with **each
+> caller's** permissions, so every resource it touches must be shared with them.
+>
+> **Requires a fresh threat-model review before adoption**, covering at minimum:
+> sole-control failure modes of the allowlist, token replay and lifetime,
+> redirect/CSRF exposure on a now-public endpoint, and what an unlisted-but-
+> authenticated caller can observe. Do not treat it as flipping a setting.
 - **Stage 2 (only if a real trigger appears).** Self-host an IdP — and if so,
   **not on fridge**, and passkey-first (Pocket ID) over Keycloak unless SAML or
   federation is genuinely needed. Triggers: needing login during WAN outages;
@@ -263,21 +342,42 @@ secret that authenticates a human, that line has been crossed.
 The current design survives either future, because it already separates
 authentication (Google) from authorization (Apps Script).
 
-1. **Re-key to `(iss, sub)`** — email becomes a display label only.
-2. **Move the allowlist to a roles map** — `sub → [roles]` — still in Script
-   Properties, still fail-closed.
-3. **Services consume roles, not identities** — a service asks "does this caller
+1. **Keep the email allowlist for now.** Caller `(iss, sub)` is unavailable in
+   this architecture (§2). Do not synthesise a substitute identifier — a
+   fabricated principal id is worse than an honest attribute, because it looks
+   authoritative while carrying no guarantee.
+2. **Introduce an internal principal id when, and only when, a real external
+   subject exists.** The durable shape is:
+
+   ```
+   validated (iss, sub)  ─────►  internal fridge.run principal
+      external identity            the thing roles attach to
+                                   (stable, issuer-independent)
+
+   email, hd, display name  ────►  attributes / constraints on that principal
+                                   never the primary identity
+   ```
+
+   `hd` in particular is a **constraint** — Google requires checking it when
+   restricting access to a domain — not an identifier.
+3. **Move the allowlist to a roles map** keyed on the internal principal, still
+   in Script Properties, still fail-closed.
+4. **Services consume roles, not identities** — a service asks "does this caller
    hold role X", never "is this caller charlie".
-4. **Swap the issuer later** if ever needed. Only step 1's key changes; steps 2
-   and 3 are unaffected. That is the whole point of keying on `(iss, sub)`.
+5. **Swap the issuer later** if ever needed. Only the external-identity mapping
+   in step 2 changes; steps 3 and 4 are unaffected. That indirection is the point:
+   it is what makes the issuer replaceable.
 
 ---
 
 ## 10. Lock-in and recovery dependencies
 
 **Things that would create lock-in — avoid:**
-- Keying authorization on email (today's defect). Re-keying later requires
-  re-enrolling every user.
+- **Keying authorization on email *once a real subject identifier exists*.**
+  Today email is the only caller-attributable identity Apps Script offers, so it
+  is not a defect — but it must not outlive that constraint. Re-keying later
+  requires re-enrolling every user, so introduce the internal principal id at the
+  same moment a validated `(iss, sub)` first becomes available, not after.
 - Letting the IdP own roles. Roles in fridge.run stay portable across issuers.
 - Making fridge.run services depend on Apps Script *specifically*, rather than on
   "a verified `(iss, sub)` plus roles".

@@ -20,64 +20,48 @@ GitHub Pages is configured in **legacy mode**, publishing the `main` branch at `
 
 | Path | Purpose |
 |---|---|
-| `index.html` | Access notice — entry page and the IAM hook |
-| `dashboard/` | Node dashboard; renders `status.json` |
-| `status.json` | Committed telemetry snapshot |
-| `tools/collect-fridge-status.sh` | Regenerates the snapshot |
-| `fridge-share-shell.css` | **The** stylesheet — every page uses this one |
+| `index.html` | Access notice — entry page and the sign-in button |
+| `status/` | Live node status; renders the node's own status document |
+| `login/` | OpenID Connect handoff to Keycloak |
+| `404.html` | Not-found page |
+| `fridge-shell.css` | **The** stylesheet — every page uses this one |
+| `fridge-iam-config.js` | Identity provider endpoint |
+| `.well-known/webfinger` | OIDC issuer discovery for `@fridge.run` addresses |
 | `media/warning-wall/` | Video-wall clips |
-| `docs/` | Written documentation |
-| `index.js`, `tools/`, `d.css`, `docker-compose.yml` | Express dashboard meant to run *on the node*, where real auth is possible |
+| `docs/architecture/` | Design documentation |
 
-## Refreshing the dashboard
+This site is **four pages**. It deliberately links to no dashboards and no group
+panels: those live behind identity, on the node, where a server can actually enforce
+access. A static site cannot, so it does not pretend to.
 
-```sh
-tools/collect-fridge-status.sh > status.json
-git add status.json && git commit -m "Refresh node status" && git push
-```
+## Status is measured, not committed
 
-The collector is **read-only** and needs no elevated privileges. It gathers host facts
-over SSH and measures service health by **functional probe** — asking each service
-whether it actually answers, rather than asking Docker whether a container is running.
-A container that is "up" but no longer serving is a failure, and probing catches it.
+`status/` fetches `https://auth.fridge.run/status.json`, which is produced on the node
+by `/usr/local/bin/fridge-status-probe` under a systemd timer, once a minute.
 
-Override the target with `FRIDGE_SSH` and `FRIDGE_IP` if addresses change.
+This replaced a hand-committed `status.json` snapshot. That snapshot was frozen at the
+moment someone last ran the collector, which meant the page reported every service
+healthy for as long as nobody refreshed it — a status page that could not go red.
 
-## What is real
+Design rules for that page:
 
-The previous site blurred this line, so it is stated plainly:
+- **Stale is not healthy.** Past three intervals the lights go grey and say so.
+- **Unreachable is not healthy.** If the fetch fails, grey, not green.
+- **Colour is never the only signal.** Every row carries a colour, a glyph shape and a
+  text label, so the page still reads under colour-blindness or in greyscale.
+- **Names and states only.** No addresses, ports, versions or counts are published.
 
-- **Real:** dashboard metrics, service health, disk usage, backup progress, the video wall.
-- **Not real:** the "Proceed" button is a plain link, not authentication. Uploads and
-  writes are unavailable.
+## Identity
 
-## Why there is no IAM
+Sign-in goes to **Keycloak on this network's own domain** (`auth.fridge.run`), not to a
+third-party identity provider. Keycloak is first in line: identity is resolved on the
+public internet, and only then does SSH over the tailnet become relevant.
 
-GitHub Pages serves static files and runs no server-side code, so **any login written in
-client-side JavaScript is decoration** — readable and bypassable in page source. Rather
-than ship security theatre, the sign-in point is marked as a hook
-(`data-iam-hook="proceed"`) and left honest.
-
-Real identity requires one of:
-
-| Approach | Public read | Real auth | Trade-off |
-|---|---|---|---|
-| Google Apps Script backend | yes | yes, verified server-side | Apps Script becomes the trust boundary |
-| Serve from the node | tailnet only | yes | not publicly reachable |
-| Reverse proxy on a VPS | yes | yes | recurring cost, another host |
-
-The node is behind **CGNAT** and cannot accept inbound connections. Tailscale solves
-reachability for known devices, but **Tailscale Funnel only serves its own `*.ts.net`
-hostname** and cannot present a valid certificate for `fridge.run`, so Funnel alone
-cannot put this domain in front of the node.
-
-## Share bridge
-
-`fridge-share-config.js` sets `origin` for the share bridge. It is intentionally **empty**.
-It used to hold an ephemeral Cloudflare quick-tunnel hostname that had long expired, so
-every share link resolved to a dead host. Quick tunnels are randomly named and vanish when
-`cloudflared` stops, so they must never be committed as durable config. Set `origin` only
-to a hostname the node reliably answers on.
+The node is **not** behind CGNAT — an earlier version of this file assumed it was. That
+was disproven directly: Let's Encrypt's validation servers reached this box from the
+public internet over `tls-alpn-01` on port 443 and issued a publicly trusted certificate
+for `auth.fridge.run`. ACME can only validate by connecting inbound, so the certificate
+is itself the proof.
 
 ## Related
 

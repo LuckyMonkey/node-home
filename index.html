@@ -86,9 +86,16 @@
       ];
       const wall = document.getElementById('videoWall');
       const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      // Respect data-saver and very low-core devices: skip the wall entirely.
+      const saveData = (navigator.connection || {}).saveData === true;
+      const weak = (navigator.hardwareConcurrency || 8) <= 4;
 
-      if (wall && !reduce) {
-        const count = window.matchMedia('(max-width: 680px)').matches ? 18 : 30;
+      if (wall && !reduce && !saveData) {
+        // Tile count was 30. Each tile is an independent H.264 decoder, so the
+        // cost is decoders x resolution x framerate - not file size. The clips
+        // are now 180x320@15fps (was 540x960@30fps), and fewer tiles are drawn.
+        // Together that is roughly 39x less decode work than before.
+        const count = window.matchMedia('(max-width: 680px)').matches ? 8 : (weak ? 8 : 14);
         for (let i = 0; i < count; i += 1) {
           const tile = document.createElement('article');
           tile.className = 'tile';
@@ -105,7 +112,9 @@
             if (Number.isFinite(video.duration) && video.duration > 0.2) {
               video.currentTime = Math.max(0, (i * 1.17) % (video.duration - 0.1));
             }
-            video.play().catch(() => {});
+            // Stagger playback start. Starting every decoder in the same frame
+            // causes a visible hitch on load even when each one is cheap.
+            setTimeout(() => video.play().catch(() => {}), i * 60);
           }, { once: true });
           tile.appendChild(video);
           wall.appendChild(tile);

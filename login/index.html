@@ -45,13 +45,16 @@
       </button>
 
       <p class="note" id="explain">
-        This hands you to <b>Google</b>, which verifies who you are, and then to the
-        node's Apps Script endpoint. That endpoint checks your verified email
-        against an allowlist <b>server-side</b> before returning anything.
+        This hands you to <b>Google</b>, which authenticates you, and then to the
+        node's Apps Script endpoint. That endpoint reads the identity
+        <b>Google</b> supplies server-side and checks it against an allowlist
+        before returning anything. It fails closed: an unknown account — or an
+        unset allowlist — denies access.
         <br><br>
-        This page is static and therefore cannot enforce identity itself — so it
-        doesn't try to. Nothing here is a security control; the check happens
-        where you can't reach it.
+        This page is static and therefore cannot enforce identity itself, so it
+        doesn't try to. Nothing here is a security control, and knowing the
+        endpoint URL grants nothing on its own. The check happens server-side,
+        where your browser cannot reach it.
       </p>
 
       <p style="margin:16px 0 0;font-size:13px;">

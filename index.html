@@ -174,7 +174,17 @@
         }
       }
       // Start them a beat apart - starting nine decoders in one frame hitches.
-      videos.forEach(function (v, k) { setTimeout(function () { var p = v.play(); if (p && p.catch) p.catch(function () {}); }, 120 * k); });
+      // Phones in low-power or data-saver mode refuse silent autoplay: then the
+      // stills stay up and the wall starts on the first tap or scroll instead.
+      var blocked = false;
+      function start(v) { var p = v.play(); if (p && p.catch) p.catch(function () { blocked = true; }); }
+      videos.forEach(function (v, k) { setTimeout(function () { start(v); }, 120 * k); });
+      function wake() {
+        if (!blocked) return;
+        blocked = false;
+        videos.forEach(start);
+      }
+      ['pointerdown', 'touchstart', 'keydown', 'scroll'].forEach(function (ev) { window.addEventListener(ev, wake, { passive: true }); });
       // Nobody is watching a hidden tab: stop decoding.
       document.addEventListener('visibilitychange', function () {
         videos.forEach(function (v) { if (document.hidden) { v.pause(); } else { var p = v.play(); if (p && p.catch) p.catch(function () {}); } });

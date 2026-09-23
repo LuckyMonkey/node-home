@@ -75,11 +75,12 @@ h1 { margin: 0; letter-spacing: -.02em; line-height: 1.15; }
   color: var(--ink); text-decoration: none; cursor: pointer; background: linear-gradient(180deg, #ffffff 0%, #eef0f3 100%); border: 1px solid #aeb3bd;
   border-radius: 11px; padding: 11px 17px; box-shadow: 0 1px 0 #fff inset, 0 2px 4px rgba(0, 0, 0, .14); transition: transform .1s ease, border-color .1s ease;
 }
-.btn:hover, .button:hover { border-color: var(--ink-2); transform: translateY(-1px); }
+.btn:hover, .button:hover { border-color: color-mix(in srgb, var(--place, #2bb59c) 70%, white); transform: translateY(-1px);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--place, #2bb59c) 22%, transparent), 0 4px 12px color-mix(in srgb, var(--place, #2bb59c) 25%, transparent); }
 .btn:focus-visible, .button:focus-visible { outline: none; box-shadow: var(--focus); }
 .btn.primary, .button.primary { background: linear-gradient(180deg, #1c8c77 0%, var(--mint-strong) 100%); border-color: #0f5f50; color: #fff;
   text-shadow: 0 1px 0 rgba(0, 0, 0, .25); box-shadow: 0 1px 0 rgba(255, 255, 255, .25) inset, 0 4px 12px rgba(21, 122, 103, .45); }
-.btn.primary:hover { background: #0f6a59; }
+.btn.primary:hover { background: linear-gradient(120deg, #157a67, #1f64c4); border-color: transparent; }
 .btn.primary::after { content: "→"; font-size: 16px; }
 .btn-ghost { background: var(--paper); }
 
@@ -108,3 +109,13 @@ h1 { margin: 0; letter-spacing: -.02em; line-height: 1.15; }
 .bar .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); font-weight: 800; }
 .bar .brand img { width: 32px; height: 32px; border-radius: 9px; }
 .bar .back-btn img { width: auto; height: 40px; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .25)); }
+
+/* links with flair: a gradient that slides to a third colour on hover, never dark */
+.panel a:not([class]), .card a:not([class]), .note a:not([class]) {
+  font-weight: 650; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px;
+  text-decoration-color: rgba(47, 125, 225, .45);
+  background-image: linear-gradient(90deg, #1e8f7a, #2f7de1 50%, #b0459b); background-size: 200% 100%;
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: #1e8f7a;
+  transition: background-position .35s ease, text-decoration-color .35s ease;
+}
+.panel a:not([class]):hover, .card a:not([class]):hover, .note a:not([class]):hover { background-position: 100% 0; text-decoration-color: #b0459b; }

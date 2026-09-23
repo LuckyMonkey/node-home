@@ -10,7 +10,8 @@
        holds the table and the session. -->
   <script>
   (function () {
-    var m = /[?&]([lf])=([23456789abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ]{3})(?:&|$)/.exec(location.search);
+    var m = /[?&]([lf])=([23456789abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ]{3})(?:&|$)/.exec(location.search)
+         || /[?&](a)=([23456789abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ]{5})(?:&|$)/.exec(location.search);   // automated link: portal first
     if (m) { location.replace('https://go.fridge.run/?' + m[1] + '=' + m[2]); }
   })();
   </script>

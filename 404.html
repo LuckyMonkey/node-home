@@ -3,29 +3,32 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>fridge.run — Not Found</title>
-  <meta name="theme-color" content="#020202">
+  <title>Not found — fridge.run</title>
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#15161a">
   <link rel="icon" href="/logo.png">
   <link rel="stylesheet" href="/fridge-shell.css">
   <style>
-    body { display: grid; place-items: center; min-height: 100vh; }
-    .box { width: min(560px, 92vw); text-align: center; }
-    .box h1 { margin: 0; font-size: clamp(19px, 2.4vw, 28px); text-transform: uppercase; letter-spacing: 0.05em; }
-    .box p { color: var(--muted); font-size: 13px; line-height: 1.65; margin: 14px 0 22px; }
-    .box .btn { text-decoration: none; }
+    body { display: grid; place-items: center; padding: 20px 16px; }
+    main { width: min(460px, 100%); text-align: center; }
+    .panel { --place: var(--c-go); }
+    .emoji { font-size: 44px; line-height: 1; margin-bottom: 8px; }
+    h1 { font-size: 24px; margin: 0 0 6px; }
+    p { color: var(--ink-2); margin: 0 0 18px; }
+    .row { display: flex; gap: 12px; justify-content: center; align-items: center; flex-wrap: wrap; }
+    hr { border: 0; height: 1px; background: var(--paper-3); margin: 20px 0 14px; }
   </style>
 </head>
 <body>
-  <main class="box">
-    <h1>404 &mdash; Not Found</h1>
-    <p>
-      That page is not here. The file-sharing routes this site used to carry were
-      removed along with the temporary bridge that served them.
-    </p>
-    <p>
-      <a class="btn btn-ghost" href="/">fridge.run</a>
-      <a class="btn btn-ghost" href="/status/">Node status</a>
-    </p>
+  <main>
+    <header class="bar"><a class="brand" href="/"><img src="/logo.png" alt=""><span>fridge.run</span></a><a class="back-btn" href="/"><picture><source type="image/webp" srcset="/media/back-button.webp 1x, /media/back-button@2x.webp 2x"><img src="/media/back-button.png" srcset="/media/back-button@2x.png 2x" width="200" height="55" alt="Back to fridge.run"></picture></a></header>
+    <section class="panel">
+      <div class="emoji" aria-hidden="true">🔍</div>
+      <h1>Nothing here</h1>
+      <p>That page doesn't exist on fridge.run.</p>
+      <a class="report-btn" id="report" href="https://go.fridge.run/report?code=404"><picture><source type="image/webp" srcset="/media/report-bug.webp 1x, /media/report-bug@2x.webp 2x"><img src="/media/report-bug.png" srcset="/media/report-bug@2x.png 2x" width="220" height="77" alt="Report this problem"></picture></a>
+    </section>
   </main>
+  <script>document.getElementById('report').href += '&from=' + encodeURIComponent(location.href);</script>
 </body>
 </html>

@@ -19,12 +19,12 @@
       --unknown: #8b949e;
     }
     body { min-height: 100vh; }
-    .wrap { width: min(760px, 94vw); margin: 0 auto; padding: 42px 0 60px; }
+    .wrap { width: min(760px, 94vw); margin: 0 auto; padding: 22px 0 60px; }
 
     .head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-    .head h1 { margin: 0; font-size: clamp(19px, 2.3vw, 26px); text-transform: uppercase; letter-spacing: 0.04em; }
-    .head a { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; text-decoration: none; }
-    .head a:hover { color: var(--ink); }
+    .head { align-items: center; }
+    .head h1 { display: flex; align-items: center; gap: 12px; margin: 0; font-size: clamp(24px, 3.4vw, 30px); color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,.65); }
+    .head h1 .ico { --place: var(--c-status); width: 46px; height: 46px; font-size: 24px; border-radius: 14px; background: #fff; box-shadow: var(--shadow); text-shadow: none; }
 
     /* The headline verdict. Its dot is decorative only - the WORDS carry it. */
     .summary {
@@ -66,8 +66,11 @@
     .who a { color: var(--muted); text-decoration: none; font-size: 12px; text-transform: uppercase; letter-spacing: 0.07em; }
     .who a:hover { color: var(--ink); }
 
-    .note { margin: 20px 0 0; font-size: 12px; line-height: 1.65; color: var(--muted); }
-    .note code { color: var(--ink); }
+    .note { margin: 18px 0 0; font-size: 13px; line-height: 1.6; color: #dfe2e8; text-shadow: 0 1px 8px rgba(0,0,0,.7); text-align: center; }
+    .note code { color: #fff; }
+    .summary, .list, .who { box-shadow: var(--shadow); }
+    .summary .big { color: var(--ink); }
+    .foot { margin-top: 22px; text-align: center; }
     .skeleton { color: var(--muted); font-size: 13px; padding: 20px 18px; }
 
     @media (max-width: 560px) {
@@ -82,9 +85,9 @@
 </head>
 <body>
   <main class="wrap">
+    <header class="bar"><a class="brand" href="/"><img src="/logo.png" alt=""><span>fridge.run</span></a><a class="back-btn" href="/"><picture><source type="image/webp" srcset="/media/back-button.webp 1x, /media/back-button@2x.webp 2x"><img src="/media/back-button.png" srcset="/media/back-button@2x.png 2x" width="200" height="55" alt="Back to fridge.run"></picture></a></header>
     <div class="head">
-      <h1>Node Status</h1>
-      <a href="../">&larr; fridge.run</a>
+      <h1><span class="ico" aria-hidden="true">📡</span>Status</h1>
     </div>
 
     <div class="who" id="who" hidden></div>
@@ -99,12 +102,7 @@
       <li class="skeleton">Contacting the node&hellip;</li>
     </ul>
 
-    <p class="note">
-      These lights are measured on the node itself, once a minute, and served from it
-      directly &mdash; this page is static and cannot invent a reading. If the node is
-      off or unreachable, the lights go grey rather than green. Service names and
-      up/down state are all that is published here.
-    </p>
+    <p class="note">Measured on the node every minute. Grey means it can't be reached.</p>
   </main>
 
   <script>

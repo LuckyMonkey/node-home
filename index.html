@@ -1,143 +1,188 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="checking">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- SHORT-LINK SHIM. Runs before anything else in the document, so a share
-       link never pays for the video wall.
-
-       This apex is GitHub Pages: static. It cannot look up a hash, cannot check
-       whether you are signed in, and cannot serve a file - so it does none of
-       those things. It only recognises the SHAPE of a code and hands it to the
-       node, which holds the actual table and the actual session. Nothing secret
-       is here, because there is nothing here to keep secret.
-
-       The URL people paste stays short: fridge.run?l=dN7, and the shape is
-       preserved on the way over: go.fridge.run?l=dN7 -->
+  <!-- SHORT-LINK SHIM. Runs before anything else, so a share link never pays for
+       the video wall. This site is static (GitHub Pages): it only recognises the
+       SHAPE of a code - fridge.run?l=dN7 - and hands it to go.fridge.run, which
+       holds the table and the session. -->
   <script>
   (function () {
     var m = /[?&]([lf])=([23456789abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ]{3})(?:&|$)/.exec(location.search);
     if (m) { location.replace('https://go.fridge.run/?' + m[1] + '=' + m[2]); }
   })();
   </script>
-  <title>fridge.run — Restricted Node</title>
-  <meta name="description" content="Access notice for fridge.run, a self-hosted home infrastructure node.">
-  <meta name="theme-color" content="#020202">
+  <title>fridge.run</title>
+  <meta name="description" content="fridge.run - a private, invite-only home network.">
+  <meta name="theme-color" content="#0e0f12">
   <link rel="icon" href="./logo.png">
+  <link rel="preload" as="image" href="./media/wall/IMG_8065.jpg">
   <link rel="stylesheet" href="./fridge-shell.css">
   <style>
-    /* page-specific: centre the notice over the wall */
-    body { display: grid; place-items: center; min-height: 100vh; }
-    .notice { width: min(940px, 94vw); text-align: center; }
-    .notice h1 { margin: 0; font-size: clamp(17px, 2vw, 26px); line-height: 1.34; text-transform: uppercase; letter-spacing: 0.03em; text-wrap: balance; }
-    .notice .legal { margin: 16px auto 0; max-width: 820px; font-size: 13px; line-height: 1.6; color: var(--muted); text-transform: uppercase; }
-    .notice .cta { margin: 22px 0 0; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-    .fridge-btn {
-      display: inline-block; width: min(420px, 78vw);
-      border: 0; background: none; padding: 0; margin: 0 0 4px; cursor: pointer;
-      border-radius: 14px; line-height: 0;
-      transition: transform .12s ease, filter .12s ease;
+    html, body { height: 100%; }
+    body { display: grid; place-items: center; padding: 20px 16px; overflow-x: hidden; background: #15161a; }
+
+    /* ---- the wall ---------------------------------------------------------------
+       3x3 tiles, each the shape of the screen, drawn larger than the screen and
+       drifting slowly (Ken Burns) - so it feels like a bigger wall than the nine
+       videos it actually decodes. */
+    .wall { position: fixed; inset: -9%; z-index: 0; display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); gap: 4px;
+      background: #0d0e11; will-change: transform; animation: drift 80s ease-in-out infinite alternate; }
+    .wall .tile { position: relative; overflow: hidden; background: #0d0e11 center / cover no-repeat; }
+    .wall video { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .wall .mirror { transform: scaleX(-1); }   /* flips the poster and the video together */
+    @keyframes drift {
+      0%   { transform: scale(1.06) translate(-2.2%, -1.6%); }
+      50%  { transform: scale(1.18) translate(1.6%, -2.4%); }
+      100% { transform: scale(1.12) translate(2.4%, 2.2%); }
     }
-    /* The artwork carries real alpha (outer background flood-filled out), so it
-       composites onto whatever surface is behind it. Do NOT set a background
-       here: the panel is #0d0d0d, so painting #000 behind a transparent image
-       produces a visibly darker rectangle - the exact artefact the alpha was
-       added to remove. */
-    .fridge-btn img { width: 100%; height: auto; border-radius: 14px; display: block; }
-    .fridge-btn:hover, .fridge-btn:focus-visible { transform: translateY(-2px); filter: brightness(1.08); }
-    .fridge-btn:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
-    .secondary { margin: 4px 0 0; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
-    .recent { margin: 22px auto 0; max-width: 820px; text-align: left; }
-    .recent h2 { margin: 0 0 10px; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
+    /* keeps the card readable over moving video, without any blur */
+    .shade { position: fixed; inset: 0; z-index: 1; pointer-events: none;
+      background: radial-gradient(ellipse at center, rgba(10, 11, 14, .55) 0%, rgba(10, 11, 14, .78) 65%, rgba(10, 11, 14, .92) 100%); }
+
+    /* ---- the card ---------------------------------------------------------------- */
+    main { position: relative; z-index: 2; width: min(460px, calc(100vw - 32px)); transition: opacity .25s ease; }
+    html.checking main { opacity: 0; }
+    /* while go.fridge.run is asked "signed in?" - a moment at most */
+    .wait { position: fixed; inset: 0; z-index: 3; display: none; place-items: center; pointer-events: none; }
+    html.checking .wait { display: grid; }
+    .wait img { width: 64px; height: 64px; border-radius: 16px; animation: pulse 1.2s ease-in-out infinite; }
+    @keyframes pulse { 50% { transform: scale(.92); opacity: .6; } }
+    .panel { --place: var(--mint); text-align: center; padding: 30px 28px 24px; }
+    .brand { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 14px; }
+    .brand img { width: 56px; height: 56px; border-radius: 14px; }
+    .brand b { font-size: 26px; letter-spacing: -.02em; }
+    h1 { font-size: 22px; margin: 0 0 4px; }
+    .tag { color: var(--ink-2); margin: 0 0 18px; }
+    .signin { display: block; margin: 0 auto 10px; width: min(300px, 100%); line-height: 0; border-radius: 14px; transition: transform .12s ease; }
+    .signin img { width: 100%; height: auto; border-radius: 14px; }
+    .signin:hover { transform: translateY(-2px); }
+    .signin:focus-visible { outline: none; box-shadow: var(--focus); }
+    .redeem { margin-top: 8px; padding: 14px; border-radius: 14px; background: var(--paper-2); border: 1px solid var(--edge); text-align: left; }
+    .redeem label { display: flex; align-items: center; gap: 9px; font-weight: 800; margin: 0 0 10px; }
+    .redeem .ico { width: 30px; height: 30px; font-size: 16px; }
+    .redeem-row { display: flex; gap: 8px; }
+    .redeem input { flex: 1; min-width: 0; font: 700 14.5px/1.2 ui-monospace, Menlo, monospace; letter-spacing: .04em; text-transform: uppercase;
+      padding: 11px 12px; border-radius: 11px; border: 1px solid #bcc1ca; background: #fff; color: var(--ink); }
+    .redeem input::placeholder { text-transform: none; color: #8a8e98; letter-spacing: .02em; }
+    .redeem input:focus { outline: none; border-color: var(--mint); box-shadow: var(--focus); }
+    .redeem small { display: block; margin-top: 8px; color: var(--dim); font-size: 12.5px; }
+    .links { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--paper-3); }
+    .links a { display: inline-flex; align-items: center; gap: 7px; padding: 6px 10px; border-radius: 10px; text-decoration: none; color: var(--ink-2); font-weight: 600; font-size: 14px; }
+    .links a:hover { background: var(--paper-2); color: var(--ink); }
+    .links .ico { width: 26px; height: 26px; font-size: 14px; border-radius: 8px; }
+    .fine { margin: 14px 0 0; font-size: 11px; line-height: 1.5; color: #c3c6cd; text-align: center; letter-spacing: .02em; text-shadow: 0 1px 6px rgba(0, 0, 0, .8); }
   </style>
 </head>
 <body>
-  <section class="wall" id="videoWall" aria-hidden="true"></section>
+  <div class="wall" id="wall" aria-hidden="true"></div>
+  <div class="shade" aria-hidden="true"></div>
+  <div class="wait" aria-hidden="true"><img src="./logo.png" alt=""></div>
 
-  <main class="wall-over notice">
-    <section class="panel" role="alert" aria-live="assertive">
-      <p class="eyebrow">Restricted Infrastructure Notice</p>
-      <h1>WARNING THE NODE YOU ARE ATTEMPTING TO ACCESS IS THE PROPERTY OF FRIDGE.RUN. UNAUTHORIZED ACCESS BEYOND THIS POINT IS STRICTLY PROHIBITED.</h1>
-      <p class="legal">IF YOU PROCEED YOU ARE IN VIOLATION OF COMPUTER FRAUD AND ABUSE ACT 18 U.S.C. § 1030 AND WILL BE FORCIBLY DISCONNECTED BY THIS NODE'S ANTI-INTRUSION SECURITY SOFTWARE. THANK YOU FOR NOT HACKING!</p>
+  <main>
+    <section class="panel">
+      <div class="brand"><img src="./logo.png" alt="" width="56" height="56"><b>fridge.run</b></div>
+      <p class="eyebrow">🔒 Private node · invite only</p>
+      <h1>Welcome to the fridge</h1>
+      <p class="tag">Chat, shared files and a few friends.</p>
 
-      <p class="cta">
-        <!-- Sign-in. Identity is Keycloak on this node's own domain; Google is not
-             involved. This goes straight to the panel, which runs the OpenID
-             Connect exchange SERVER-SIDE and then shows you your links, files and
-             services. Signing in lands you somewhere useful - not on a settings
-             page, and not back here. -->
-        <a class="fridge-btn" href="https://go.fridge.run/" data-iam-hook="signin"
-           aria-label="Login with fridge.run">
-          <picture>
-            <source srcset="./media/login-with-fridge@2x.webp 2x, ./media/login-with-fridge.webp 1x" type="image/webp">
-            <img src="./media/login-with-fridge.png"
-                 srcset="./media/login-with-fridge@2x.png 2x, ./media/login-with-fridge.png 1x"
-                 alt="Login with fridge.run" width="600" height="200">
-          </picture>
-        </a>
-      </p>
-      <!-- The only surface offered to an anonymous visitor. Dashboards and group
-           panels are deliberately NOT linked from here: they live behind identity,
-           on the node, and are not part of the public site. -->
-      <p class="secondary">
-        <a class="btn btn-ghost" href="./status/">Node status</a>
-      </p>
+      <a class="signin" href="https://go.fridge.run/" aria-label="Login with fridge.run">
+        <picture>
+          <source srcset="./media/login-with-fridge@2x.webp 2x, ./media/login-with-fridge.webp 1x" type="image/webp">
+          <img src="./media/login-with-fridge.png" srcset="./media/login-with-fridge@2x.png 2x, ./media/login-with-fridge.png 1x" alt="Login with fridge.run" width="600" height="200">
+        </picture>
+      </a>
 
+      <form class="redeem c-invite" action="https://go.fridge.run/join" method="get" autocomplete="off">
+        <label for="code"><span class="ico" aria-hidden="true">🎟️</span>Got an invite code?</label>
+        <div class="redeem-row">
+          <input id="code" name="code" required spellcheck="false" autocapitalize="characters" placeholder="FRIDGE-XXXXX-XXXXX-…" aria-describedby="code-hint">
+          <button class="btn primary" type="submit">Redeem</button>
+        </div>
+        <small id="code-hint">Invited by email? Just open the link in it.</small>
+      </form>
+
+      <nav class="links" aria-label="More">
+        <a class="c-status" href="./status/"><span class="ico" aria-hidden="true">📡</span>Status</a>
+        <a class="c-report" href="https://go.fridge.run/report?from=https%3A%2F%2Ffridge.run%2F"><span class="ico" aria-hidden="true">🐞</span>Report a problem</a>
+      </nav>
     </section>
+    <p class="fine">Unauthorized access is prohibited under 18 U.S.C. § 1030 and will be met by this node's anti-intrusion software. Thank you for not hacking!</p>
   </main>
 
   <script>
-    (() => {
-      'use strict';
+  (function () {
+    'use strict';
+    var root = document.documentElement;
 
-      // ---- video wall (flair) --------------------------------------------
-      // Served from /media/ at the repo root, which is what GitHub Pages
-      // publishes. These used to point at ./docs/media/ which only worked by
-      // accident of the duplicate tree.
-      const sources = [
-        './media/warning-wall/IMG_8065.mp4',
-        './media/warning-wall/IMG_8066.mp4',
-        './media/warning-wall/IMG_8067.mp4'
-      ];
-      const wall = document.getElementById('videoWall');
-      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      // Respect data-saver and very low-core devices: skip the wall entirely.
-      const saveData = (navigator.connection || {}).saveData === true;
-      const weak = (navigator.hardwareConcurrency || 8) <= 4;
+    // ---- 1. Signed in already? Straight to your panel, before the wall starts.
+    // go.fridge.run answers only yes/no, and only to this site. ?stay shows the
+    // homepage anyway.
+    var stay = /[?&]stay\b/.test(location.search);
+    function show() { root.classList.remove('checking'); }
+    function check(then) {
+      if (stay || !window.fetch) { then(); return; }
+      var done = false;
+      var timer = setTimeout(function () { if (!done) { done = true; then(); } }, 1200);
+      fetch('https://go.fridge.run/api/me', { credentials: 'include', cache: 'no-store' })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (done) return;
+          done = true; clearTimeout(timer);
+          if (j && j.signedIn) { location.replace('https://go.fridge.run/'); } else { then(); }
+        })
+        .catch(function () { if (!done) { done = true; clearTimeout(timer); then(); } });
+    }
 
-      if (wall && !reduce && !saveData) {
-        // Tile count was 30. Each tile is an independent H.264 decoder, so the
-        // cost is decoders x resolution x framerate - not file size. The clips
-        // are now 180x320@15fps (was 540x960@30fps), and fewer tiles are drawn.
-        // Together that is roughly 39x less decode work than before.
-        const count = window.matchMedia('(max-width: 680px)').matches ? 8 : (weak ? 8 : 14);
-        for (let i = 0; i < count; i += 1) {
-          const tile = document.createElement('article');
-          tile.className = 'tile';
-          const video = document.createElement('video');
-          video.src = sources[i % sources.length];
-          video.autoplay = true;
-          video.muted = true;
-          video.loop = true;
-          video.playsInline = true;
-          video.preload = 'metadata';
-          video.defaultPlaybackRate = 0.85 + ((i % 5) * 0.05);
-          video.playbackRate = video.defaultPlaybackRate;
-          video.addEventListener('loadedmetadata', () => {
-            if (Number.isFinite(video.duration) && video.duration > 0.2) {
-              video.currentTime = Math.max(0, (i * 1.17) % (video.duration - 0.1));
-            }
-            // Stagger playback start. Starting every decoder in the same frame
-            // causes a visible hitch on load even when each one is cheap.
-            setTimeout(() => video.play().catch(() => {}), i * 60);
-          }, { once: true });
-          tile.appendChild(video);
+    // ---- 2. The wall ---------------------------------------------------------------
+    // Three clips (Sora originals - the only ones there are), each shown three
+    // times. Placed so a clip never sits next to itself, and varied per tile by
+    // start point, speed and mirror-flip, so repeats do not read as repeats.
+    var CLIPS = ['./media/wall/IMG_8065', './media/wall/IMG_8066', './media/wall/IMG_8067'];
+    var SPEEDS = [0.82, 0.94, 1.06];
+    function buildWall() {
+      var wall = document.getElementById('wall');
+      var still = window.matchMedia('(prefers-reduced-motion: reduce)').matches || (navigator.connection || {}).saveData === true;
+      var videos = [];
+      for (var r = 0; r < 3; r++) {
+        for (var c = 0; c < 3; c++) {
+          var i = r * 3 + c;
+          var clip = CLIPS[(r + c) % 3];                   // Latin square: no clip beside itself
+          var tile = document.createElement('div');
+          tile.className = 'tile' + ((r * 2 + c) % 3 === 1 ? ' mirror' : '');
+          tile.style.backgroundImage = 'url("' + clip + '.jpg")';   // shown until (or instead of) the video
+          if (!still) {
+            var v = document.createElement('video');
+            v.muted = true; v.loop = true; v.playsInline = true; v.autoplay = false;
+            v.setAttribute('muted', ''); v.setAttribute('playsinline', '');
+            v.preload = 'auto';
+            v.poster = clip + '.jpg';
+            v.src = clip + '.mp4';
+            v.dataset.offset = String((i * 3.3) % 9);
+            v.dataset.rate = String(SPEEDS[(r + 2 * c) % 3]);
+            v.addEventListener('loadedmetadata', function () {
+              var d = this.duration;
+              if (isFinite(d) && d > 1) { this.currentTime = parseFloat(this.dataset.offset) % (d - 0.5); }
+              this.playbackRate = parseFloat(this.dataset.rate);
+            });
+            tile.appendChild(v);
+            videos.push(v);
+          }
           wall.appendChild(tile);
         }
       }
+      // Start them a beat apart - starting nine decoders in one frame hitches.
+      videos.forEach(function (v, k) { setTimeout(function () { var p = v.play(); if (p && p.catch) p.catch(function () {}); }, 120 * k); });
+      // Nobody is watching a hidden tab: stop decoding.
+      document.addEventListener('visibilitychange', function () {
+        videos.forEach(function (v) { if (document.hidden) { v.pause(); } else { var p = v.play(); if (p && p.catch) p.catch(function () {}); } });
+      });
+    }
 
-    })();
+    check(function () { show(); buildWall(); });
+  })();
   </script>
 </body>
 </html>

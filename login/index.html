@@ -17,17 +17,16 @@
   <link rel="canonical" href="https://go.fridge.run/">
   <link rel="stylesheet" href="../fridge-shell.css">
   <style>
-    body { display:grid; place-items:center; min-height:100vh; }
-    .box { width:min(480px,92vw); text-align:center; }
-    .box h1 { margin:0 0 10px; font-size:clamp(17px,2.1vw,22px); text-transform:uppercase; letter-spacing:.04em; }
-    .box p { color:var(--muted); font-size:13px; line-height:1.6; }
+    body { display: grid; place-items: center; padding: 20px 16px; }
+    .box { width: min(420px, 100%); text-align: center; --place: var(--mint); }
+    .box h1 { font-size: 22px; margin: 0 0 8px; }
+    .box p { color: var(--ink-2); margin: 0 0 14px; }
   </style>
 </head>
 <body>
-  <main class="box">
-    <h1>Taking you to your panel</h1>
-    <p>Sign-in happens on the node.</p>
-    <p><a class="btn btn-ghost" href="https://go.fridge.run/">Continue</a></p>
+  <main class="box panel">
+    <h1>Taking you to your panel…</h1>
+    <p><a class="btn primary" href="https://go.fridge.run/">Continue</a></p>
   </main>
   <script>location.replace('https://go.fridge.run/');</script>
 </body>

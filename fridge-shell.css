@@ -1,462 +1,110 @@
+/*
+ * fridge.run - the public site's look. Same kitchen-fridge style as
+ * go.fridge.run: enamel-white panels with a steel edge on the dark
+ * fridge-and-cables wallpaper, mint for the main action, one colour per place.
+ *
+ * The older colour names (--panel, --line, --muted, --ink, --bg, --accent) are
+ * kept and repointed, so pages with their own inline styles follow along.
+ * No backdrop blur: it made scrolling repaint everything and lagged browsers.
+ */
 :root {
-  color-scheme: dark;
-  --bg: #020202;
-  --bg-soft: #090909;
-  --ink: #f3f3f3;
-  --muted: #9a9a9a;
-  --line: rgba(255, 255, 255, 0.1);
-  --panel: rgba(12, 12, 12, 0.9);
-  --panel-strong: rgba(18, 18, 18, 0.98);
-  --accent: #ffffff;
-  --shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
-  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+  color-scheme: light;
+  --paper: #eceef1;
+  --paper-2: #f7f8fa;
+  --paper-3: #dfe2e7;
+  --ink: #131419;
+  --ink-2: #30333b;
+  --dim: #585c67;
+  --edge: #c9cdd5;
+  --steel: linear-gradient(180deg, #f6f7f9 0%, #dde0e5 100%);
+  --enamel: linear-gradient(180deg, #f3f4f6 0%, #e8eaee 100%);
+  --mint-strong: #157a67;
+  --mint: #2bb59c;
+  --mint-dark: #1e8f7a;
+  --orange: #f26b3a;
+  --shadow: 0 1px 0 rgba(255, 255, 255, .8) inset, 0 -1px 0 rgba(0, 0, 0, .06) inset, 0 12px 32px rgba(0, 0, 0, .5), 0 2px 6px rgba(0, 0, 0, .3);
+  --focus: 0 0 0 3px rgba(43, 181, 156, .45);
+  /* places */
+  --c-go: #f0a52a; --c-chat: #7c5cff; --c-account: #2f7de1; --c-status: #1f9d55; --c-report: #f26b3a; --c-invite: #2bb59c;
+  /* older names, repointed */
+  --bg: #15161a;
+  --panel: var(--paper);
+  --panel-strong: var(--paper);
+  --line: var(--edge);
+  --muted: var(--dim);
+  --accent: var(--mint);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Ubuntu, sans-serif;
 }
 
-* {
-  box-sizing: border-box;
-}
-
-html,
+* { box-sizing: border-box; }
+html { background: #0e0f12; }
 body {
   margin: 0;
-  min-height: 100%;
-  background:
-    radial-gradient(circle at top left, rgba(255, 255, 255, 0.04), transparent 22%),
-    radial-gradient(circle at bottom right, rgba(255, 255, 255, 0.03), transparent 18%),
-    linear-gradient(180deg, #000 0%, #070707 48%, #000 100%);
-  color: var(--ink);
-}
-
-body {
   min-height: 100vh;
-  padding: 20px;
-}
-
-a {
-  color: inherit;
-}
-
-.shell {
-  width: min(980px, 100%);
-  margin: 0 auto;
-  display: grid;
-  gap: 14px;
-}
-
-.masthead {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px 18px;
-  border: 1px solid var(--line);
-  border-radius: 22px;
-  background: linear-gradient(180deg, rgba(16, 16, 16, 0.96), rgba(10, 10, 10, 0.9));
-  box-shadow: var(--shadow);
-}
-
-.masthead img {
-  width: 72px;
-  height: 72px;
-  object-fit: contain;
-  flex: none;
-}
-
-.eyebrow {
-  margin: 0 0 4px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  font-size: 11px;
-  color: var(--muted);
-  font-weight: 700;
-}
-
-h1 {
-  margin: 0;
-  font-size: clamp(1.6rem, 4vw, 3rem);
-  line-height: 0.96;
-  letter-spacing: -0.04em;
-}
-
-.sub {
-  margin: 8px 0 0;
-  color: var(--muted);
-  line-height: 1.45;
-  max-width: 42rem;
-  font-size: 0.98rem;
-}
-
-.nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.nav a,
-.button,
-button.button,
-button.ghost,
-.button.ghost {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 42px;
-  padding: 0 14px;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  background: rgba(18, 18, 18, 0.96);
   color: var(--ink);
-  text-decoration: none;
-  font: inherit;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+  font-size: 15.5px;
+  line-height: 1.55;
+  background-color: #0e0f12;
+  background-image:
+    linear-gradient(180deg, rgba(14, 15, 18, .62) 0, rgba(14, 15, 18, .74) 600px, #0e0f12 1024px),
+    url("/media/fridge-bg.jpg");
+  background-image:
+    linear-gradient(180deg, rgba(14, 15, 18, .62) 0, rgba(14, 15, 18, .74) 600px, #0e0f12 1024px),
+    image-set(url("/media/fridge-bg.webp") type("image/webp"), url("/media/fridge-bg.jpg") type("image/jpeg"));
+  background-repeat: no-repeat, repeat-x;
+  background-size: 100% 1024px, 800px 1024px;
 }
+a { color: var(--mint-dark); }
 
-.nav a:hover,
-.button:hover,
-button.button:hover,
-button.ghost:hover,
-.card-link:hover {
-  transform: translateY(-1px);
-  border-color: rgba(255, 255, 255, 0.22);
-  background: rgba(28, 28, 28, 0.98);
+/* ---- panels --------------------------------------------------------------------- */
+.panel, .card {
+  position: relative; background: var(--enamel); border: 1px solid var(--edge); border-radius: 18px;
+  padding: 24px; box-shadow: var(--shadow);
 }
-
-.button.primary,
-button.button.primary {
-  background: #f0f0f0;
-  border-color: #f0f0f0;
-  color: #050505;
+.panel::before, .card::before {
+  content: ""; position: absolute; left: -1px; top: 22px; bottom: 22px; width: 4px; border-radius: 0 4px 4px 0;
+  background: var(--place, #c9ced6);
 }
+.eyebrow { margin: 0 0 6px; font-size: 12px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--mint-dark); }
+h1 { margin: 0; letter-spacing: -.02em; line-height: 1.15; }
+.muted { color: var(--dim); }
 
-.panel {
-  border: 1px solid var(--line);
-  border-radius: 22px;
-  background: linear-gradient(180deg, var(--panel-strong), var(--panel));
-  box-shadow: var(--shadow);
-  padding: 18px;
+/* ---- buttons -------------------------------------------------------------------- */
+.btn, .button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px; font: 700 15px/1 inherit; font-family: inherit;
+  color: var(--ink); text-decoration: none; cursor: pointer; background: linear-gradient(180deg, #ffffff 0%, #eef0f3 100%); border: 1px solid #aeb3bd;
+  border-radius: 11px; padding: 11px 17px; box-shadow: 0 1px 0 #fff inset, 0 2px 4px rgba(0, 0, 0, .14); transition: transform .1s ease, border-color .1s ease;
 }
+.btn:hover, .button:hover { border-color: var(--ink-2); transform: translateY(-1px); }
+.btn:focus-visible, .button:focus-visible { outline: none; box-shadow: var(--focus); }
+.btn.primary, .button.primary { background: linear-gradient(180deg, #1c8c77 0%, var(--mint-strong) 100%); border-color: #0f5f50; color: #fff;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, .25); box-shadow: 0 1px 0 rgba(255, 255, 255, .25) inset, 0 4px 12px rgba(21, 122, 103, .45); }
+.btn.primary:hover { background: #0f6a59; }
+.btn.primary::after { content: "→"; font-size: 16px; }
+.btn-ghost { background: var(--paper); }
 
-.grid {
-  display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-}
+/* ---- places: an icon bubble in the place's colour ------------------------------------ */
+.ico { display: inline-grid; place-items: center; flex: none; width: 34px; height: 34px; border-radius: 10px; font-size: 18px;
+  background: color-mix(in srgb, var(--place, #9aa0aa) 22%, white); border: 1px solid color-mix(in srgb, var(--place, #9aa0aa) 45%, white); }
+.c-go { --place: var(--c-go); } .c-chat { --place: var(--c-chat); } .c-account { --place: var(--c-account); }
+.c-status { --place: var(--c-status); } .c-report { --place: var(--c-report); } .c-invite { --place: var(--c-invite); }
 
-.card-link,
-.share-row {
-  display: grid;
-  gap: 6px;
-  text-decoration: none;
-  color: inherit;
-  padding: 16px;
-  border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: linear-gradient(180deg, rgba(20, 20, 20, 0.98), rgba(12, 12, 12, 0.94));
-}
+/* ---- the artwork buttons ------------------------------------------------------------ */
+.back-btn, .report-btn { display: inline-block; border-radius: 16px; transition: transform .12s ease; line-height: 0; }
+.back-btn img { width: 200px; height: auto; filter: drop-shadow(0 4px 10px rgba(0, 0, 0, .35)); }
+.report-btn img { width: 220px; height: auto; }
+.back-btn:hover { transform: translateY(-2px) rotate(1deg); }
+.report-btn:hover { transform: translateY(-2px) rotate(-1deg); }
 
-.card-kicker {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--muted);
-  font-weight: 800;
-}
+/* ---- a page title sitting on the wallpaper -------------------------------------------- */
+.on-wall { color: #fff; text-shadow: 0 2px 10px rgba(0, 0, 0, .65); }
+.on-wall-soft { color: #dfe2e8; text-shadow: 0 1px 8px rgba(0, 0, 0, .7); }
 
-.card-title {
-  font-size: 1.08rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-}
+@media (prefers-reduced-motion: reduce) { *, *::after { transition: none !important; animation: none !important; } }
 
-.card-copy,
-.share-detail,
-.footer-note,
-.meta-line,
-.muted {
-  color: var(--muted);
-  line-height: 1.45;
-  font-size: 0.95rem;
-}
-
-.mono,
-code,
-input,
-.hash,
-.qr {
-  font-family: "IBM Plex Mono", "SFMono-Regular", monospace;
-}
-
-.lookup {
-  display: grid;
-  gap: 14px;
-}
-
-.stack {
-  display: grid;
-  gap: 14px;
-}
-
-label {
-  display: grid;
-  gap: 8px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-}
-
-input[type="text"] {
-  width: 100%;
-  min-height: 52px;
-  padding: 0 16px;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(8, 8, 8, 0.95);
-  color: var(--ink);
-  font-size: 1rem;
-}
-
-.action-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.notice {
-  padding: 14px 16px;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(14, 14, 14, 0.96);
-  color: var(--muted);
-  line-height: 1.45;
-}
-
-.notice.error {
-  border-color: rgba(255, 113, 113, 0.28);
-  color: #ffb8b8;
-}
-
-.notice[hidden],
-.share-empty[hidden] {
-  display: none;
-}
-
-.share-list {
-  display: grid;
-  gap: 12px;
-}
-
-.share-row {
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 16px;
-}
-
-.share-meta {
-  display: grid;
-  gap: 4px;
-  min-width: 0;
-}
-
-.share-name {
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  font-size: 1rem;
-  overflow-wrap: anywhere;
-}
-
-.share-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: flex-end;
-}
-
-.share-empty {
-  color: var(--muted);
-  font-size: 0.95rem;
-}
-
-.redirect-target {
-  display: grid;
-  gap: 10px;
-  padding: 16px;
-  border-radius: 18px;
-  background: #060606;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.qr {
-  margin: 0;
-  padding: 12px;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: #000;
-  color: #fff;
-  white-space: pre;
-  overflow-x: auto;
-  line-height: 0.72;
-  font-size: 9px;
-}
-
-@media (max-width: 760px) {
-  body {
-    padding: 14px;
-  }
-
-  .masthead {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .masthead img {
-    width: 60px;
-    height: 60px;
-  }
-
-  .share-row {
-    grid-template-columns: 1fr;
-  }
-
-  .share-actions {
-    justify-content: flex-start;
-  }
-}
-
-/* ==========================================================================
-   Fridge shared shell — added 2026-09-17
-   Unifies the site on one dark theme. Previously index.html carried its own
-   inline light theme while every other page used this file, which is what
-   made the site look like several different sites.
-   ========================================================================== */
-
-/* --- site navigation ---------------------------------------------------- */
-.nav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 12px 14px;
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  background: var(--panel);
-}
-.nav a {
-  padding: 7px 12px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  text-decoration: none;
-  color: var(--muted);
-  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
-}
-.nav a:hover,
-.nav a:focus-visible { color: var(--ink); border-color: rgba(255,255,255,0.35); background: rgba(255,255,255,0.05); outline: none; }
-.nav a[aria-current="page"] { color: var(--bg); background: var(--accent); border-color: var(--accent); }
-
-/* --- panels and grids --------------------------------------------------- */
-.panel {
-  padding: 16px 18px;
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  background: var(--panel);
-  box-shadow: var(--shadow);
-}
-.grid { display: grid; gap: 12px; }
-.grid-2 { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
-.grid-3 { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
-
-/* --- stat tiles --------------------------------------------------------- */
-.tile-stat {
-  padding: 14px 16px;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  background: linear-gradient(180deg, rgba(20,20,20,0.9), rgba(10,10,10,0.85));
-}
-.tile-stat .label {
-  margin: 0 0 6px;
-  font-size: 10px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--muted);
-  font-weight: 700;
-}
-.tile-stat .value { margin: 0; font-size: clamp(20px, 3vw, 27px); font-weight: 700; line-height: 1.1; }
-.tile-stat .sub { margin: 5px 0 0; font-size: 12px; color: var(--muted); }
-
-/* --- meters ------------------------------------------------------------- */
-.meter { margin-top: 9px; height: 6px; border-radius: 999px; background: rgba(255,255,255,0.09); overflow: hidden; }
-.meter > i { display: block; height: 100%; border-radius: 999px; background: var(--ink); transition: width 0.4s ease; }
-.meter.warn > i { background: #e0a030; }
-.meter.crit > i { background: #d4553c; }
-
-/* --- status pills ------------------------------------------------------- */
-.pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 5px 11px;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  font-size: 12px;
-  font-weight: 600;
-}
-.pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
-.pill.up::before   { background: #3fb950; box-shadow: 0 0 8px rgba(63,185,80,0.7); }
-.pill.down::before { background: #d4553c; box-shadow: 0 0 8px rgba(212,85,60,0.7); }
-.svc-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
-.svc-list li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255,255,255,0.02); }
-.svc-list .svc-name { font-size: 13px; font-weight: 600; }
-
-/* --- portals (links out to services) ------------------------------------ */
-.portals { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
-.portal {
-  display: block;
-  padding: 14px 16px;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  background: rgba(255,255,255,0.02);
-  text-decoration: none;
-  color: var(--ink);
-  transition: border-color 0.15s ease, transform 0.15s ease, background 0.15s ease;
-}
-.portal:hover, .portal:focus-visible { border-color: rgba(255,255,255,0.35); background: rgba(255,255,255,0.05); transform: translateY(-1px); outline: none; }
-.portal .portal-name { display: block; font-weight: 700; font-size: 14px; }
-.portal .portal-meta { display: block; margin-top: 3px; font-size: 12px; color: var(--muted); }
-.portal[data-reach="tailnet"] .portal-meta::after { content: " · tailnet only"; }
-
-/* --- video wall (the flair, preserved from the old inline styles) ------- */
-.wall {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  display: grid;
-  grid-template-columns: repeat(6, minmax(120px, 1fr));
-  gap: 8px;
-  padding: 8px;
-  pointer-events: none;
-}
-.wall .tile { position: relative; overflow: hidden; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06); background: #0a0a0a; min-height: 180px; }
-.wall .tile video { width: 100%; height: 100%; object-fit: cover; opacity: 0.22; filter: saturate(0.55) contrast(1.05); }
-.wall .tile::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.25), rgba(0,0,0,0.6)); }
-.wall-over { position: relative; z-index: 1; }
-
-/* --- utility ------------------------------------------------------------ */
-.meta-row { display: flex; flex-wrap: wrap; gap: 14px; margin: 0; padding: 0; list-style: none; font-size: 12px; color: var(--muted); }
-.meta-row b { color: var(--ink); font-weight: 600; }
-.foot { padding: 14px 18px; border: 1px solid var(--line); border-radius: 18px; background: var(--panel); font-size: 12px; color: var(--muted); }
-.foot code { color: var(--ink); }
-.note { margin: 10px 0 0; padding: 11px 13px; border-left: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.03); border-radius: 0 10px 10px 0; font-size: 12.5px; color: var(--muted); }
-.btn {
-  display: inline-block; padding: 10px 18px; border-radius: 999px;
-  border: 1px solid var(--accent); background: var(--accent); color: var(--bg);
-  font-weight: 700; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
-  text-decoration: none; cursor: pointer;
-}
-.btn:hover, .btn:focus-visible { opacity: 0.88; outline: none; }
-.btn-ghost { background: transparent; color: var(--ink); border-color: var(--line); }
-
-@media (max-width: 1080px) { .wall { grid-template-columns: repeat(4, minmax(100px, 1fr)); } }
-@media (max-width: 680px)  { .wall { grid-template-columns: repeat(3, minmax(80px, 1fr)); gap: 6px; padding: 6px; } .wall .tile { min-height: 135px; } body { padding: 16px; } }
-@media (prefers-reduced-motion: reduce) { .wall .tile video { display: none; } .portal, .meter > i { transition: none; } }
+/* ---- the top bar: the way home, at the top of every page ------------------------------ */
+.bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 22px; padding: 8px 10px 8px 14px;
+  border-radius: 16px; background: var(--steel); border: 1px solid var(--edge); box-shadow: var(--shadow); }
+.bar .brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); font-weight: 800; }
+.bar .brand img { width: 32px; height: 32px; border-radius: 9px; }
+.bar .back-btn img { width: auto; height: 40px; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .25)); }

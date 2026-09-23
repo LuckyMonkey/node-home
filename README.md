@@ -27,7 +27,7 @@ GitHub Pages is configured in **legacy mode**, publishing the `main` branch at `
 | `fridge-shell.css` | **The** stylesheet — every page uses this one |
 | `fridge-iam-config.js` | Identity provider endpoint |
 | `.well-known/webfinger` | OIDC issuer discovery for `@fridge.run` addresses |
-| `media/warning-wall/` | Video-wall clips |
+| `media/wall/` | Video-wall clips (web encodes of the three Sora originals) and their posters |
 | `docs/architecture/` | Design documentation |
 
 This site is **four pages**. It deliberately links to no dashboards and no group

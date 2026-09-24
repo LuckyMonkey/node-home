@@ -72,6 +72,8 @@
     .summary .big { color: var(--ink); }
     .foot { margin-top: 22px; text-align: center; }
     .skeleton { color: var(--muted); font-size: 13px; padding: 20px 18px; }
+    .subhead { margin: 26px 0 0; display: flex; align-items: center; gap: 10px; font-size: 18px; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,.65); }
+    .subhead .ico { font-size: 22px; }
 
     @media (max-width: 560px) {
       .row { flex-wrap: wrap; gap: 8px 12px; }
@@ -101,6 +103,9 @@
     <ul class="list" id="list" aria-live="polite" aria-busy="true">
       <li class="skeleton">Contacting the node&hellip;</li>
     </ul>
+
+    <h2 class="subhead" id="chead" hidden><span class="ico" aria-hidden="true">🐋</span>Containers</h2>
+    <ul class="list" id="clist" hidden aria-live="polite"></ul>
 
     <p class="note">Measured on the node every minute. Grey means it can't be reached.</p>
   </main>
@@ -139,7 +144,8 @@
       sumWhen.textContent = when || '';
     }
 
-    function rows(services) {
+    function rows(services, into) {
+      var listEl = into || document.getElementById('list');
       listEl.setAttribute('aria-busy', 'false');
       listEl.innerHTML = '';
       services.forEach(function (svc) {
@@ -185,6 +191,12 @@
           }
           var svcs = doc.services || [];
           rows(svcs);
+          // Containers the owner marked public in whale: name + state only.
+          var boxes = doc.containers || [];
+          var clist = document.getElementById('clist');
+          clist.hidden = document.getElementById('chead').hidden = !boxes.length;
+          if (boxes.length) rows(boxes, clist);
+          svcs = svcs.concat(boxes);
           var down = svcs.filter(function (s) { return s.state === 'down'; }).length;
           var warn = svcs.filter(function (s) { return s.state === 'warn'; }).length;
           var when = isFinite(gen) ? 'checked ' + ago(gen) : '';

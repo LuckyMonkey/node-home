@@ -25,7 +25,7 @@
   --shadow: 0 1px 0 rgba(255, 255, 255, .8) inset, 0 -1px 0 rgba(0, 0, 0, .06) inset, 0 12px 32px rgba(0, 0, 0, .5), 0 2px 6px rgba(0, 0, 0, .3);
   --focus: 0 0 0 3px rgba(43, 181, 156, .45);
   /* places */
-  --c-go: #f0a52a; --c-chat: #7c5cff; --c-account: #2f7de1; --c-status: #1f9d55; --c-report: #f26b3a; --c-invite: #2bb59c;
+  --c-go: #f0a52a; --c-chat: #7c5cff; --c-account: #2f7de1; --c-status: #1f9d55; --c-report: #f26b3a; --c-invite: #2bb59c; --c-monkey: #22a846;
   /* older names, repointed */
   --bg: #15161a;
   --panel: var(--paper);
@@ -88,7 +88,7 @@ h1 { margin: 0; letter-spacing: -.02em; line-height: 1.15; }
 .ico { display: inline-grid; place-items: center; flex: none; width: 34px; height: 34px; border-radius: 10px; font-size: 18px;
   background: color-mix(in srgb, var(--place, #9aa0aa) 22%, white); border: 1px solid color-mix(in srgb, var(--place, #9aa0aa) 45%, white); }
 .c-go { --place: var(--c-go); } .c-chat { --place: var(--c-chat); } .c-account { --place: var(--c-account); }
-.c-status { --place: var(--c-status); } .c-report { --place: var(--c-report); } .c-invite { --place: var(--c-invite); }
+.c-status { --place: var(--c-status); } .c-report { --place: var(--c-report); } .c-invite { --place: var(--c-invite); } .c-monkey { --place: var(--c-monkey); }
 
 /* ---- the artwork buttons ------------------------------------------------------------ */
 .back-btn, .report-btn { display: inline-block; border-radius: 16px; transition: transform .12s ease; line-height: 0; }

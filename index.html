@@ -13,6 +13,9 @@
     var m = /[?&]([lf])=([23456789abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ]{3})(?:&|$)/.exec(location.search)
          || /[?&](a)=([23456789abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ]{5})(?:&|$)/.exec(location.search);   // automated link: portal first
     if (m) { location.replace('https://go.fridge.run/?' + m[1] + '=' + m[2]); }
+    // One-time drop link: a page that takes one file, then evaporates.
+    var d = /[?&]d=([A-Za-z0-9_-]{43})(?:&|$)/.exec(location.search);
+    if (d) { location.replace('https://go.fridge.run/drop/' + d[1]); }
   })();
   </script>
   <title>fridge.run</title>

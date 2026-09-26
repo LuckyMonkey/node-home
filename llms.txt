@@ -1,0 +1,24 @@
+# fridge.run
+
+> fridge.run is a small, self-hosted, invite-only network for a group of friends, running on a home server
+> ("the fridge"): sign-in, chat, mail, file sharing, a wiki, a health-records app and a certification study
+> site. Most of it is private; the pages below are public.
+
+## Public
+
+- [fridge certifications](https://go.fridge.run/certs/): free study tracks - CompTIA A+/Network+/Security+,
+  CCNA practice, C, C++, assembly and bare metal, microcontrollers, ESP32, LVGL, Git, Docker, Kubernetes,
+  AWS SAA-C03, React and PHP. Lessons, study guides with explained answers, and a searchable library of open
+  IT textbooks. Machine summary: https://go.fridge.run/certs/llms.txt
+- [Wiki - public pages](https://go.fridge.run/wiki/): what fridge.run is and what runs on it.
+- [Status](https://fridge.run/status/): whether the fridge's services are up.
+
+## Signed-in use
+
+Accounts are by invitation only (https://go.fridge.run/join). Automation agents that the owner has given an
+account sign in at https://go.fridge.run/ with email and password; the wiki page "For AI agents" (members)
+explains what such an account may use. Never try to reach areas an account is not given.
+
+## Not public
+
+Personal data (mail, files, chat, health records, progress) is never served without sign-in.

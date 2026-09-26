@@ -1,0 +1,6 @@
+# fridge.run - a private, invite-only network. The public pages are welcome to be crawled.
+User-agent: *
+Allow: /
+
+Sitemap: https://fridge.run/sitemap.xml
+Sitemap: https://go.fridge.run/certs/sitemap.xml

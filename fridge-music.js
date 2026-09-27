@@ -38,27 +38,38 @@
   state.playing = false;
 
   // ---- look (self-contained: the same pill on fridge.run and go.fridge.run) -------------------------------------
-  var css = '.fm{position:fixed;right:14px;bottom:14px;z-index:9990;display:flex;align-items:center;gap:6px;padding:5px 10px 5px 6px;' +
-    'border-radius:999px;background:linear-gradient(180deg,#f3f4f6 0%,#e8eaee 100%);border:1px solid #c9cdd5;' +
-    'box-shadow:0 1px 0 rgba(255,255,255,.8) inset,0 8px 24px rgba(0,0,0,.45),0 2px 6px rgba(0,0,0,.3);' +
-    'font:12.5px/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ubuntu,sans-serif;color:#30333b}' +
-    '.fm button{display:grid;place-items:center;width:30px;height:30px;padding:0;margin:0;border-radius:50%;border:1px solid #c9cdd5;' +
-    'background:linear-gradient(180deg,#f6f7f9 0%,#dde0e5 100%);color:#131419;cursor:pointer;font-size:13px;line-height:1}' +
-    '.fm .fm-play{background:#2bb59c;border-color:#1e8f7a;color:#fff}.fm button:hover{filter:brightness(1.05)}' +
-    '.fm button:focus-visible,.fm input:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(43,181,156,.45)}' +
-    '.fm button:disabled{opacity:.45;cursor:default}.fm-label{min-width:3.5em;white-space:nowrap}' +
-    '.fm-vol{width:84px;accent-color:#1e8f7a;margin:0}' +
-    '.fm-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}' +
-    '.fm-eq{display:none;align-items:flex-end;gap:2px;height:12px}.fm-on .fm-eq{display:inline-flex}' +
-    '.fm-eq i{width:3px;height:5px;border-radius:1px;background:#1e8f7a;animation:fm-eq 1.6s ease-in-out infinite}' +
-    '.fm-eq i:nth-child(2){animation-delay:-.5s}.fm-eq i:nth-child(3){animation-delay:-1s}' +
-    '@keyframes fm-eq{0%,100%{height:3px}50%{height:11px}}.fm-still .fm-eq i{animation:none;height:8px}' +
-    '@media (prefers-reduced-motion:reduce){.fm-eq i{animation:none;height:8px}}.fm-off .fm-label{color:#585c67}' +
-    '@media (max-width:520px){body:has(.fm){padding-bottom:52px}.fm{right:8px;bottom:8px;padding:4px 8px 4px 4px}.fm-vol{width:64px}.fm-label{display:none}}' +
-    '@media print{.fm{display:none}}';
+  // Scoped to #fridge-music and reset, so a host page's own button/input rules (go.fridge.run styles every button and
+  // input) can never reach in: the id outranks any class-based rule, and all:unset clears what we don't set.
+  var R = '#fridge-music';
+  var css = R + '{all:initial;position:fixed;right:14px;bottom:14px;z-index:2147483000;display:flex;align-items:center;gap:6px;' +
+    'box-sizing:border-box;padding:5px 10px 5px 6px;border-radius:999px;background:linear-gradient(180deg,#f3f4f6 0%,#e8eaee 100%);' +
+    'border:1px solid #c9cdd5;box-shadow:0 1px 0 rgba(255,255,255,.8) inset,0 8px 24px rgba(0,0,0,.45),0 2px 6px rgba(0,0,0,.3);' +
+    'font:12.5px/1.2 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ubuntu,sans-serif;color:#30333b;text-align:left;letter-spacing:normal;text-shadow:none}' +
+    R + ' *{box-sizing:border-box}' +
+    R + ' button{all:unset;box-sizing:border-box;display:grid;place-items:center;flex:none;width:30px;height:30px;border-radius:50%;' +
+    'border:1px solid #c9cdd5;background:linear-gradient(180deg,#f6f7f9 0%,#dde0e5 100%);color:#131419;cursor:pointer;' +
+    'font:13px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ubuntu,sans-serif;text-align:center}' +
+    R + ' button.fm-play{background:#2bb59c;border-color:#1e8f7a;color:#fff}' +
+    R + ' button:hover{filter:brightness(1.06);transform:none;box-shadow:none}' +
+    R + ' button:focus-visible,' + R + ' input:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(43,181,156,.45)}' +
+    R + ' button:disabled{opacity:.45;cursor:default}' +
+    R + ' .fm-label{flex:none;min-width:3.5em;white-space:nowrap;font:inherit;color:inherit}' +
+    R + ' input.fm-vol{all:revert;-webkit-appearance:auto;appearance:auto;flex:none;width:84px;height:auto;margin:0;padding:0;border:0;' +
+    'background:transparent;box-shadow:none;accent-color:#1e8f7a;vertical-align:middle}' +
+    R + ' .fm-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}' +
+    R + ' .fm-icon{font:inherit;line-height:1}' +
+    R + ' .fm-eq{display:none;align-items:flex-end;gap:2px;height:12px;flex:none}' + R + '.fm-on .fm-eq{display:inline-flex}' +
+    R + ' .fm-eq i{display:block;width:3px;height:5px;border-radius:1px;background:#1e8f7a;animation:fm-eq 1.6s ease-in-out infinite}' +
+    R + ' .fm-eq i:nth-child(2){animation-delay:-.5s}' + R + ' .fm-eq i:nth-child(3){animation-delay:-1s}' +
+    '@keyframes fm-eq{0%,100%{height:3px}50%{height:11px}}' + R + '.fm-still .fm-eq i{animation:none;height:8px}' +
+    '@media (prefers-reduced-motion:reduce){' + R + ' .fm-eq i{animation:none;height:8px}}' + R + '.fm-off .fm-label{color:#585c67}' +
+    '@media (max-width:520px){body:has(#fridge-music){padding-bottom:52px}' + R + '{right:8px;bottom:8px;padding:4px 8px 4px 4px}' +
+    R + ' input.fm-vol{width:64px}' + R + ' .fm-label{display:none}}' +
+    '@media print{' + R + '{display:none}}';
 
   var box = document.createElement('div');
   box.className = 'fm';
+  box.id = 'fridge-music';
   box.setAttribute('role', 'group');
   box.setAttribute('aria-label', 'Background music');
   box.innerHTML =

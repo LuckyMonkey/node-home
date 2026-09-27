@@ -84,19 +84,25 @@ with echo. 32 bars, about 1 min 53 s, seamless.
   browsers without Ogg (older Safari / iOS). Each holds one loop plus a few seconds of the same audio either side;
   the player loops between `LOOP_START` (1.0 s) and `LOOP_START + LOOP_LEN` (112.941176 s), so the loop stays
   gapless even when a decoder adds priming delay. Peak -9 dBFS, average about -26 dBFS: quiet, lots of headroom.
-- **Player:** `fridge-music.js` (the control's look is in `fridge-shell.css`, `.fm`). Off until pressed - nothing
-  is downloaded or played before a click. Play/pause, mute and volume are remembered in this browser; the loop
-  position is kept for the tab, and after a link the music resumes on the first click or key press on the new
-  page (never before). One tab plays at a time. Fades in and out; still indicator under reduced motion; works
-  with keyboard and screen readers; a missing file or old browser just shows "Music unavailable". Nothing is sent
-  anywhere.
-- **On which pages:** the ones that load the script - `index.html`, `404.html`, `status/`, `phone/` (not the
-  redirect-only pages).
+- **Player:** `fridge-music.js` - one script for both sites, styling itself (the corner pill). Each site remembers
+  its own choice (localStorage; nothing is sent anywhere):
+  - **fridge.run** loads it with `data-autostart`: on unless you turned it off. It starts by itself where the browser
+    allows sound without a click (a site you have used before), otherwise on your first tap, click or key.
+  - **go.fridge.run** loads `https://fridge.run/fridge-music.js` (and the music, cross-origin - Pages sends
+    `Access-Control-Allow-Origin: *`) from every signed-in page except the media player: off until you turn it on,
+    then remembered, carrying on page to page.
+  Turned off stays off. The loop position is kept for the tab; one tab plays at a time; fades in and out; still
+  indicator under reduced motion; keyboard and screen-reader friendly; a missing file or old browser shows a message.
+- **On which pages:** fridge.run's `index.html`, `404.html`, `status/`, `phone/` (not the redirect-only pages), and
+  go.fridge.run's shell (`src/shell.php`, `shell_close()`).
 - **Replace it:** put new files at the same paths (a seamless loop, with the loop's start and length in
   `LOOP_START`/`LOOP_LEN` at the top of `fridge-music.js`), or edit and re-run `python3 tools/ambient/compose.py`
   (needs numpy and ffmpeg with libopus). **Disable it:** remove the `<script src="/fridge-music.js" defer>` line
-  from a page, or from all four to drop it from the site.
-- **Checks** (no build step here, so a checklist): no request for `media/music/` until the play button is pressed;
+  from a page, or from all four to drop it from the site (go.fridge.run: the line in `src/shell.php`). To make
+  fridge.run quiet by default again, drop `data-autostart`.
+- **Checks** (no build step here, so a checklist): fridge.run - on at first visit, starts on the first tap where the
+  browser blocks sound (at once where it allows), off stays off after a reload; go.fridge.run - off by default, no
+  request for the music until turned on, on is remembered page to page, off is remembered. And:
   Enter/Space on the focused play button toggles it; mute and volume survive a reload; following a link keeps the
   choice and resumes only after a click; paused stays paused after a reload; one control per page; with
   prefers-reduced-motion the playing bars stay still; blocking the music file shows a message and the page still

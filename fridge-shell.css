@@ -119,3 +119,40 @@ h1 { margin: 0; letter-spacing: -.02em; line-height: 1.15; }
   transition: background-position .35s ease, text-decoration-color .35s ease;
 }
 .panel a:not([class]):hover, .card a:not([class]):hover, .note a:not([class]):hover { background-position: 100% 0; text-decoration-color: #b0459b; }
+
+/* ---- background music control (fridge-music.js) -------------------------------------------------------------
+   An enamel pill in the corner; off until pressed. Stays out of the way on phones. */
+.fm {
+  position: fixed; right: 14px; bottom: 14px; z-index: 20;
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 10px 5px 6px; border-radius: 999px;
+  background: var(--enamel); border: 1px solid var(--edge); box-shadow: var(--shadow);
+  font-size: 12.5px; color: var(--ink-2);
+}
+.fm button {
+  display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border-radius: 50%;
+  border: 1px solid var(--edge); background: var(--steel); color: var(--ink); cursor: pointer; font-size: 13px; line-height: 1;
+}
+.fm .fm-play { background: var(--mint); border-color: var(--mint-dark); color: #fff; }
+.fm button:hover { filter: brightness(1.05); }
+.fm button:focus-visible, .fm input:focus-visible { outline: none; box-shadow: var(--focus); }
+.fm button:disabled { opacity: .45; cursor: default; }
+.fm-label { min-width: 3.5em; white-space: nowrap; }
+.fm-vol { width: 84px; accent-color: var(--mint-dark); }
+.fm-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+/* playing: three small bars that move - still (a steady dot of colour) for reduced motion */
+.fm-eq { display: none; align-items: flex-end; gap: 2px; height: 12px; }
+.fm-on .fm-eq { display: inline-flex; }
+.fm-eq i { width: 3px; height: 5px; border-radius: 1px; background: var(--mint-dark); animation: fm-eq 1.6s ease-in-out infinite; }
+.fm-eq i:nth-child(2) { animation-delay: -.5s; } .fm-eq i:nth-child(3) { animation-delay: -1s; }
+@keyframes fm-eq { 0%, 100% { height: 3px; } 50% { height: 11px; } }
+.fm-still .fm-eq i { animation: none; height: 8px; }
+@media (prefers-reduced-motion: reduce) { .fm-eq i { animation: none; height: 8px; } }
+.fm-off .fm-label { color: var(--dim); }
+@media (max-width: 520px) {
+  body:has(.fm) { padding-bottom: 52px; }            /* room below the page, so the control never covers its last line */
+  .fm { right: 8px; bottom: 8px; padding: 4px 8px 4px 4px; }
+  .fm-vol { width: 64px; }
+  .fm-label { display: none; }
+  .fm-on .fm-label { display: none; }
+}

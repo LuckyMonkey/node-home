@@ -21,6 +21,7 @@ GitHub Pages is configured in **legacy mode**, publishing the `main` branch at `
 | Path | Purpose |
 |---|---|
 | `index.html` | Access notice — entry page and the sign-in button |
+| `random/` | Public redirect to the RND randomness service and machine display |
 | `status/` | Live node status; renders the node's own status document |
 | `login/` | OpenID Connect handoff to Keycloak |
 | `404.html` | Not-found page |

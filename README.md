@@ -96,9 +96,9 @@ with echo. 32 bars, about 1 min 53 s, seamless.
   indicator under reduced motion; keyboard and screen-reader friendly; a missing file or old browser shows a message.
 - **On which pages:** fridge.run's `index.html`, `404.html`, `status/`, `phone/` (not the redirect-only pages), and
   go.fridge.run's shell (`src/shell.php`, `shell_close()`).
-- **Replace it:** put new files at the same paths (a seamless loop, with the loop's start and length in
-  `LOOP_START`/`LOOP_LEN` at the top of `fridge-music.js`), or edit and re-run `python3 tools/ambient/compose.py`
-  (needs numpy and ffmpeg with libopus). **Disable it:** remove the `<script src="/fridge-music.js" defer>` line
+- **Replace it:** add a track to the `TRACKS` catalog in `fridge-music.js` with its loop metadata, or edit and
+  re-run `python3 tools/ambient/compose.py` / `python3 tools/ambient/compose_tracks.py` (needs numpy and ffmpeg with libopus).
+  **Disable it:** remove the `<script src="/fridge-music.js" defer>` line
   from a page, or from all four to drop it from the site (go.fridge.run: the line in `src/shell.php`). To make
   fridge.run quiet by default again, drop `data-autostart`.
 - **Checks** (no build step here, so a checklist): fridge.run - on at first visit, starts on the first tap where the
@@ -108,3 +108,35 @@ with echo. 32 bars, about 1 min 53 s, seamless.
   choice and resumes only after a click; paused stays paused after a reload; one control per page; with
   prefers-reduced-motion the playing bars stay still; blocking the music file shows a message and the page still
   works. These were run in headless Firefox (20/20) - see the commit message.
+
+### The small generated catalog
+
+The player now offers four quiet modes. The left/right buttons (or the track
+name) change mode; changing while music is playing fades into the new loop.
+Only the selected loop is fetched and decoded.
+
+| Track | Feel | Beat |
+|---|---|---:|
+| Cellar Light | roomy ambient pad, frame drum, sparse plucks | 68 BPM |
+| Canopy Pulse | mysterious soft jungle hand drums and leaf-like shakers | 86 BPM |
+| Panda Drum Trail | rounded toms, bamboo-like clicks, patient motion | 78 BPM |
+| Moss Signal | the quietest night-air mode, damp drum and small signals | 64 BPM |
+
+These are computer-generated originals: the patterns are designed with AI
+assistance, then rendered deterministically from Python + NumPy. There are no
+borrowed samples, vocals, or recognizable melodies. Each new mode has:
+
+- a small JSON tracker pattern in `media/music/tracker/`;
+- a simple Standard MIDI file for rearranging in another tool;
+- Ogg Opus and AAC browser samples;
+- an entry in `media/music/catalog.json`.
+
+Regenerate the three tracker modes with:
+
+    python3 tools/ambient/compose_tracks.py
+
+The source format is intentionally plain. A row contains sixteen steps per
+bar, with values from `0` to `1` for frame drum, hand drum, air/shaker, and
+wood click. Notes in `bass` and `plucks` add restrained pitched movement.
+Keep the peak near -12 dBFS and the loops short; the website is background
+space, not a streaming album.

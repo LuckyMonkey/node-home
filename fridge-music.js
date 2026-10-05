@@ -64,7 +64,7 @@
     'font:13px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ubuntu,sans-serif;text-align:center}' +
     R + ' button.fm-play{background:#2bb59c;border-color:#1e8f7a;color:#fff}' +
     R + ' button.fm-step{font-size:18px}' +
-    R + ' button.fm-track{width:auto;min-width:92px;padding:0 8px;border-radius:12px;display:flex;align-items:center;justify-content:center;gap:5px;font-size:11px}' +
+    R + ' button.fm-track{width:auto;min-width:92px;padding:0 8px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;line-height:1.05}' +
     R + ' .fm-track-name{max-width:92px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}' +
     R + ' .fm-track-mode{display:block;color:#69707a;font-size:9px;font-weight:500;line-height:1}' +
     R + ' button:hover{filter:brightness(1.06);transform:none;box-shadow:none}' +
@@ -80,7 +80,7 @@
     '@keyframes fm-eq{0%,100%{height:3px}50%{height:11px}}' + R + '.fm-still .fm-eq i{animation:none;height:8px}' +
     '@media (prefers-reduced-motion:reduce){' + R + ' .fm-eq i{animation:none;height:8px}}' +
     '@media (max-width:520px){body:has(#fridge-music){padding-bottom:52px}' + R + '{right:8px;bottom:8px;padding:4px 8px 4px 4px}' +
-    R + ' input.fm-vol{width:64px}' + R + ' .fm-track{min-width:30px;width:30px;padding:0}' + R + ' .fm-track-name{display:none}}' +
+    R + ' input.fm-vol{width:64px}' + R + ' .fm-track{min-width:30px;width:30px;padding:0}' + R + ' .fm-track-name{display:none}' + R + ' .fm-track-mode{display:none}}' +
     '@media print{' + R + '{display:none}}';
 
   var box = document.createElement('div');

@@ -90,10 +90,11 @@
     .redeem input::placeholder { text-transform: none; color: #8a8e98; letter-spacing: .02em; }
     .redeem input:focus { outline: none; border-color: var(--mint); box-shadow: var(--focus); }
     .redeem small { display: block; margin-top: 8px; color: var(--dim); font-size: 12.5px; }
-    .links { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--paper-3); }
-    .links a { display: inline-flex; align-items: center; gap: 7px; padding: 6px 10px; border-radius: 10px; text-decoration: none; color: var(--ink-2); font-weight: 600; font-size: 14px; }
-    .links a:hover { background: linear-gradient(120deg, color-mix(in srgb, var(--place) 20%, white), color-mix(in srgb, var(--place) 6%, white)); color: color-mix(in srgb, var(--place) 70%, black); }
-    .links .ico { width: 26px; height: 26px; font-size: 14px; border-radius: 8px; }
+    /* "PHP patched" prize ribbon (2026-10-22 PHP CVE response): blue rosette, pulsing */
+    .ribbon { display: block; width: min(210px, 48vw); height: auto; margin: 0 auto -6px; overflow: visible;
+      filter: drop-shadow(0 6px 14px rgba(0, 0, 0, .55)); transform-origin: 50% 40%; animation: ribbon 1.8s ease-in-out infinite; }
+    @keyframes ribbon { 0%, 100% { transform: scale(.9); } 50% { transform: scale(1.08); } }
+    .ribbon text { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-weight: 900; text-anchor: middle; fill: #fff; }
     .fine { margin: 14px 0 0; font-size: 11px; line-height: 1.5; color: #c3c6cd; text-align: center; letter-spacing: .02em; text-shadow: 0 1px 6px rgba(0, 0, 0, .8); }
   </style>
 </head>
@@ -103,6 +104,16 @@
   <div class="wait" aria-hidden="true"><img src="./logo.png" alt=""></div>
 
   <main>
+    <svg class="ribbon" viewBox="0 0 200 290" role="img" aria-label="Blue ribbon: PHP patched to 8.3.36">
+      <polygon points="58,160 40,284 74,262 98,290 112,176" fill="#1d4fb8"/>
+      <polygon points="142,160 160,284 126,262 102,290 88,176" fill="#163f97"/>
+      <polygon points="100.0,4.0 109.6,14.5 121.4,6.4 128.4,18.8 141.7,13.5 145.8,27.2 159.9,24.9 160.8,39.2 175.1,40.1 172.8,54.2 186.5,58.3 181.2,71.6 193.6,78.6 185.5,90.4 196.0,100.0 185.5,109.6 193.6,121.4 181.2,128.4 186.5,141.7 172.8,145.8 175.1,159.9 160.8,160.8 159.9,175.1 145.8,172.8 141.7,186.5 128.4,181.2 121.4,193.6 109.6,185.5 100.0,196.0 90.4,185.5 78.6,193.6 71.6,181.2 58.3,186.5 54.2,172.8 40.1,175.1 39.2,160.8 24.9,159.9 27.2,145.8 13.5,141.7 18.8,128.4 6.4,121.4 14.5,109.6 4.0,100.0 14.5,90.4 6.4,78.6 18.8,71.6 13.5,58.3 27.2,54.2 24.9,40.1 39.2,39.2 40.1,24.9 54.2,27.2 58.3,13.5 71.6,18.8 78.6,6.4 90.4,14.5" fill="#2563eb"/>
+      <circle cx="100" cy="100" r="72" fill="#1e40af" stroke="#fbbf24" stroke-width="4"/>
+      <circle cx="100" cy="100" r="63" fill="none" stroke="#93c5fd" stroke-width="1.5" stroke-dasharray="3 4"/>
+      <text x="100" y="86" font-size="33">PHP</text>
+      <text x="100" y="114" font-size="20" letter-spacing="1.5">PATCHED</text>
+      <text x="100" y="136" font-size="13" fill="#fbbf24" style="fill:#fbbf24">8.3.36 ✓</text>
+    </svg>
     <section class="panel">
       <div class="brand"><img src="./logo.png" alt="" width="56" height="56"><b>fridge.run</b></div>
       <p class="eyebrow">🔒 Private node · invite only</p>
@@ -124,17 +135,6 @@
         </div>
         <small id="code-hint">Invited by email? Just open the link in it.</small>
       </form>
-
-      <nav class="links" aria-label="More">
-        <a class="c-monkey" href="./luckymonkey/"><span class="ico" aria-hidden="true">🐵</span>MonkeyNet</a>
-        <a class="c-status" href="./random/"><span class="ico" aria-hidden="true">RND</span>Randomness</a>
-        <a class="c-status" href="https://go.fridge.run/certs/" title="Free study tracks: CompTIA, networking, C/C++, embedded, cloud, web"><span class="ico" aria-hidden="true">🎓</span>Certifications</a>
-        <a class="c-status" href="https://go.fridge.run/wiki/"><span class="ico" aria-hidden="true">📖</span>Wiki</a>
-        <a class="c-status" href="./status/"><span class="ico" aria-hidden="true">📡</span>Status</a>
-        <a class="c-status" href="./phone/"><span class="ico" aria-hidden="true">📱</span>Open on phone</a>
-        <a class="c-status" href="https://go.fridge.run/care/" title="For clinicians a fridge.run member has let in during a visit"><span class="ico" aria-hidden="true">🩺</span>Providers login</a>
-        <a class="c-report" href="https://go.fridge.run/report?from=https%3A%2F%2Ffridge.run%2F"><span class="ico" aria-hidden="true">🤮</span>Report a problem</a>
-      </nav>
     </section>
     <p class="fine">Unauthorized access is prohibited under 18 U.S.C. § 1030 and will be met by this node's anti-intrusion software. Thank you for not hacking!</p>
   </main>

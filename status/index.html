@@ -14,6 +14,7 @@
        legibility on the dark surface (--bg #020202 / --panel #0c0c0c). */
     :root {
       --ok: #3fb950;
+      --idle: #8b949e;
       --warn: #d29922;
       --down: #f85149;
       --unknown: #8b949e;
@@ -49,6 +50,7 @@
     .s-warn    .light, .s-warn    .state { color: var(--warn); }
     .s-down    .light, .s-down    .state { color: var(--down); }
     .s-unknown .light, .s-unknown .state { color: var(--unknown); }
+    .s-idle    .light, .s-idle    .state { color: var(--idle); }
 
     .who {
       margin: 18px 0 0; padding: 13px 18px;
@@ -104,15 +106,18 @@
       <li class="skeleton">Contacting the node&hellip;</li>
     </ul>
 
-    <h2 class="subhead" id="chead" hidden><span class="ico" aria-hidden="true">🐋</span>Containers</h2>
+    <h2 class="subhead" id="chead" hidden><span class="ico" aria-hidden="true">🧩</span>Apps</h2>
     <ul class="list" id="clist" hidden aria-live="polite"></ul>
 
-    <p class="note">Measured on the node every minute. Grey means it can't be reached.</p>
+    <p class="note">Measured on the node every minute: each website is opened the way a visitor would, and each app's container is checked. Grey means it can't be reached; ◌ means an on-demand app that is stopped on purpose.</p>
   </main>
 
   <script>
   (function () {
-    var ENDPOINT = 'https://auth.fridge.run/status.json';
+    // social.fridge.run first: it resolves to the public address everywhere. Inside the
+    // house auth.fridge.run resolves to fridge's LAN address, and browsers block a public
+    // page from fetching a private one, so the page said "unreachable" at home.
+    var ENDPOINTS = ['https://social.fridge.run/status.json', 'https://auth.fridge.run/status.json'];
     var REFRESH = 30000;
 
     // glyph + label per state. Shape and word both differ, so colour is never
@@ -121,7 +126,8 @@
       ok:      { glyph: '●', label: 'Operational' },  // filled circle
       warn:    { glyph: '▲', label: 'Degraded'    },  // triangle
       down:    { glyph: '■', label: 'Down'        },  // square
-      unknown: { glyph: '○', label: 'Unknown'     }   // hollow circle
+      unknown: { glyph: '○', label: 'Unknown'     },  // hollow circle
+      idle:    { glyph: '◌', label: 'On demand'   }   // dotted circle: stopped on purpose
     };
 
     var listEl = document.getElementById('list');
@@ -170,16 +176,24 @@
     // when it can but its reading is too old to still be true.
     function allUnknown(reason, when) {
       paint('unknown', reason, when);
-      var names = ['Web ingress', 'Identity (Keycloak)', 'DNS filtering (Pi-hole)', 'Freezer node'];
+      var names = ['Web ingress', 'Member site (go.fridge.run)', 'Identity (Keycloak)', 'DNS filtering (Pi-hole)', 'Freezer node'];
       rows(names.map(function (n) { return { name: n, state: 'unknown', detail: '' }; }));
     }
 
     function load() {
-      fetch(ENDPOINT, { cache: 'no-store' })
-        .then(function (r) {
-          if (!r.ok) throw new Error('http ' + r.status);
-          return r.json();
-        })
+      // Ask each address in turn; the first that answers is the reading.
+      function get(i) {
+        return fetch(ENDPOINTS[i], { cache: 'no-store' })
+          .then(function (r) {
+            if (!r.ok) throw new Error('http ' + r.status);
+            return r.json();
+          })
+          .catch(function (e) {
+            if (i + 1 < ENDPOINTS.length) return get(i + 1);
+            throw e;
+          });
+      }
+      get(0)
         .then(function (doc) {
           var gen = Date.parse(doc.generated);
           var ttl = (doc.ttl || 120) * 1000;
@@ -191,7 +205,7 @@
           }
           var svcs = doc.services || [];
           rows(svcs);
-          // Containers the owner marked public in whale: name + state only.
+          // Every member app (and the containers the owner marked public in whale): name + state only.
           var boxes = doc.containers || [];
           var clist = document.getElementById('clist');
           clist.hidden = document.getElementById('chead').hidden = !boxes.length;

@@ -180,9 +180,9 @@
     R + ' .fm-volbox{display:none;position:absolute;bottom:36px;left:50%;transform:translateX(-50%);width:34px;height:118px;padding:8px 0;border-radius:17px;background:rgba(23,27,34,.92);border:1px solid rgba(255,255,255,.14)}' +
     R + ' .fm-spk:hover .fm-volbox,' + R + ' .fm-spk:focus-within .fm-volbox{display:block}' +
     R + ' input.fm-vol{all:revert;-webkit-appearance:slider-vertical;appearance:slider-vertical;writing-mode:vertical-lr;direction:rtl;width:18px;height:100px;margin:0 auto;display:block;accent-color:#2bb59c}' +
-    R + ' .fm-eq{display:inline-flex;align-items:flex-end;gap:2px;height:12px}' + R + ' .fm-eq i{display:block;width:3px;height:4px;border-radius:1px;background:#fff}' +
+    R + ' .fm-eq{display:inline-flex;align-items:flex-end;gap:2px;height:12px}' + R + ' .fm-eq i{display:block;width:3px;height:12px;border-radius:1px;background:#fff;transform:scaleY(.33);transform-origin:50% 100%}' +
     R + '.fm-on .fm-eq i{animation:fm-eq 1.2s ease-in-out infinite}' + R + ' .fm-eq i:nth-child(2){animation-delay:-.4s}' + R + ' .fm-eq i:nth-child(3){animation-delay:-.8s}' +
-    '@keyframes fm-eq{0%,100%{height:3px}50%{height:12px}}@media (prefers-reduced-motion:reduce){' + R + ' .fm-eq i{animation:none!important;height:8px}}' +
+    '@keyframes fm-eq{0%,100%{transform:scaleY(.25)}50%{transform:scaleY(1)}}@media (prefers-reduced-motion:reduce){' + R + ' .fm-eq i{animation:none!important;transform:scaleY(.66)}}' +
     R + ' .fm-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}@media print{' + R + '{display:none}}';
 
   var box = document.createElement('div');

@@ -94,7 +94,7 @@
     .links a { display: inline-flex; align-items: center; gap: 7px; padding: 6px 10px; border-radius: 10px; text-decoration: none; color: var(--ink-2); font-weight: 600; font-size: 14px; }
     .links a:hover { background: linear-gradient(120deg, color-mix(in srgb, var(--place) 20%, white), color-mix(in srgb, var(--place) 6%, white)); color: color-mix(in srgb, var(--place) 70%, black); }
     .links .ico { width: 26px; height: 26px; font-size: 14px; border-radius: 8px; }
-    /* "PHP patched" rosette (2026-10-22 PHP CVE response): white, pulsing, in the card's
+    /* PHP security rosette (2026-10-23 advisory recheck): white, pulsing, in the card's
        top-right corner, clear of the centered brand and title */
     .panel { position: relative; }
     .ribbon { position: absolute; z-index: 5; top: -86px; right: -86px; width: 172px; height: 172px; overflow: visible;
@@ -121,15 +121,16 @@
 
   <main>
     <section class="panel">
-      <svg class="ribbon" viewBox="0 0 260 260" role="img" aria-label="PHP patched to 8.3.36: CVE-2026-109618 and CVE-2026-109619">
+      <svg class="ribbon" viewBox="0 0 260 260" role="img" aria-label="PHP 8.3.36: two flaws patched; CVE-2026-115560 mitigated by disabling session upload progress. Verified October 23, 2026.">
         <defs><path id="cve-ring" d="M130,130 m-114,0 a114,114 0 1,1 228,0 a114,114 0 1,1 -228,0"/></defs>
-        <g class="ring"><animateTransform attributeName="transform" type="rotate" from="0 130 130" to="360 130 130" dur="12s" repeatCount="indefinite"/><text class="cve"><textPath href="#cve-ring" textLength="712" lengthAdjust="spacingAndGlyphs">CVE-2026-109618 ✦ CVE-2026-109619 ✦ CVE-2026-109618 ✦ CVE-2026-109619 ✦ </textPath></text></g>
+        <g class="ring"><animateTransform attributeName="transform" type="rotate" from="0 130 130" to="360 130 130" dur="12s" repeatCount="indefinite"/><text class="cve"><textPath href="#cve-ring" textLength="712" lengthAdjust="spacingAndGlyphs">CVE-2026-109618 ✦ CVE-2026-109619 ✦ CVE-2026-115560 ✦ </textPath></text></g>
         <g transform="translate(30 30)"><g class="seal">
           <polygon points="100.0,4.0 109.6,14.5 121.4,6.4 128.4,18.8 141.7,13.5 145.8,27.2 159.9,24.9 160.8,39.2 175.1,40.1 172.8,54.2 186.5,58.3 181.2,71.6 193.6,78.6 185.5,90.4 196.0,100.0 185.5,109.6 193.6,121.4 181.2,128.4 186.5,141.7 172.8,145.8 175.1,159.9 160.8,160.8 159.9,175.1 145.8,172.8 141.7,186.5 128.4,181.2 121.4,193.6 109.6,185.5 100.0,196.0 90.4,185.5 78.6,193.6 71.6,181.2 58.3,186.5 54.2,172.8 40.1,175.1 39.2,160.8 24.9,159.9 27.2,145.8 13.5,141.7 18.8,128.4 6.4,121.4 14.5,109.6 4.0,100.0 14.5,90.4 6.4,78.6 18.8,71.6 13.5,58.3 27.2,54.2 24.9,40.1 39.2,39.2 40.1,24.9 54.2,27.2 58.3,13.5 71.6,18.8 78.6,6.4 90.4,14.5" fill="#fff"/>
           <circle cx="100" cy="100" r="72" fill="#fff" stroke="#1e40af" stroke-width="5"/>
-          <text x="100" y="92" font-size="40">PHP</text>
-          <text x="100" y="122" font-size="23" letter-spacing="1">PATCHED</text>
-          <text x="100" y="148" font-size="17">8.3.36</text>
+          <text x="100" y="72" font-size="27">PHP 8.3.36</text>
+          <text x="100" y="100" font-size="18">2 PATCHED</text>
+          <text x="100" y="125" font-size="16">1 MITIGATED</text>
+          <text x="100" y="149" font-size="13">CHECKED OCT 23</text>
         </g></g>
       </svg>
       <div class="brand"><img src="./logo.png" alt="" width="56" height="56"><b>fridge.run</b></div>

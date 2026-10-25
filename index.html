@@ -152,13 +152,13 @@
       <h1>fridge is down</h1>
       <p class="lead">
         Sorry — <strong>go.fridge.run</strong> is not accessible right now.
-        We’re working on recovery and will bring services back carefully.
+        We’re working to regain access to the fridge host. Once we’re back in, the plan is to restore the full service set.
       </p>
       <p class="notice">⚠️ No data has been lost as part of this outage.</p>
     </section>
 
     <section class="section">
-      <h2>⚠️ Down or being worked on</h2>
+      <h2>⚠️ Temporarily down while access is restored</h2>
       <ul class="status-list">
         <li class="down">
           <strong>go.fridge.run and sign-in</strong>
@@ -170,33 +170,33 @@
         </li>
         <li class="recovering">
           <strong>Wiki and knowledge services</strong>
-          <span>The wiki application, body atlas, food, maps, certificates, law, binder, and Citizens are candidates for restoration once their data and identity dependencies are recovered.</span>
+          <span>The wiki application, body atlas, food, maps, certificates, law, binder, and Citizens are expected to return once the host and its data are reachable again.</span>
         </li>
         <li class="recovering">
           <strong>Game services</strong>
-          <span>Lucky Monkey, HedgePets, and the dedicated game-server stacks can return as their code and deployment hosts are rebuilt.</span>
+          <span>Lucky Monkey, HedgePets, and the dedicated game-server stacks are expected to return; HedgePets is already being prepared for GitHub Pages.</span>
         </li>
       </ul>
     </section>
 
     <section class="section">
-      <h2>⚠️ What is recoverable, and what is not guaranteed</h2>
+      <h2>⚠️ Restoration plan</h2>
       <ul class="status-list">
         <li class="recovering">
           <strong>HedgePets is being restored</strong>
           <span>The standalone Godot game is being exported to its own GitHub Pages site. When the build finishes, it will be available at <a href="https://luckymonkey.github.io/hedgepets/">HedgePets on GitHub Pages</a>.</span>
         </li>
         <li class="warning">
-          <strong>Email is not guaranteed to return</strong>
-          <span>SMTP settings, mail delivery state, and mailbox history were host-side configuration, not repository content. Delivery will require re-created credentials and provider setup.</span>
+          <strong>Email is waiting for host access</strong>
+          <span>SMTP settings, delivery state, and mailbox history are on the host. We expect to restore them when access returns; credentials may need to be re-entered.</span>
         </li>
         <li class="warning">
-          <strong>Stored variables and secrets need to be re-created</strong>
-          <span>Environment files, OAuth secrets, Keycloak secrets, SMTP credentials, tokens, and signing keys were deliberately excluded from GitHub.</span>
+          <strong>Stored variables and secrets are waiting on host access</strong>
+          <span>These were deliberately excluded from GitHub, but they are part of the host recovery work and will be restored or re-entered when the fridge is reachable.</span>
         </li>
         <li class="warning">
-          <strong>Large data corpuses need separate recovery</strong>
-          <span>Photos, media, graph databases, uploaded files, chat history, forum data, and game worlds are not fully represented by source repositories.</span>
+          <strong>Large data corpuses are waiting on host access</strong>
+          <span>Photos, media, graph databases, uploaded files, chat history, forum data, and game worlds live on the host or its storage. They are expected to be restored when the fridge is reachable.</span>
         </li>
       </ul>
     </section>
@@ -205,8 +205,8 @@
       <h2>⚠️ Wiki backup status</h2>
       <ul class="status-list">
         <li class="warning">
-          <strong>Partially backed up</strong>
-          <span>The wiki source, guides, configuration defaults, and Git-backed Markdown pages are in GitHub. The live DokuWiki state and media under <code>/srv/wiki/data</code>, plus synced checkouts under <code>/srv/wiki-git</code>, are not confirmed in an off-machine backup.</span>
+          <strong>Source-backed; live data awaiting host access</strong>
+          <span>The wiki source, guides, configuration defaults, and Git-backed Markdown pages are in GitHub. The live DokuWiki state and media under <code>/srv/wiki/data</code>, plus synced checkouts under <code>/srv/wiki-git</code>, are not confirmed in an off-machine backup, but remain on the recovery host and are expected to be checked when access returns.</span>
         </li>
         <li class="warning">
           <strong>UX library assets may need separate recovery</strong>
@@ -215,7 +215,7 @@
       </ul>
     </section>
 
-    <footer>⚠️ Recovery is in progress. This page will be replaced when the main services are ready.</footer>
+    <footer>⚠️ Recovery is in progress. The full service set is expected to return when access to the fridge host is restored.</footer>
   </main>
 </body>
 </html>

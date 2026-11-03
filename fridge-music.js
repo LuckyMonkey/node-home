@@ -12,7 +12,12 @@
  * The player is a small round button while you browse; it opens on hover or tap: play, the song list, next, and one
  * speaker button (mute) with a vertical volume slider. Songs saved on the music page (go.fridge.run/music) join the
  * list on that site. Each site remembers its own choice in localStorage; nothing is sent anywhere.
- * window.FridgeMusic is the engine: { songs, instruments, start(song), stop(), setVolume(v), onStep(fn) }.
+ * window.FridgeMusic is the engine: { songs, instruments, start(song), stop(), setVolume(v), onStep(fn),
+ *   songById(id), setLevel(x), noteName(song, degree) }.
+ * Songs may span several bars (a part's pattern is 16 steps per bar; shorter patterns repeat), may name `layers`
+ * (part -> the intensity it needs, 0..1.5, see setLevel) and `bpmRise` (extra BPM at full intensity), and may set
+ * `bed: true` for a continuous drone. One engine for every fridge sound: fridge.run, go.fridge.run/music and the
+ * Lucky Monkey game (its jungle music is the song `lucky-monkey-jungle`, driven by the game's threat level).
  */
 (function () {
   'use strict';
@@ -41,7 +46,16 @@
     {id: 'panda-trail', title: 'Panda Trail', mood: 'gentle toms', bpm: 78, root: 57, scale: 'minor', seed: 7, parts: {
       tom_lo: 'x.......o.......', tom_hi: '....o.......o..o', shaker: 'o...o...o...o...', marimba: '5.....3.....1...', pad: '1-------6-------'}},
     {id: 'cellar-light', title: 'Cellar Light', mood: 'ambient', bpm: 68, root: 50, scale: 'dorian', seed: 3, parts: {
-      pad: '1---------------', kalimba: '5.......3...2...', tom_lo: 'o...............', bass: '1.......5.......'}}
+      pad: '1---------------', kalimba: '5.......3...2...', tom_lo: 'o...............', bass: '1.......5.......'}},
+    // Lucky Monkey (the game): jungle at night. A drone and birds, growing into shaker, bongos, marimba over
+    // Am-F-C-G, a cuica and a low tom as the threat rises. The game sets the intensity with setLevel (0..1.5).
+    {id: 'lucky-monkey-jungle', title: 'Lucky Monkey: Jungle at Night', mood: 'the game: drone and birds into a groove', game: 'luckymonkey',
+      bpm: 92, bpmRise: 20, root: 57, scale: 'minor', seed: 5, bars: 4, bed: true,
+      layers: {birds: 0.01, shaker: 0.3, bongo_lo: 0.45, bongo_hi: 0.45, marimba: 0.6, cuica: 0.7, tom_lo: 0.9}, parts: {
+      birds: 'o...............o...............o...............o...............',
+      shaker: 'o.x.o.x.o.x.o.x.', bongo_lo: 'x....x..x....x..', bongo_hi: '...x..x...x...xx',
+      marimba: '1...5...3...5.1.6...3...8...3.6.3...7...5...7.3.7...4...2...4.7.',
+      cuica: '......x.......o.', tom_lo: 'x.......x.......'}}
   ];
   var SCALES = {
     'minor-pent': [0, 3, 5, 7, 10], 'major-pent': [0, 2, 4, 7, 9], minor: [0, 2, 3, 5, 7, 8, 10],
@@ -94,58 +108,105 @@
     kick: {label: 'Kick', play: function (t, v) { drum(t, 120, 42, 0.32, 0.8 * v, 'sine'); }},
     shaker: {label: 'Shaker', play: function (t, v) { noise(t, 6500, 0.12 * v, 0.05); }},
     clave: {label: 'Clave', play: function (t, v) { tone(t, 2100, 0.22 * v, 0.05, 'sine'); }},
-    kalimba: {label: 'Kalimba', melodic: true, play: function (t, v, f) { tone(t, f * 2, 0.22 * v, 0.7, 'sine', 4.1); }},
-    marimba: {label: 'Marimba', melodic: true, play: function (t, v, f) { tone(t, f * 2, 0.26 * v, 0.4, 'sine', 3.9); }},
-    bass: {label: 'Bass', melodic: true, play: function (t, v, f) { tone(t, f / 2, 0.36 * v, 0.34, 'triangle'); }},
-    pad: {label: 'Pad', melodic: true, held: true, play: function (t, v, f, len) { pad(t, f, 0.05 * v, len); }}
+    kalimba: {label: 'Kalimba', melodic: true, oct: 1, play: function (t, v, f) { tone(t, f * 2, 0.22 * v, 0.7, 'sine', 4.1); }},
+    marimba: {label: 'Marimba', melodic: true, oct: 1, play: function (t, v, f) { tone(t, f * 2, 0.26 * v, 0.4, 'sine', 3.9); }},
+    bass: {label: 'Bass', melodic: true, oct: -1, play: function (t, v, f) { tone(t, f / 2, 0.36 * v, 0.34, 'triangle'); }},
+    pad: {label: 'Pad', melodic: true, held: true, play: function (t, v, f, len) { pad(t, f, 0.05 * v, len); }},
+    cuica: {label: 'Cuica', play: function (t, v) { cuica(t, 0.2 * v); }},
+    birds: {label: 'Birds', chance: 0.45, play: function (t, v) { birds(t, 0.06 * v); }}
   };
+  // Cuica: the friction drum's "whoop", a pitch glide up then down (Lucky Monkey).
+  function cuica(t, peak) {
+    var o = ctx.createOscillator(), f = ctx.createBiquadFilter(), g = ctx.createGain(); o.type = 'triangle';
+    f.type = 'bandpass'; f.frequency.value = 900; f.Q.value = 2;
+    o.frequency.setValueAtTime(380, t); o.frequency.exponentialRampToValueAtTime(760, t + 0.09); o.frequency.exponentialRampToValueAtTime(420, t + 0.24);
+    env(g, t, peak, 0.02, 0.24); o.connect(f); f.connect(g); g.connect(master); o.start(t); o.stop(t + 0.32);
+  }
+  // Birds: a few chirps that slide up, or a quick trill (Lucky Monkey).
+  function birds(t, peak) {
+    var base = 1800 + Math.random() * 1600, n = 2 + Math.floor(Math.random() * 4), trill = Math.random() < 0.4;
+    for (var k = 0; k < n; k++) {
+      var at = t + k * (trill ? 0.06 : 0.14), o = ctx.createOscillator(), g = ctx.createGain(), d = trill ? 0.05 : 0.11;
+      o.frequency.setValueAtTime(base * (trill ? 1 : 0.8), at); o.frequency.exponentialRampToValueAtTime(base * (trill ? 1.15 : 1.3), at + d * 0.85);
+      env(g, at, peak, 0.004, d); o.connect(g); g.connect(master); o.start(at); o.stop(at + d + 0.05);
+    }
+  }
+  // The bed: a warm low drone (two detuned saws + a soft fifth through a slowly breathing low-pass), for songs with
+  // `bed: true`. Its loudness and brightness follow the intensity.
+  var bed = null;
+  function bedOn(s) {
+    if (bed || !s.bed) return;
+    var g = ctx.createGain(), lp = ctx.createBiquadFilter(), f0 = 440 * Math.pow(2, ((s.root || 57) - 69) / 12) / 4;
+    g.gain.value = 0; lp.type = 'lowpass'; lp.frequency.value = 220; lp.Q.value = 0.7;
+    var oscs = [[f0, 'sawtooth', 1], [f0 * 1.005, 'sawtooth', 1], [f0 * 1.498, 'sine', 0.4]].map(function (x) {
+      var o = ctx.createOscillator(), og = ctx.createGain(); o.type = x[1]; o.frequency.value = x[0]; og.gain.value = x[2];
+      o.connect(og); og.connect(lp); o.start(); return o; });
+    var lfo = ctx.createOscillator(), lg = ctx.createGain(); lfo.frequency.value = 0.07; lg.gain.value = 60; lfo.connect(lg); lg.connect(lp.frequency); lfo.start();
+    lp.connect(g); g.connect(master); bed = {g: g, lp: lp, oscs: oscs.concat([lfo])};
+  }
+  function bedLevel() {
+    if (!bed) return; var now = ctx.currentTime;
+    bed.g.gain.setTargetAtTime(intensity > 0 ? 0.05 + intensity * 0.02 : 0, now, 1.2);
+    bed.lp.frequency.setTargetAtTime(200 + intensity * 320, now, 1.5);
+  }
+  function bedOff() { if (!bed) return; var b = bed; bed = null; b.g.gain.setTargetAtTime(0, ctx.currentTime, 0.3); window.setTimeout(function () { b.oscs.forEach(function (o) { try { o.stop(); } catch (e) {} }); }, 1500); }
 
   // ---- the sequencer -------------------------------------------------------------------------------------------
   function rng(seed) { var x = seed >>> 0 || 1; return function () { x ^= x << 13; x ^= x >>> 17; x ^= x << 5; return ((x >>> 0) % 10000) / 10000; }; }
   function freqOf(song, degree) { var sc = SCALES[song.scale] || SCALES.minor, d = degree - 1, oct = Math.floor(d / sc.length); return 440 * Math.pow(2, ((song.root || 57) + sc[((d % sc.length) + sc.length) % sc.length] + 12 * oct - 69) / 12); }
-  var song = null, step = 0, nextAt = 0, timer = 0, rand = null, stepFns = [], vol = 0.4, muted = false;
+  var song = null, step = 0, nextAt = 0, timer = 0, rand = null, stepFns = [], vol = 0.4, muted = false, intensity = 1;
+  function barsOf(s) { return Math.max(1, Math.min(8, +s.bars || 1)); }
+  function noteName(s, degree, octShift) {   // octShift: the instrument's octave (marimba +1, bass -1)
+    var NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'], sc = SCALES[s.scale] || SCALES.minor, d = degree - 1, oct = Math.floor(d / sc.length);
+    var midi = (s.root || 57) + sc[((d % sc.length) + sc.length) % sc.length] + 12 * oct; midi += 12 * (octShift || 0); return NAMES[midi % 12] + (Math.floor(midi / 12) - 1);
+  }
   function level() { return muted ? 0 : vol * vol * 0.9; }
   function schedule() {
-    var dur = 60 / song.bpm / 4;
+    var dur = 60 / ((song.bpm || 100) + (song.bpmRise || 0) * Math.min(intensity, 1.4) / 1.4) / 4, total = 16 * barsOf(song);
     while (nextAt < ctx.currentTime + 0.12) {
-      var s = step % 16, bar = Math.floor(step / 16), fill = bar % 4 === 3 && s >= 12;
+      var g = step % total, s = g % 16, bar = Math.floor(step / 16), fill = bar % 4 === 3 && s >= 12;
       Object.keys(song.parts).forEach(function (name) {
         var ins = INSTRUMENTS[name], pat = String(song.parts[name] || ''); if (!ins || !pat) return;
-        var c = pat.charAt(s % pat.length);
+        if (song.layers && song.layers[name] != null && intensity < song.layers[name]) return;   // not loud enough yet
+        var at0 = g % pat.length, c = pat.charAt(at0);
         if (ins.melodic) {
           if (!/[1-9]/.test(c)) return;
-          var len = dur; if (ins.held) { for (var k = s + 1; k < 16 && pat.charAt(k) === '-'; k++) len += dur; }
+          var len = dur; if (ins.held) { for (var k = at0 + 1; k < pat.length && pat.charAt(k) === '-'; k++) len += dur; }
           var deg = +c + (rand() < 0.12 ? (rand() < 0.5 ? 1 : -1) : 0);           // a passing note now and then
           ins.play(nextAt, 0.85 + rand() * 0.15, freqOf(song, deg), len);
           return;
         }
         var v = c === 'x' ? 1 : c === 'o' ? 0.55 : 0;
+        if (v && ins.chance && rand() > ins.chance) v = 0;                                  // birds call now and then
         if (!v && fill && /tom|conga|djembe|bongo/.test(name) && rand() < 0.45) v = 0.6;   // fills at the end of every fourth bar
         if (!v && rand() < 0.03 && /bongo|conga|shaker/.test(name)) v = 0.3;               // ghost notes
         if (v && rand() < 0.04 && c !== 'x') v = 0;                                          // the odd drop
         if (v) ins.play(nextAt + (rand() - 0.5) * 0.006, v);
       });
-      var at = nextAt, st = s;
-      stepFns.forEach(function (fn) { try { fn(st, at); } catch (e) {} });
+      var at = nextAt, st = s, gst = g;
+      stepFns.forEach(function (fn) { try { fn(st, at, gst); } catch (e) {} });          // step in bar, time, step in song
       nextAt += dur * (s % 2 ? 0.94 : 1.06);                                                // a little swing
       step++;
     }
   }
   var Engine = {
     get songs() { return allSongs(); }, builtIn: BUILT_IN, instruments: INSTRUMENTS, scales: SCALES, customKey: SONGS_KEY,
+    songById: songById, noteName: noteName, barsOf: barsOf,
+    get level() { return intensity; },
+    setLevel: function (x) { intensity = Math.max(0, Math.min(1.5, +x || 0)); if (ctx) bedLevel(); },
     get playing() { return !!timer; }, get song() { return song; },
     start: function (s) {
       if (!AC) return Promise.reject(new Error('No Web Audio here'));
       audio(); Engine.stop(true);
-      song = s; step = 0; rand = rng(s.seed || 1); nextAt = ctx.currentTime + 0.08;
+      song = s; step = 0; rand = rng(s.seed || 1); nextAt = ctx.currentTime + 0.08; bedOff(); bedOn(s);
       return (ctx.state === 'suspended' ? ctx.resume() : Promise.resolve()).then(function () {
         master.gain.cancelScheduledValues(ctx.currentTime); master.gain.setValueAtTime(master.gain.value, ctx.currentTime);
         master.gain.linearRampToValueAtTime(level(), ctx.currentTime + 0.6);
-        timer = window.setInterval(schedule, 25); schedule();
+        bedLevel(); timer = window.setInterval(schedule, 25); schedule();
       });
     },
     stop: function (quick) {
-      if (!timer) return; window.clearInterval(timer); timer = 0;
+      if (!timer) return; window.clearInterval(timer); timer = 0; bedOff();
       if (ctx) { master.gain.cancelScheduledValues(ctx.currentTime); master.gain.setValueAtTime(master.gain.value, ctx.currentTime); master.gain.linearRampToValueAtTime(0, ctx.currentTime + (quick ? 0.08 : 0.5)); }
     },
     setVolume: function (v, m) { vol = Math.max(0, Math.min(1, v)); muted = !!m; if (ctx && timer) master.gain.linearRampToValueAtTime(level(), ctx.currentTime + 0.12); },

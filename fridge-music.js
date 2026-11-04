@@ -13,11 +13,12 @@
  * The player is a small round button while you browse; it opens on hover or tap: play, the song list, next, and one
  * speaker button (mute) with a vertical volume slider. Songs saved on the music page (go.fridge.run/music) join the
  * list on that site. Each site remembers its own choice in localStorage; nothing is sent anywhere.
- * window.FridgeMusic is the engine: { songs, instruments, start(song), stop(), setVolume(v), onStep(fn),
+ * window.FridgeMusic is the engine: { songs, instruments, start(song), stop(), setVolume(v), onStep(fn), onSong(fn), resolve,
  *   songById(id), setLevel(x), noteName(song, degree) }.
  * Songs may span several bars (a part's pattern is 16 steps per bar; shorter patterns repeat), may name `layers`
  * (part -> the intensity it needs, 0..1.5, see setLevel) and `bpmRise` (extra BPM at full intensity), and may set
- * `bed: true` for a continuous drone, and `player: false` to stay off the little player (music page only). One engine for every fridge sound: fridge.run, go.fridge.run/music and the
+ * `bed: true` for a continuous drone, `player: false` to stay off the little player (music page only), and
+ * `next` (a song id) to play on into that song when it ends - songs linked into parts. One engine for every fridge sound: fridge.run, go.fridge.run/music and the
  * Lucky Monkey game (its jungle music is the song `lucky-monkey-jungle`, driven by the game's threat level).
  */
 (function () {
@@ -30,7 +31,7 @@
   var AC = window.AudioContext || window.webkitAudioContext;
   var KEY = 'fridge.music', SONGS_KEY = 'fridge.music.songs';
 
-  // ---- songs: x = accent, o = soft, . = rest; melodic lines use scale degrees 1-9, - holds, . rests ---------------
+  // ---- songs: x = accent, o = soft, d = double (a hit, then another half a step later), . = rest; melodic lines use scale degrees 1-9, - holds, . rests ---------------
   var BUILT_IN = [
     {id: 'jungle-run', title: 'Jungle Run', mood: 'bongos, quick', bpm: 112, root: 57, scale: 'minor-pent', seed: 11, parts: {
       bongo_hi: 'x..o..x.x..o.x..', bongo_lo: '..x...x...x...xo', conga: 'x...o.x.x...o.x.', shaker: 'oxoxoxoxoxoxoxox',
@@ -74,16 +75,21 @@
       pad: '1-------------------------------------------------------------------------------------------------------------------------------'}},
     // Disrupted Distillation: an original industrial piece (C# phrygian, 99 BPM) led by a didgeridoo solo over buzz
     // pads, hard booms and metal, written to the measured feel of a Half-Life 2: Episode One combat cue; none of that
-    // cue's notes. Music page only.
+    // cue's notes. Bar 4 breaks down low (sub drop, deep didgeridoo), pound toms add off-beat half beats, and bar 8
+    // builds a pat-patapat crescendo into the pow (boom + crash) of bar 1. Music page only.
     {id: 'disrupted-distillation', title: 'Disrupted Distillation', mood: 'industrial, didgeridoo', player: false,
       bpm: 99, root: 49, scale: 'phrygian', seed: 17, bars: 8, exact: true, parts: {
-      boom: 'x.......x.x.....x.....x...x.x...',
-      crack: '....x.......x...',
-      clank: '..o...x....o.x....o...x..o...x.o',
-      steam: '........................................................x.......',
-      didge: '1---------------1-------1---1---1-----1-----1---1---1---1-1-1---1---------------1-------1-1-1-1-1-----1-----1-1-1---1---1---1-1-',
-      didge_toot: '............................5.........................5.......4...........................5.........5.........6...5.......5.....',
-      buzz_pad: '1-------------------------------2---------------1---------------1-------------------------------2---------------4---------------',
+      boom: 'x.......x.x.....x.....x...x.x...x.......x.x.....x...............x.......x.x.....x.....x...x.x...x.......x.x.....x.......x...x.x.',
+      crack: '....x.......x.......x.......x.......x.......x...........x...........x.......x.......x.......x.......x.......x.......x...x.d.dxdx',
+      pound: '......o...............o..d....................o.......................o...............d..o...x....o.......o..o..o...o...o.o.dxdd',
+      clank: '..o...x....o.x....o...x..o...x.o..o...x....o.x........x...........o...x....o.x....o...x..o...x.o..o...x....o.x....o...x...o.x.xx',
+      crash: 'x...............................................................o...............................................................',
+      drop: '................................................x...............................................................................',
+      steam: '........................................................x.......................................................................',
+      didge: '1---------------1-------1---1---1-----1-----1---................1---------------1-------1-1-1-1-1-----1-----1-1-1---1---1-1-1111',
+      didge_deep: '................................................1---------------................................................................',
+      didge_toot: '............................5.............................................................5.........5.........6...5.............',
+      buzz_pad: '1-------------------------------2---------------................1-------------------------------2---------------4---------------',
       gulls: '........................................o...............................................................o.......................'}}
   ];
   var SCALES = {
@@ -167,7 +173,7 @@
   }
   // Didgeridoo: buzzing lips (a lightly driven saw that scoops up into pitch), a growl (fast wobble in loudness),
   // breath, and two mouth formants the tongue moves about three times a second - the "wah-wah" of a solo. Held.
-  function didge(t, freq, peak, len, toot) {
+  function didge(t, freq, peak, len, toot, deep) {
     var o = ctx.createOscillator(), w = shaper(5), mix = ctx.createGain(), g = ctx.createGain(); o.type = 'sawtooth';
     o.frequency.setValueAtTime(freq * (toot ? 0.85 : 0.94), t); o.frequency.exponentialRampToValueAtTime(freq, t + (toot ? 0.06 : 0.11));
     var mouth = ctx.createOscillator(), mg = ctx.createGain(); mouth.type = 'triangle'; mouth.frequency.value = toot ? 7 : 3.3; mg.gain.value = 1; mouth.connect(mg);
@@ -175,7 +181,7 @@
       bp.type = 'bandpass'; bp.frequency.value = fm[0]; bp.Q.value = fm[1]; bg.gain.value = fm[2]; depth.gain.value = fm[3];
       mg.connect(depth); depth.connect(bp.frequency); w.connect(bp); bp.connect(bg); bg.connect(mix); });
     var growl = ctx.createOscillator(), gg = ctx.createGain(), am = ctx.createGain(); growl.frequency.value = 27; gg.gain.value = 0.3; am.gain.value = 0.75;
-    var body = ctx.createBiquadFilter(), bdg = ctx.createGain(); body.type = 'lowpass'; body.frequency.value = toot ? 400 : 180; bdg.gain.value = 0.1;   // the drone's own low body
+    var body = ctx.createBiquadFilter(), bdg = ctx.createGain(); body.type = 'lowpass'; body.frequency.value = toot ? 400 : deep ? 130 : 180; bdg.gain.value = deep ? 0.4 : 0.1;   // the drone's own low body
     growl.connect(gg); gg.connect(am.gain); o.connect(w); w.connect(body); body.connect(bdg); bdg.connect(mix); mix.connect(am);
     var br = ctx.createBufferSource(), bf = ctx.createBiquadFilter(), bgn = ctx.createGain(); br.buffer = noiseBuf; br.loop = true; bf.type = 'bandpass'; bf.frequency.value = 900; bgn.gain.value = 0.05;
     br.connect(bf); bf.connect(bgn); bgn.connect(am);
@@ -190,6 +196,18 @@
     [[1, 0], [1.007, 0], [1.498, 0], [2.003, 0], [0.996, 0]].forEach(function (r) { var o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = freq * r[0]; o.connect(w); o.start(t); o.stop(t + len + 0.1); });
     g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(peak, t + Math.min(0.35, len * 0.3)); g.gain.setValueAtTime(peak, t + len * 0.85); g.gain.linearRampToValueAtTime(0.0001, t + len);
     w.connect(hp); hp.connect(pk); pk.connect(g); g.connect(master);
+  }
+  // Pound: a hard industrial tom - a driven, pitch-dropping body, a slap of noise and a short metal ring.
+  function pound(t, peak) {
+    var o = ctx.createOscillator(), g = ctx.createGain(), w = shaper(6); o.frequency.setValueAtTime(210, t); o.frequency.exponentialRampToValueAtTime(88, t + 0.14);
+    env(g, t, peak, 0.002, 0.24); o.connect(w); w.connect(g); g.connect(master); o.start(t); o.stop(t + 0.3);
+    noise(t, 1400, peak * 0.45, 0.05, 'bandpass'); metal(t, peak * 0.12, [740, 1630], 0.1);
+  }
+  // Drop: a long sub fall that opens up a break (the floor gives way).
+  function drop(t, peak) {
+    var o = ctx.createOscillator(), g = ctx.createGain(), w = shaper(3), lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 420;
+    o.frequency.setValueAtTime(100, t); o.frequency.exponentialRampToValueAtTime(29, t + 1.5);
+    env(g, t, peak, 0.01, 1.7); o.connect(w); w.connect(lp); lp.connect(g); g.connect(master); o.start(t); o.stop(t + 1.8);
   }
   // Steam: a hiss that swells and cuts (a pressure valve).
   function steam(t, peak) {
@@ -229,9 +247,12 @@
     boom: {label: 'Boom', play: function (t, v) { boom(t, 0.36 * v); }},
     crack: {label: 'Metal crack', play: function (t, v) { crack(t, 1.4 * v); }},
     clank: {label: 'Clank', play: function (t, v) { metal(t, 0.5 * v, [523, 1311, 2207, 3460], 0.26); }},
+    pound: {label: 'Pound (industrial tom)', play: function (t, v) { pound(t, 0.5 * v); }},
+    drop: {label: 'Sub drop', play: function (t, v) { drop(t, 0.3 * v); }},
     steam: {label: 'Steam', play: function (t, v) { steam(t, 0.07 * v); }},
     dist_lead: {label: 'Distorted lead', melodic: true, play: function (t, v, f) { distLead(t, f, 0.1 * v, 0.34); }},
     didge: {label: 'Didgeridoo', melodic: true, held: true, oct: -1, play: function (t, v, f, len) { didge(t, f / 2, 0.7 * v, len); }},
+    didge_deep: {label: 'Didgeridoo (deep)', melodic: true, held: true, oct: -2, play: function (t, v, f, len) { didge(t, f / 4, 0.42 * v, len, false, true); }},
     didge_toot: {label: 'Didgeridoo toot', melodic: true, play: function (t, v, f) { didge(t, f, 0.45 * v, 0.2, true); }},
     buzz_pad: {label: 'Buzz pad', melodic: true, held: true, play: function (t, v, f, len) { buzzPad(t, f, 0.035 * v, len); }},
     gulls: {label: 'Gulls', play: function (t, v) { gulls(t, 0.12 * v); }},
@@ -290,9 +311,25 @@
     var midi = (s.root || 57) + sc[((d % sc.length) + sc.length) % sc.length] + 12 * oct; midi += 12 * (octShift || 0); return NAMES[midi % 12] + (Math.floor(midi / 12) - 1);
   }
   function level() { return muted ? 0 : vol * vol * 0.9; }
+  // Linked songs: a song may name `next` (a song id); when it ends, the engine plays on into that song.
+  // Engine.resolve(id) can supply the song object (the music page hands over the copy it is editing).
+  var songFns = [];
+  function nextOf(s) {
+    if (!s || !s.next) return null;
+    var n = (Engine.resolve && Engine.resolve(s.next)) || allSongs().find(function (x) { return x.id === s.next; });
+    return n && n.parts ? n : null;
+  }
   function schedule() {
-    var dur = 60 / ((song.bpm || 100) + (song.bpmRise || 0) * Math.min(intensity, 1.4) / 1.4) / 4, total = 16 * barsOf(song);
     while (nextAt < ctx.currentTime + 0.12) {
+      var total = 16 * barsOf(song);
+      if (step > 0 && step % total === 0) {
+        var nx = nextOf(song);
+        if (nx && nx !== song) {
+          song = nx; step = 0; total = 16 * barsOf(song); bedOff(); bedOn(song); bedLevel();
+          songFns.forEach(function (fn) { try { fn(nx); } catch (e) {} });
+        }
+      }
+      var dur = 60 / ((song.bpm || 100) + (song.bpmRise || 0) * Math.min(intensity, 1.4) / 1.4) / 4;
       var g = step % total, s = g % 16, bar = Math.floor(step / 16), fill = bar % 4 === 3 && s >= 12;
       Object.keys(song.parts).forEach(function (name) {
         var ins = INSTRUMENTS[name], pat = String(song.parts[name] || ''); if (!ins || !pat) return;
@@ -305,7 +342,7 @@
           ins.play(nextAt, 0.85 + rand() * 0.15, freqOf(song, deg), len);
           return;
         }
-        var v = c === 'x' ? 1 : c === 'o' ? 0.55 : 0;
+        var v = c === 'x' || c === 'd' ? 1 : c === 'o' ? 0.55 : 0;
         if (v && ins.chance && rand() > ins.chance) v = 0;                                  // birds call now and then
         if (!song.exact) {
         if (!v && fill && /tom|conga|djembe|bongo/.test(name) && rand() < 0.45) v = 0.6;   // fills at the end of every fourth bar
@@ -313,6 +350,7 @@
         if (v && rand() < 0.04 && c !== 'x') v = 0;                                          // the odd drop
         }
         if (v) ins.play(nextAt + (rand() - 0.5) * 0.006, v);
+        if (v && c === 'd') ins.play(nextAt + (song.exact ? dur : dur * (s % 2 ? 0.94 : 1.06)) / 2, v * 0.8);   // the half beat
       });
       var at = nextAt, st = s, gst = g;
       stepFns.forEach(function (fn) { try { fn(st, at, gst); } catch (e) {} });          // step in bar, time, step in song
@@ -342,6 +380,8 @@
     },
     setVolume: function (v, m) { vol = Math.max(0, Math.min(1, v)); muted = !!m; if (ctx && timer) master.gain.linearRampToValueAtTime(level(), ctx.currentTime + 0.12); },
     onStep: function (fn) { stepFns.push(fn); },
+    onSong: function (fn) { songFns.push(fn); },   // a linked song took over: fn(song)
+    resolve: null,                                  // optional: function (id) -> the song object to play for `next`
     get running() { return !!(ctx && ctx.state === 'running'); }
   };
   window.FridgeMusic = Engine;

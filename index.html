@@ -94,6 +94,38 @@
     .links a { display: inline-flex; align-items: center; gap: 7px; padding: 6px 10px; border-radius: 10px; text-decoration: none; color: var(--ink-2); font-weight: 600; font-size: 14px; }
     .links a:hover { background: linear-gradient(120deg, color-mix(in srgb, var(--place) 20%, white), color-mix(in srgb, var(--place) 6%, white)); color: color-mix(in srgb, var(--place) 70%, black); }
     .links .ico { width: 26px; height: 26px; font-size: 14px; border-radius: 8px; }
+    /* ---- games: a modal of what anyone can play on the fridge ------------------------ */
+    .links button.games { display: inline-flex; align-items: center; gap: 7px; padding: 6px 10px; border-radius: 10px; border: 0; background: none; cursor: pointer;
+      font: 600 14px/1.2 inherit; font-family: inherit; color: var(--ink-2); --place: var(--c-monkey); }
+    .links button.games:hover { background: linear-gradient(120deg, color-mix(in srgb, var(--place) 20%, white), color-mix(in srgb, var(--place) 6%, white)); color: color-mix(in srgb, var(--place) 70%, black); }
+    .links button.games:focus-visible { outline: none; box-shadow: var(--focus); }
+    dialog.gm { width: min(720px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); padding: 0; border: 0; border-radius: 20px;
+      background: var(--paper); color: var(--ink); box-shadow: var(--shadow); overflow: auto; }
+    dialog.gm::backdrop { background: rgba(8, 9, 12, .72); }
+    .gm-head { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 10px; padding: 16px 18px 12px; background: var(--paper); border-bottom: 1px solid var(--paper-3); }
+    .gm-head h2 { margin: 0; font-size: 20px; flex: 1; text-align: left; }
+    .gm-head p { margin: 2px 0 0; font-size: 13.5px; color: var(--dim); font-weight: 600; }
+    .gm-x { width: 38px; height: 38px; border-radius: 12px; border: 1px solid var(--edge); background: var(--paper-2); font-size: 20px; line-height: 1; cursor: pointer; color: var(--ink-2); }
+    .gm-x:focus-visible { outline: none; box-shadow: var(--focus); }
+    .gm-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; padding: 16px 18px; }
+    .gm-card { display: flex; flex-direction: column; border-radius: 16px; overflow: hidden; background: #fff; border: 1px solid var(--edge); text-align: left; }
+    .gm-card img { display: block; width: 100%; height: auto; aspect-ratio: 600 / 315; object-fit: cover; background: #0d0e11; }
+    .gm-body { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px 14px; flex: 1; }
+    .gm-body h3 { margin: 0; font-size: 17px; }
+    .gm-body p { margin: 0; font-size: 13.5px; line-height: 1.45; color: var(--ink-2); flex: 1; }
+    .gm-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+    .gm-tags span { font-size: 11.5px; font-weight: 800; padding: 3px 8px; border-radius: 99px; background: var(--paper); color: var(--dim); }
+    .gm-tags .new { background: #fff1d6; color: #8a5300; }
+    .gm-body .btn { margin-top: 6px; justify-content: center; }
+    .gm-alt { font-size: 12.5px; color: var(--dim); text-align: center; }
+    .gm-alt a { color: var(--mint-strong); font-weight: 700; }
+    .gm-test { margin: 0 18px 18px; padding: 16px; border-radius: 16px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; text-align: left;
+      background: linear-gradient(120deg, #e3f6f0, #e6eefb); border: 1px solid #bfe3d8; }
+    .gm-test div { flex: 1 1 260px; }
+    .gm-test h3 { margin: 0 0 4px; font-size: 17px; }
+    .gm-test p { margin: 0; font-size: 13.5px; line-height: 1.45; color: var(--ink-2); }
+    .gm-test .btn { flex: none; }
+    @media (max-width: 480px) { .gm-list { padding: 12px; gap: 12px; } .gm-test { margin: 0 12px 12px; } .gm-test .btn { width: 100%; justify-content: center; } }
     .fine { margin: 16px 0 0; font-size: 14px; line-height: 1.5; font-weight: 600; color: #c3c6cd; text-align: center; letter-spacing: .02em; text-shadow: 0 1px 6px rgba(0, 0, 0, .8); }
   </style>
 </head>
@@ -126,12 +158,56 @@
       </form>
 
       <nav class="links" aria-label="More">
-        <a class="c-status" href="./whaleship/"><span class="ico" aria-hidden="true">🐋</span>WHALESHIP · Play</a>
+        <button type="button" class="games" data-games aria-haspopup="dialog"><span class="ico" aria-hidden="true">🎮</span>Games · Play free</button>
         <a class="c-status" href="https://go.fridge.run/care/" title="For clinicians a fridge.run member has let in during a visit"><span class="ico" aria-hidden="true">🩺</span>Providers login</a>
         <a class="c-status" href="./status/"><span class="ico" aria-hidden="true">📡</span>Status</a>
         <a class="c-status" href="https://go.fridge.run/changes"><span class="ico" aria-hidden="true">📜</span>Changelog</a>
       </nav>
     </section>
+    <dialog class="gm" id="games" aria-labelledby="gm-title">
+      <div class="gm-head">
+        <div style="flex:1"><h2 id="gm-title">🎮 Games on the fridge</h2><p>Free, in your browser, no account or install.</p></div>
+        <button type="button" class="gm-x" data-games-close aria-label="Close">×</button>
+      </div>
+      <div class="gm-list">
+        <article class="gm-card">
+          <img src="./media/games/whaleship.jpg" alt="WHALESHIP: container whales against Kubernetes carriers" width="600" height="315" loading="lazy">
+          <div class="gm-body">
+            <h3>🐋 WHALESHIP</h3>
+            <div class="gm-tags"><span>Solo or 2 players</span><span>~5 min quick mode</span></div>
+            <p>Battleship where the ships are infrastructure. Sink their stack, then send a friend the link and they're playing.</p>
+            <a class="btn primary" href="https://go.fridge.run/whaleship/">Play</a>
+          </div>
+        </article>
+        <article class="gm-card">
+          <img src="./media/games/luckymonkey.jpg" alt="Lucky Monkey: an isometric jungle of network nodes" width="600" height="315" loading="lazy">
+          <div class="gm-body">
+            <h3>🐵 Lucky Monkey</h3>
+            <div class="gm-tags"><span class="new">Early build</span><span>Desktop best</span></div>
+            <p>Keep the jungle network running until 17:00: spot trouble, send your crew, fix nodes before they fall.</p>
+            <a class="btn primary" href="https://go.fridge.run/luckymonkey/">Play</a>
+            <div class="gm-alt">Fridge offline? <a href="https://luckymonkey.github.io/luckymonkey/">Play the GitHub copy</a></div>
+          </div>
+        </article>
+        <article class="gm-card">
+          <img src="./media/games/hedgepets.jpg" alt="HedgePets: a hedgehog made of leaves" width="600" height="315" loading="lazy">
+          <div class="gm-body">
+            <h3>🦔 HedgePets</h3>
+            <div class="gm-tags"><span class="new">Playtest</span><span>Saves in your browser</span></div>
+            <p>Plant creatures in an ordinary backyard. Type five letters to show you're a person, then grow your garden.</p>
+            <a class="btn primary" href="https://go.fridge.run/play">Play</a>
+          </div>
+        </article>
+      </div>
+      <section class="gm-test">
+        <div>
+          <h3>🧪 Playtest for us</h3>
+          <p>Play any of these, then tell us what broke, what confused you and what you'd change. Playtesters get new builds first.</p>
+        </div>
+        <a class="btn primary" href="mailto:playtest@fridge.run?subject=I%27d%20like%20to%20playtest&amp;body=Hi%21%20I%27d%20like%20to%20playtest.%0A%0AGames%20I%20tried%3A%20%0ADevice%20%2F%20browser%3A%20%0AWhat%20I%20noticed%3A%20">Sign me up</a>
+      </section>
+    </dialog>
+
     <p class="fine">Unauthorized access is prohibited under 18 U.S.C. § 1030 and will be met by this node's anti-intrusion software. Thank you for not hacking!</p>
   </main>
 
@@ -143,7 +219,8 @@
     // ---- 1. Signed in already? Straight to your panel, before the wall starts.
     // go.fridge.run answers only yes/no, and only to this site. ?stay shows the
     // homepage anyway.
-    var stay = /[?&]stay\b/.test(location.search);
+    var wantGames = /^#games$/.test(location.hash) || /[?&]games\b/.test(location.search);
+    var stay = /[?&]stay\b/.test(location.search) || wantGames;
     function show() { root.classList.remove('checking'); }
     function check(then) {
       if (stay || !window.fetch) { then(); return; }
@@ -214,7 +291,23 @@
       });
     }
 
-    check(function () { show(); buildWall(); });
+    // ---- 3. Games: a modal of what anyone can play (fridge.run/#games opens it) ----------
+    var dlg = document.getElementById('games');
+    function openGames() {
+      if (!dlg) return;
+      if (dlg.showModal) { if (!dlg.open) dlg.showModal(); } else { location.href = 'https://go.fridge.run/whaleship/'; return; }
+      if (location.hash !== '#games') history.replaceState(null, '', '#games');
+    }
+    function closeGames() { if (dlg && dlg.open) dlg.close(); }
+    if (dlg) {
+      dlg.addEventListener('close', function () { if (location.hash === '#games') history.replaceState(null, '', location.pathname + location.search); });
+      dlg.addEventListener('click', function (e) { if (e.target === dlg) closeGames(); });   // click on the backdrop
+    }
+    document.querySelectorAll('[data-games]').forEach(function (b) { b.addEventListener('click', openGames); });
+    document.querySelectorAll('[data-games-close]').forEach(function (b) { b.addEventListener('click', closeGames); });
+    window.addEventListener('hashchange', function () { if (location.hash === '#games') openGames(); });
+
+    check(function () { show(); buildWall(); if (wantGames) openGames(); });
   })();
   </script>
 <script src="/fridge-music.js?v=20261022a" data-autostart defer></script>

@@ -2,7 +2,8 @@
  * fridge.run background music - songs played live, not recordings (Mail #15).
  *
  * Each song is a few step patterns (16 steps a bar) for synthesized instruments - bongos, congas, djembe and
- * jungle toms, shaker, clave, kalimba, marimba, bass, pad - and a seed. A small Web Audio sequencer plays them
+ * jungle toms, shaker, clave, kalimba, marimba, bass, pad; a rock kit (snare, hats, crash) and synth bass, horn and
+ * brass for darker songs - and a seed. A small Web Audio sequencer plays them
  * with seeded variations and a fill every fourth bar, so a song never repeats exactly. No audio files.
  *
  *   <script src="https://fridge.run/fridge-music.js" defer></script>        off until you turn it on (go.fridge.run)
@@ -16,7 +17,7 @@
  *   songById(id), setLevel(x), noteName(song, degree) }.
  * Songs may span several bars (a part's pattern is 16 steps per bar; shorter patterns repeat), may name `layers`
  * (part -> the intensity it needs, 0..1.5, see setLevel) and `bpmRise` (extra BPM at full intensity), and may set
- * `bed: true` for a continuous drone. One engine for every fridge sound: fridge.run, go.fridge.run/music and the
+ * `bed: true` for a continuous drone, and `player: false` to stay off the little player (music page only). One engine for every fridge sound: fridge.run, go.fridge.run/music and the
  * Lucky Monkey game (its jungle music is the song `lucky-monkey-jungle`, driven by the game's threat level).
  */
 (function () {
@@ -57,7 +58,20 @@
       birds: 'o...............o...............o...............o...............',
       lm_shaker: 'o.x.o.x.o.x.o.x.', lm_bongo_lo: 'x....x..x....x..', lm_bongo_hi: '...x..x...x...xx',
       lm_marimba: '3...7...5...7.3.1...5...3...5.1.5...9...7...9.5.2...6...4...6.2.',
-      cuica: '......x.......o.', lm_tom: 'x.......x.......'}}
+      cuica: '......x.......o.', lm_tom: 'x.......x.......'}},
+    // Kaon (Half-Life, Kelly Bailey): a cover, transcribed note for note from bars 2-9 of a fan MIDI (the main loop;
+    // the bridge and the intro are left out). E phrygian, 180 BPM, straight. Only on the music page (player: false).
+    {id: 'kaon', title: 'Kaon (Half-Life cover)', mood: 'industrial, fast', player: false,
+      bpm: 180, root: 52, scale: 'phrygian', seed: 9, bars: 8, exact: true, parts: {
+      tom_lo: 'x...x.........x.....x...........x...x.........x.....x...........x...x.........x.....x...........x...x.........x.....x...........',
+      snare: 'o.o.o.o.x.o.o.o.o.o.o.o.x.o.o.o.o.o.o.o.x.o.o.o.o.o.o.o.x.o.o.o.o.o.o.o.x.o.o.o.o.o.o.o.x.o.o.o.o.o.o.o.x.o.o.x.xxx.o.x.xxx.o.x.',
+      hat: 'x.x.x.x.x.x.x.x.',
+      hat_open: 'x...x...x...x...x...x...x...x...x...x...x...x...x...x...x...x...x...x...x...x...x...x...x...x...x...x...x...x...x...x...x...x.x.',
+      crash: 'o.......o.....o.....o...o.......',
+      synth_bass: '1...1...1.....2.....1...2...1...1...1...1.....3.....1...4...1...1...1...1.....2.....1...2...1...3...3...3.....4.....2...4...2...',
+      horn: '1...1.......1...2...1...2...1...1...2.......1...2...1...2...1...1...1.......1...2...1...2...1...1...2.......4...2...4...2...4...',
+      brass: '1...1...1...1...2...1...2...1...1...1...2...1...2...1...2...1...1...1...1...1...2...1...2...1...1...1...2...1...4...2...4...2...',
+      pad: '1-------------------------------------------------------------------------------------------------------------------------------'}}
   ];
   var SCALES = {
     'minor-pent': [0, 3, 5, 7, 10], 'major-pent': [0, 2, 4, 7, 9], minor: [0, 2, 3, 5, 7, 8, 10],
@@ -100,6 +114,15 @@
     [1, 1.005, 1.5].forEach(function (r) { var o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = freq * r; o.connect(f); o.start(t); o.stop(t + len + 0.1); });
     f.connect(g); g.connect(master);
   }
+  // A synth voice: detuned oscillators through a low-pass that closes from cut0 to cut1 (horn, brass, synth bass).
+  function synth(t, freq, peak, len, type, cut0, cut1, detunes) {
+    var f = ctx.createBiquadFilter(), g = ctx.createGain(); f.type = 'lowpass'; f.Q.value = 2;
+    f.frequency.setValueAtTime(cut0, t); f.frequency.exponentialRampToValueAtTime(cut1, t + len * 0.8);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.012);
+    g.gain.setValueAtTime(peak, t + len * 0.6); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+    (detunes || [1]).forEach(function (r) { var o = ctx.createOscillator(); o.type = type; o.frequency.value = freq * r; o.connect(f); o.start(t); o.stop(t + len + 0.05); });
+    f.connect(g); g.connect(master);
+  }
   var INSTRUMENTS = {
     bongo_hi: {label: 'Bongo high', play: function (t, v) { drum(t, 470, 330, 0.12, 0.5 * v, 'sine', [3200, 0.12 * v, 0.02]); }},
     bongo_lo: {label: 'Bongo low', play: function (t, v) { drum(t, 300, 210, 0.16, 0.55 * v, 'sine', [2400, 0.1 * v, 0.02]); }},
@@ -114,6 +137,13 @@
     marimba: {label: 'Marimba', melodic: true, oct: 1, play: function (t, v, f) { tone(t, f * 2, 0.26 * v, 0.4, 'sine', 3.9); }},
     bass: {label: 'Bass', melodic: true, oct: -1, play: function (t, v, f) { tone(t, f / 2, 0.36 * v, 0.34, 'triangle'); }},
     pad: {label: 'Pad', melodic: true, held: true, play: function (t, v, f, len) { pad(t, f, 0.05 * v, len); }},
+    snare: {label: 'Snare', play: function (t, v) { drum(t, 210, 150, 0.09, 0.35 * v, 'triangle'); noise(t, 1800, 0.3 * v, 0.14); }},
+    hat: {label: 'Hi-hat', play: function (t, v) { noise(t, 8500, 0.1 * v, 0.03); }},
+    hat_open: {label: 'Open hi-hat', play: function (t, v) { noise(t, 7500, 0.08 * v, 0.2); }},
+    crash: {label: 'Crash', play: function (t, v) { noise(t, 5000, 0.12 * v, 0.9); }},
+    synth_bass: {label: 'Synth bass', melodic: true, oct: -2, play: function (t, v, f) { synth(t, f / 4, 0.34 * v, 0.3, 'sawtooth', 900, 160, [1, 1.006]); }},
+    horn: {label: 'Horn', melodic: true, play: function (t, v, f) { synth(t, f, 0.13 * v, 0.32, 'sawtooth', 2400, 600, [1, 1.004]); }},
+    brass: {label: 'Brass', melodic: true, play: function (t, v, f) { synth(t, f, 0.1 * v, 0.3, 'square', 1800, 450, [0.997, 1.003]); }},
     cuica: {label: 'Cuica', play: function (t, v) { cuica(t, 0.17 * v); }},
     birds: {label: 'Birds', chance: 0.45, play: function (t, v) { birds(t, 0.09 * v); }},
     // Lucky Monkey's own voices, exactly as the game synthesized them (louder by the engine's master ratio):
@@ -236,6 +266,7 @@
   function save() { try { localStorage.setItem(KEY, JSON.stringify({playing: Engine.playing || wanted, muted: state.muted, vol: state.vol, track: state.track})); } catch (e) {} }
   vol = state.vol; muted = state.muted;
 
+  function playerSongs() { return allSongs().filter(function (s) { return s.player !== false; }); }   // player: false = music page only
   var R = '#fridge-music';
   var css = R + '{all:initial;position:fixed;right:14px;bottom:14px;z-index:2147483000;display:flex;align-items:center;gap:5px;box-sizing:border-box;' +
     'height:40px;padding:4px;border-radius:999px;background:rgba(23,27,34,.86);border:1px solid rgba(255,255,255,.14);box-shadow:0 6px 18px rgba(0,0,0,.35);' +
@@ -270,8 +301,8 @@
   volIn.value = Math.round(state.vol * 100);
 
   function fillSongs() {
-    select.innerHTML = allSongs().map(function (s) { return '<option value="' + s.id + '">' + String(s.title).replace(/[<&]/g, '') + '</option>'; }).join('');
-    if (!allSongs().some(function (s) { return s.id === state.track; })) state.track = BUILT_IN[0].id;
+    select.innerHTML = playerSongs().map(function (s) { return '<option value="' + s.id + '">' + String(s.title).replace(/[<&]/g, '') + '</option>'; }).join('');
+    if (!playerSongs().some(function (s) { return s.id === state.track; })) state.track = BUILT_IN[0].id;
     select.value = state.track;
   }
   function render() {
@@ -289,7 +320,7 @@
 
   play.addEventListener('click', function () { if (Engine.playing || wanted) stop(); else start(); });
   select.addEventListener('change', function () { state.track = select.value; save(); if (Engine.playing) start(); render(); });
-  next.addEventListener('click', function () { var all = allSongs(), i = all.findIndex(function (s) { return s.id === state.track; }); state.track = all[(i + 1) % all.length].id; select.value = state.track; save(); if (Engine.playing || wanted) start(); render(); });
+  next.addEventListener('click', function () { var all = playerSongs(), i = all.findIndex(function (s) { return s.id === state.track; }); state.track = all[(i + 1) % all.length].id; select.value = state.track; save(); if (Engine.playing || wanted) start(); render(); });
   mute.addEventListener('click', function () { state.muted = !state.muted; Engine.setVolume(state.vol, state.muted); save(); render(); });
   volIn.addEventListener('input', function () { state.vol = volIn.value / 100; if (state.vol > 0) state.muted = false; Engine.setVolume(state.vol, state.muted); save(); render(); });
 

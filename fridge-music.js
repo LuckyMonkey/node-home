@@ -4,7 +4,7 @@
  * Each song is a few step patterns (16 steps a bar) for synthesized instruments - bongos, congas, djembe and
  * jungle toms, shaker, clave, kalimba, marimba, bass, pad; a rock kit (snare, hats, crash) and synth bass, horn and
  * brass for darker songs; boom, crack, distorted lead, didgeridoo drone and gulls for industrial ones - and a seed. A small Web Audio sequencer plays them
- * with seeded variations and a fill every fourth bar, so a song never repeats exactly. No audio files.
+ * with seeded variations and a fill every fourth bar (song.mix sets a part's volume, song.echo sends parts to one shared tempo echo), so a song never repeats exactly. No audio files.
  *
  *   <script src="https://fridge.run/fridge-music.js" defer></script>        off until you turn it on (go.fridge.run)
  *   <script src="/fridge-music.js" data-autostart defer></script>           on unless you turned it off (fridge.run)
@@ -116,37 +116,55 @@
   function songById(id) { return allSongs().find(function (s) { return s.id === id; }) || BUILT_IN[0]; }
 
   // ---- instruments: tiny synthesized voices -----------------------------------------------------------------------
-  var ctx = null, master = null, noiseBuf = null;
+  var ctx = null, master = null, noiseBuf = null, echo = null, send = 0;
   function audio() {
     if (!ctx) {
       ctx = new AC(); master = ctx.createGain(); master.gain.value = 0; master.connect(ctx.destination);
+      // one shared echo: a dotted-eighth delay (it follows the tempo), each repeat darker and thinner; parts send to it
+      // by song.echo[part] (0-0.6). One delay line for the whole song, so it costs next to nothing.
+      echo = {inp: ctx.createGain(), hp: ctx.createBiquadFilter(), d: ctx.createDelay(1.5), lp: ctx.createBiquadFilter(), fb: ctx.createGain()};
+      echo.hp.type = 'highpass'; echo.hp.frequency.value = 180; echo.lp.type = 'lowpass'; echo.lp.frequency.value = 2600; echo.fb.gain.value = 0.38;
+      echo.inp.connect(echo.hp); echo.hp.connect(echo.d); echo.d.connect(echo.lp); echo.lp.connect(echo.fb); echo.fb.connect(echo.d); echo.lp.connect(master);
       noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
       var d = noiseBuf.getChannelData(0); for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     }
     return ctx;
   }
+  // where a voice plays into: the master, plus the echo when the part being played sends to it
+  function out() {
+    if (!send) return master;
+    var dry = ctx.createGain(), wet = ctx.createGain(); wet.gain.value = send; dry.connect(master); dry.connect(wet); wet.connect(echo.inp); return dry;
+  }
+  // a raw square wave: the plain electronic buzz (an alarm, an IV pump), a fast attack, held for the note, no distortion
+  function square(t, freq, peak, len) {
+    var o = ctx.createOscillator(), lp = ctx.createBiquadFilter(), g = ctx.createGain(), end = t + Math.max(0.05, len);
+    o.type = 'square'; o.frequency.value = freq; lp.type = 'lowpass'; lp.frequency.value = 5200; lp.Q.value = 0.5;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.004);
+    g.gain.setValueAtTime(peak, Math.max(t + 0.005, end - 0.015)); g.gain.exponentialRampToValueAtTime(0.0001, end + 0.025);
+    o.connect(lp); lp.connect(g); g.connect(out()); o.start(t); o.stop(end + 0.05);
+  }
   function env(g, t, peak, a, d) { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(Math.max(0.0002, peak), t + a); g.gain.exponentialRampToValueAtTime(0.0001, t + a + d); }
   function drum(t, f0, f1, decay, peak, type, slap) {
     var o = ctx.createOscillator(), g = ctx.createGain(); o.type = type || 'sine';
     o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + decay * 0.6);
-    env(g, t, peak, 0.003, decay); o.connect(g); g.connect(master); o.start(t); o.stop(t + decay + 0.05);
+    env(g, t, peak, 0.003, decay); o.connect(g); g.connect(out()); o.start(t); o.stop(t + decay + 0.05);
     if (slap) noise(t, slap[0], slap[1], slap[2], 'bandpass');
   }
   function noise(t, freq, peak, decay, type) {
     var n = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain(); n.buffer = noiseBuf;
     f.type = type || 'highpass'; f.frequency.value = freq; env(g, t, peak, 0.002, decay);
-    n.connect(f); f.connect(g); g.connect(master); n.start(t, Math.random() * 0.5); n.stop(t + decay + 0.05);
+    n.connect(f); f.connect(g); g.connect(out()); n.start(t, Math.random() * 0.5); n.stop(t + decay + 0.05);
   }
   function tone(t, freq, peak, decay, type, partial) {
     var o = ctx.createOscillator(), g = ctx.createGain(); o.type = type || 'sine'; o.frequency.value = freq;
-    env(g, t, peak, 0.004, decay); o.connect(g); g.connect(master); o.start(t); o.stop(t + decay + 0.05);
-    if (partial) { var p = ctx.createOscillator(), pg = ctx.createGain(); p.frequency.value = freq * partial; env(pg, t, peak * 0.3, 0.002, decay * 0.25); p.connect(pg); pg.connect(master); p.start(t); p.stop(t + decay); }
+    env(g, t, peak, 0.004, decay); o.connect(g); g.connect(out()); o.start(t); o.stop(t + decay + 0.05);
+    if (partial) { var p = ctx.createOscillator(), pg = ctx.createGain(); p.frequency.value = freq * partial; env(pg, t, peak * 0.3, 0.002, decay * 0.25); p.connect(pg); pg.connect(out()); p.start(t); p.stop(t + decay); }
   }
   function pad(t, freq, peak, len) {
     var f = ctx.createBiquadFilter(), g = ctx.createGain(); f.type = 'lowpass'; f.frequency.value = 900;
     g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(peak, t + Math.min(1.2, len * 0.4)); g.gain.linearRampToValueAtTime(0.0001, t + len);
     [1, 1.005, 1.5].forEach(function (r) { var o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = freq * r; o.connect(f); o.start(t); o.stop(t + len + 0.1); });
-    f.connect(g); g.connect(master);
+    f.connect(g); g.connect(out());
   }
   // A synth voice: detuned oscillators through a low-pass that closes from cut0 to cut1 (horn, brass, synth bass).
   function synth(t, freq, peak, len, type, cut0, cut1, detunes) {
@@ -155,7 +173,7 @@
     g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.012);
     g.gain.setValueAtTime(peak, t + len * 0.6); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
     (detunes || [1]).forEach(function (r) { var o = ctx.createOscillator(); o.type = type; o.frequency.value = freq * r; o.connect(f); o.start(t); o.stop(t + len + 0.05); });
-    f.connect(g); g.connect(master);
+    f.connect(g); g.connect(out());
   }
   // A soft-clipping waveshaper (distortion), one curve per amount. Odd length and symmetric, so silence stays 0 (no DC offset).
   var curves = {};
@@ -165,7 +183,7 @@
   }
   // Metal: noise ringing through a few narrow, inharmonic band-passes, slightly driven - struck sheet metal, pipes.
   function metal(t, peak, freqs, decay) {
-    var g = ctx.createGain(), w = shaper(4); env(g, t, peak, 0.001, decay); w.connect(g); g.connect(master);
+    var g = ctx.createGain(), w = shaper(4); env(g, t, peak, 0.001, decay); w.connect(g); g.connect(out());
     freqs.forEach(function (f, i) { var n = ctx.createBufferSource(), bp = ctx.createBiquadFilter(), bg = ctx.createGain(); n.buffer = noiseBuf;
       bp.type = 'bandpass'; bp.frequency.value = f; bp.Q.value = 28; bg.gain.value = 6 / (i + 1);
       n.connect(bp); bp.connect(bg); bg.connect(w); n.start(t, Math.random() * 0.5); n.stop(t + decay + 0.05); });
@@ -174,7 +192,7 @@
   function boom(t, peak) {
     var o = ctx.createOscillator(), g = ctx.createGain(), w = shaper(9), lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1100;
     o.frequency.setValueAtTime(130, t); o.frequency.exponentialRampToValueAtTime(46, t + 0.16);
-    env(g, t, peak, 0.002, 0.34); o.connect(w); w.connect(lp); lp.connect(g); g.connect(master); o.start(t); o.stop(t + 0.42);
+    env(g, t, peak, 0.002, 0.34); o.connect(w); w.connect(lp); lp.connect(g); g.connect(out()); o.start(t); o.stop(t + 0.42);
     noise(t, 2500, peak * 0.5, 0.015);
   }
   // Crack: a snapping noise burst with a short metallic ring (no tones).
@@ -184,7 +202,7 @@
     var w = shaper(40), lp = ctx.createBiquadFilter(), g = ctx.createGain(); lp.type = 'lowpass'; lp.frequency.value = 1500; lp.Q.value = 1;
     g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.01); g.gain.setValueAtTime(peak, t + len * 0.7); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
     [1, 1.008].forEach(function (r) { var o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = freq * r; o.connect(w); o.start(t); o.stop(t + len + 0.05); });
-    w.connect(lp); lp.connect(g); g.connect(master);
+    w.connect(lp); lp.connect(g); g.connect(out());
   }
   // Didgeridoo: buzzing lips (a lightly driven saw that scoops up into pitch), a growl (fast wobble in loudness),
   // breath, and two mouth formants the tongue moves about three times a second - the "wah-wah" of a solo. Held.
@@ -201,7 +219,7 @@
     var br = ctx.createBufferSource(), bf = ctx.createBiquadFilter(), bgn = ctx.createGain(); br.buffer = noiseBuf; br.loop = true; bf.type = 'bandpass'; bf.frequency.value = 900; bgn.gain.value = 0.05;
     br.connect(bf); bf.connect(bgn); bgn.connect(am);
     g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(peak, t + 0.04); g.gain.setValueAtTime(peak, t + Math.max(0.06, len - 0.08)); g.gain.linearRampToValueAtTime(0.0001, t + len);
-    am.connect(g); g.connect(master);
+    am.connect(g); g.connect(out());
     [o, mouth, growl, br].forEach(function (n) { n.start(t); n.stop(t + len + 0.05); });
   }
   // Buzz pad: a hard, buzzy chord - detuned saws on the root, fifth and octave, distorted, low end cut, upper mids lifted.
@@ -210,25 +228,25 @@
     hp.type = 'highpass'; hp.frequency.value = 160; pk.type = 'peaking'; pk.frequency.value = 2200; pk.gain.value = 7; pk.Q.value = 0.8;
     [[1, 0], [1.007, 0], [1.498, 0], [2.003, 0], [0.996, 0]].forEach(function (r) { var o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = freq * r[0]; o.connect(w); o.start(t); o.stop(t + len + 0.1); });
     g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(peak, t + Math.min(0.35, len * 0.3)); g.gain.setValueAtTime(peak, t + len * 0.85); g.gain.linearRampToValueAtTime(0.0001, t + len);
-    w.connect(hp); hp.connect(pk); pk.connect(g); g.connect(master);
+    w.connect(hp); hp.connect(pk); pk.connect(g); g.connect(out());
   }
   // Pound: a hard industrial tom - a driven, pitch-dropping body, a slap of noise and a short metal ring.
   function pound(t, peak) {
     var o = ctx.createOscillator(), g = ctx.createGain(), w = shaper(6); o.frequency.setValueAtTime(210, t); o.frequency.exponentialRampToValueAtTime(88, t + 0.14);
-    env(g, t, peak, 0.002, 0.24); o.connect(w); w.connect(g); g.connect(master); o.start(t); o.stop(t + 0.3);
+    env(g, t, peak, 0.002, 0.24); o.connect(w); w.connect(g); g.connect(out()); o.start(t); o.stop(t + 0.3);
     noise(t, 1400, peak * 0.45, 0.05, 'bandpass'); metal(t, peak * 0.12, [740, 1630], 0.1);
   }
   // Drop: a long sub fall that opens up a break (the floor gives way).
   function drop(t, peak) {
     var o = ctx.createOscillator(), g = ctx.createGain(), w = shaper(3), lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 420;
     o.frequency.setValueAtTime(100, t); o.frequency.exponentialRampToValueAtTime(29, t + 1.5);
-    env(g, t, peak, 0.01, 1.7); o.connect(w); w.connect(lp); lp.connect(g); g.connect(master); o.start(t); o.stop(t + 1.8);
+    env(g, t, peak, 0.01, 1.7); o.connect(w); w.connect(lp); lp.connect(g); g.connect(out()); o.start(t); o.stop(t + 1.8);
   }
   // Steam: a hiss that swells and cuts (a pressure valve).
   function steam(t, peak) {
     var n = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain(); n.buffer = noiseBuf; n.loop = true; f.type = 'highpass'; f.frequency.value = 3500;
     g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.35); g.gain.setValueAtTime(peak, t + 0.4); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.48);
-    n.connect(f); f.connect(g); g.connect(master); n.start(t); n.stop(t + 0.55);
+    n.connect(f); f.connect(g); g.connect(out()); n.start(t); n.stop(t + 0.55);
   }
   // Gulls: a buzzing, distorted cry - a pitch that leaps up and sags, roughened by fast vibrato.
   function gulls(t, peak) {
@@ -236,7 +254,7 @@
     var vib = ctx.createOscillator(), vg = ctx.createGain(); vib.frequency.value = 34; vg.gain.value = base * 0.06; vib.connect(vg); vg.connect(o.frequency);
     o.frequency.setValueAtTime(base, t); o.frequency.exponentialRampToValueAtTime(base * 1.7, t + 0.07); o.frequency.exponentialRampToValueAtTime(base * 0.8, t + 0.42);
     bp.type = 'bandpass'; bp.frequency.value = 1700; bp.Q.value = 1.5; env(g, t, peak, 0.02, 0.45);
-    o.connect(w); w.connect(bp); bp.connect(g); g.connect(master); o.start(t); vib.start(t); o.stop(t + 0.5); vib.stop(t + 0.5);
+    o.connect(w); w.connect(bp); bp.connect(g); g.connect(out()); o.start(t); vib.start(t); o.stop(t + 0.5); vib.stop(t + 0.5);
   }
   var INSTRUMENTS = {
     bongo_hi: {label: 'Bongo high', play: function (t, v) { drum(t, 470, 330, 0.12, 0.5 * v, 'sine', [3200, 0.12 * v, 0.02]); }},
@@ -269,6 +287,8 @@
     didge: {label: 'Didgeridoo', melodic: true, held: true, oct: -1, play: function (t, v, f, len) { didge(t, f / 2, 0.7 * v, len); }},
     didge_deep: {label: 'Didgeridoo (deep)', melodic: true, held: true, oct: -2, play: function (t, v, f, len) { didge(t, f / 4, 0.42 * v, len, false, true); }},
     didge_toot: {label: 'Didgeridoo toot', melodic: true, play: function (t, v, f) { didge(t, f, 0.45 * v, 0.2, true); }},
+    square_bass: {label: 'Square buzz', melodic: true, held: true, oct: -1, play: function (t, v, f, len) { square(t, f / 2, 0.17 * v, len * 0.92); }},
+    square_beep: {label: 'Square beep', melodic: true, play: function (t, v, f) { square(t, f * 2, 0.035 * v, 0.09); }},
     buzz_pad: {label: 'Buzz pad', melodic: true, held: true, play: function (t, v, f, len) { buzzPad(t, f, 0.035 * v, len); }},
     gulls: {label: 'Gulls', play: function (t, v) { gulls(t, 0.12 * v); }},
     cuica: {label: 'Cuica', play: function (t, v) { cuica(t, 0.17 * v); }},
@@ -285,7 +305,7 @@
     var o = ctx.createOscillator(), f = ctx.createBiquadFilter(), g = ctx.createGain(); o.type = 'triangle';
     f.type = 'bandpass'; f.frequency.value = 900; f.Q.value = 2;
     o.frequency.setValueAtTime(380, t); o.frequency.exponentialRampToValueAtTime(760, t + 0.09); o.frequency.exponentialRampToValueAtTime(420, t + 0.24);
-    env(g, t, peak, 0.02, 0.24); o.connect(f); f.connect(g); g.connect(master); o.start(t); o.stop(t + 0.32);
+    env(g, t, peak, 0.02, 0.24); o.connect(f); f.connect(g); g.connect(out()); o.start(t); o.stop(t + 0.32);
   }
   // Birds: a few chirps that slide up, or a quick trill (Lucky Monkey).
   function birds(t, peak) {
@@ -293,7 +313,7 @@
     for (var k = 0; k < n; k++) {
       var at = t + k * (trill ? 0.06 : 0.14), o = ctx.createOscillator(), g = ctx.createGain(), d = trill ? 0.05 : 0.11;
       o.frequency.setValueAtTime(base * (trill ? 1 : 0.8), at); o.frequency.exponentialRampToValueAtTime(base * (trill ? 1.15 : 1.3), at + d * 0.85);
-      env(g, at, peak, 0.004, d); o.connect(g); g.connect(master); o.start(at); o.stop(at + d + 0.05);
+      env(g, at, peak, 0.004, d); o.connect(g); g.connect(out()); o.start(at); o.stop(at + d + 0.05);
     }
   }
   // The bed: a warm low drone (two detuned saws + a soft fifth through a slowly breathing low-pass), for songs with
@@ -346,8 +366,13 @@
       }
       var dur = 60 / ((song.bpm || 100) + (song.bpmRise || 0) * Math.min(intensity, 1.4) / 1.4) / 4;
       var g = step % total, s = g % 16, bar = Math.floor(step / 16), fill = bar % 4 === 3 && s >= 12;
+      var dt = Math.min(1.4, dur * 3);                                                       // the echo: a dotted eighth
+      if (Math.abs(echo.d.delayTime.value - dt) > 0.002) echo.d.delayTime.setTargetAtTime(dt, ctx.currentTime, 0.05);
       Object.keys(song.parts).forEach(function (name) {
         var ins = INSTRUMENTS[name], pat = String(song.parts[name] || ''); if (!ins || !pat) return;
+        send = song.echo ? Math.max(0, Math.min(0.6, +song.echo[name] || 0)) : 0;          // how much of this part echoes
+        var mix = song.mix && song.mix[name] != null ? Math.max(0, Math.min(1.5, +song.mix[name])) : 1;   // this part's volume
+        if (!mix) return;
         if (song.layers && song.layers[name] != null && intensity < song.layers[name]) return;   // not loud enough yet
         var at0 = g % pat.length, c = pat.charAt(at0);
         if (ins.melodic) {
@@ -355,7 +380,7 @@
           var len = dur; if (ins.held) { for (var k = at0 + 1; k < pat.length && pat.charAt(k) === '-'; k++) len += dur; }
           var deg = +c + (!song.exact && rand() < 0.12 ? (rand() < 0.5 ? 1 : -1) : 0);   // a passing note now and then
           var semis = song.shift ? (+song.shift[Math.floor(g / 16)] || 0) : 0;            // this bar's key change
-          ins.play(nextAt, 0.85 + rand() * 0.15, freqOf(song, deg) * Math.pow(2, semis / 12), len);
+          ins.play(nextAt, (0.85 + rand() * 0.15) * mix, freqOf(song, deg) * Math.pow(2, semis / 12), len);
           return;
         }
         var v = c === 'x' || c === 'd' ? 1 : c === 'o' ? 0.55 : 0;
@@ -365,9 +390,11 @@
         if (!v && rand() < 0.03 && /bongo|conga|shaker/.test(name)) v = 0.3;               // ghost notes
         if (v && rand() < 0.04 && c !== 'x') v = 0;                                          // the odd drop
         }
+        v *= mix;
         if (v) ins.play(nextAt + (rand() - 0.5) * 0.006, v);
         if (v && c === 'd') ins.play(nextAt + (song.exact ? dur : dur * (s % 2 ? 0.94 : 1.06)) / 2, v * 0.8);   // the half beat
       });
+      send = 0;
       var at = nextAt, st = s, gst = g;
       stepFns.forEach(function (fn) { try { fn(st, at, gst); } catch (e) {} });          // step in bar, time, step in song
       nextAt += song.exact ? dur : dur * (s % 2 ? 0.94 : 1.06);                              // a little swing (not for exact songs)

@@ -336,6 +336,7 @@
     buzz_pad: {label: 'Buzz pad', melodic: true, held: true, play: function (t, v, f, len) { buzzPad(t, f, 0.035 * v, len); }},
     gulls: {label: 'Gulls', play: function (t, v) { gulls(t, 0.12 * v); }},
     cuica: {label: 'Cuica', play: function (t, v) { cuica(t, 0.17 * v); }},
+    cuica_wail: {label: 'Cuica wail', play: function (t, v) { cuicaWail(t, 1.3 * v); }},
     birds: {label: 'Birds', chance: 0.45, play: function (t, v) { birds(t, 0.09 * v); }},
     // Lucky Monkey's own voices, exactly as the game synthesized them (louder by the engine's master ratio):
     lm_bongo_hi: {label: 'Bongo high (Lucky Monkey)', play: function (t, v) { drum(t, 420, 300, 0.18, 0.31 * v, 'sine', [2500, 0.16 * v, 0.03]); }},
@@ -363,6 +364,14 @@
   // The bed: a warm low drone (two detuned saws + a soft fifth through a slowly breathing low-pass), for songs with
   // `bed: true`. Its loudness and brightness follow the intensity.
   var bed = null;
+  // the cuica as an effect: lower, longer and eerier than the drum - a moan that rises, wavers and falls away
+  function cuicaWail(t, peak) {
+    var o = ctx.createOscillator(), f = ctx.createBiquadFilter(), g = ctx.createGain(), vib = ctx.createOscillator(), vg = ctx.createGain();
+    o.type = 'triangle'; f.type = 'bandpass'; f.frequency.value = 620; f.Q.value = 1.4;
+    o.frequency.setValueAtTime(260, t); o.frequency.exponentialRampToValueAtTime(640, t + 0.16); o.frequency.exponentialRampToValueAtTime(230, t + 0.55);
+    vib.frequency.value = 7; vg.gain.value = 14; vib.connect(vg); vg.connect(o.frequency);
+    env(g, t, peak, 0.03, 0.55); o.connect(f); f.connect(g); g.connect(out()); o.start(t); vib.start(t); o.stop(t + 0.65); vib.stop(t + 0.65);
+  }
   function bedOn(s) {
     if (bed || !s.bed) return;
     var g = ctx.createGain(), lp = ctx.createBiquadFilter(), f0 = 440 * Math.pow(2, ((s.bedRoot || s.root || 57) - 69) / 12) / 4;
@@ -404,7 +413,8 @@
       if (step > 0 && step % total === 0) {
         var nx = nextOf(song);
         if (nx && nx !== song) {
-          song = nx; step = 0; total = 16 * barsOf(song); bedOff(); bedOn(song); bedLevel();
+          var sameBed = bed && nx.bed && (nx.bedRoot || nx.root) === (song.bedRoot || song.root);   // linked parts on one drone: it carries on
+          song = nx; step = 0; total = 16 * barsOf(song); if (!sameBed) { bedOff(); bedOn(song); } bedLevel();
           songFns.forEach(function (fn) { try { fn(nx); } catch (e) {} });
         }
       }

@@ -34,22 +34,61 @@
 
   // ---- songs: x = accent, o = soft, d = double (a hit, then another half a step later), . = rest; melodic lines use scale degrees 1-9, - holds, . rests ---------------
   var BUILT_IN = [
-    {id: 'jungle-run', title: 'Jungle Run', mood: 'bongos, quick', bpm: 112, root: 57, scale: 'minor-pent', seed: 11, parts: {
-      bongo_hi: 'x..o..x.x..o.x..', bongo_lo: '..x...x...x...xo', conga: 'x...o.x.x...o.x.', shaker: 'oxoxoxoxoxoxoxox',
-      kick: 'x.......x..x....', bass: '1...1.3.5...4.3.', kalimba: '5.3.1...5.6.5...'}},
-    {id: 'canopy-drums', title: 'Canopy Drums', mood: 'congas and djembe', bpm: 98, root: 55, scale: 'dorian', seed: 23, parts: {
-      djembe: 'x..x..x...x.x...', conga: '.o..x..o.o..x..o', bongo_hi: '...o...o...o..oo', shaker: 'o.o.o.o.o.o.o.o.',
-      bass: '1.....1.4.....5.', marimba: '1.3.5.3.2.4.6.4.', pad: '1---------------'}},
-    {id: 'rain-dance', title: 'Rain Dance', mood: 'heavy jungle drums', bpm: 120, root: 52, scale: 'phrygian', seed: 37, parts: {
-      tom_lo: 'x..x..x.x..x..x.', tom_hi: '..o...o...o.o.o.', djembe: 'x.x...x.x.x...x.', kick: 'x...x...x...x...',
-      shaker: 'oooooooooooooooo', clave: 'x..x..x...x.x...', bass: '1..1..1.1..2..1.'}},
-    {id: 'night-market', title: 'Night Market', mood: 'clave and kalimba', bpm: 92, root: 60, scale: 'major-pent', seed: 41, parts: {
-      clave: 'x..x..x...x.x...', bongo_lo: 'x.....x.x.......', shaker: '.o.o.o.o.o.o.o.o',
-      kalimba: '1.3.5.6.5.3.2...', bass: '1...5...6...4...', pad: '1-------4-------'}},
-    {id: 'panda-trail', title: 'Panda Trail', mood: 'gentle toms', bpm: 78, root: 57, scale: 'minor', seed: 7, parts: {
-      tom_lo: 'x.......o.......', tom_hi: '....o.......o..o', shaker: 'o...o...o...o...', marimba: '5.....3.....1...', pad: '1-------6-------'}},
-    {id: 'cellar-light', title: 'Cellar Light', mood: 'ambient', bpm: 68, root: 50, scale: 'dorian', seed: 3, parts: {
-      pad: '1---------------', kalimba: '5.......3...2...', tom_lo: 'o...............', bass: '1.......5.......'}},
+    // A A', bars 5-6 lifted a 4th, a bongo build, a turnaround
+    {id: 'jungle-run', title: 'Jungle Run', mood: 'bongos, quick', bpm: 112, root: 57, scale: 'minor-pent', seed: 11, bars: 8, shift: [0,0,0,0,5,5,0,0], echo: {kalimba: 0.22}, parts: {
+      bongo_hi: 'x..o..x.x..o.x..x..o..x.x..o.x..x..o..x.x..o.x..x..o..x.x..o.x..x..o..x.x..o.x..x..o..x.x..o.x..x.xox.xox.xoxxxxx..o..x.x..o....',
+      bongo_lo: '..x...x...x...xo..x...x...x...xo..x...x...x...xo..x...x...x...xo..x...x...x...xo..x...x...x...xo..x...x...x.x.xx..x...x.........',
+      conga: 'x...o.x.x...o.x.x...o.x.x...o.x.x...o.x.x...o.x.x...o.x.x...o.x.x...o.x.x...o.x.x...o.x.x...o.x.x...o.x.x...o.x.x...o.x.x...oooo',
+      shaker: 'oxoxoxoxoxoxoxox',
+      kick: 'x.......x..x....x.......x..x....x.......x..x....x.......x..x....x.......x..x....x.......x..x....x...x...x...x...x.......x.x.x.x.',
+      bass: '1...1.3.5...4.3.1...1.3.5...4.3.4...4.5.6...5.4.1...1.3.5...2.1.1...1.3.5...4.3.1...3...4...5...1.1.3.3.4.4.5.5.1.......5...4.2.',
+      kalimba: '5.3.1...5.6.5...5.3.1...3.2.1...6.5.6.8.7...6.5.5.6.5.3.2...1...1.3.5...5.6.5...6.5.3...2.3.1...5.5.6.6.8.8.9...8...6...5...3.2.'}},
+    // i-IV-i-v under the marimba, pad chords, kalimba sparkles, a djembe fill
+    {id: 'canopy-drums', title: 'Canopy Drums', mood: 'congas and djembe', bpm: 98, root: 55, scale: 'dorian', seed: 23, bars: 8, echo: {kalimba: 0.3, marimba: 0.12}, parts: {
+      djembe: 'x..x..x...x.x...x..x..x...x.x...x..x..x...x.x...x..x..x...x.x...x..x..x...x.x...x..x..x...x.x...x..x..x...x.x...x.xxx.x.xxxxx.xx',
+      conga: '.o..x..o.o..x..o',
+      bongo_hi: '...o...o...o..oo...o...o...o..oo...o...o...o..oo...o...o...o..oo...o...o...o..oo...o...o...o..oo...o...o...o..oooooo...o...ooooo',
+      shaker: 'o.o.o.o.o.o.o.o.',
+      bass: '1.....1.4.....5.1.....1.4.....5.4.....4.6.....5.4.....4.3.....2.1.....1.4.....5.1.....1.4.....5.5.....5.7.....5.4.....4.5...7.5.',
+      marimba: '1.3.5.3.2.4.6.4.1.3.5.3.2.4.6.4.4.6.8.6.3.5.7.5.4.6.8.6.5.4.3.2.1.3.5.8.5.3.2.4.6.5.4.3.2.4.6.4.5.7.9.7.5.7.9.7.8.7.6.5.4.3.2...',
+      pad: '1-------------------------------4-------------------------------1-------------------------------5---------------4---------------',
+      kalimba: '................................................................8.......9...............6...5...9.......8.......................'}},
+    // storm, a breakdown (drone, marimba lament), a thunder build into the crash
+    {id: 'rain-dance', title: 'Rain Dance', mood: 'heavy jungle drums', bpm: 120, root: 52, scale: 'phrygian', seed: 37, bars: 8, echo: {marimba: 0.3}, parts: {
+      tom_lo: 'x..x..x.x..x..x.x..x..x.x..x..x.x..x..x.x..x..x.x..x..x.x..x..x.x...............x.......x.......x..x..x.x..x..x.x.x.x.x.dxdxdxdd',
+      tom_hi: '..o...o...o.o.o...o...o...o.o.o...o...o...o.o.o...o...o...o.o.o.........................o...o.....o...o...o.o.o...o.o.o.o.o.dddd',
+      djembe: 'x.x...x.x.x...x.x.x...x.x.x...x.x.x...x.x.x...x.x.x...x.x.x...x.........................x.x.x.x.x.x...x.x.x...x.x.x.x.x.x.x.xxxx',
+      kick: 'x...x...x...x...x...x...x...x...x...x...x...x...x...x...x...x...x...............x.......x.......x...x...x...x...x...x...x...x...',
+      shaker: 'ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo.o.o.o.o.o.o.o.o.o.o.o.o.o.o.o.oooooooooooooooooooooooooooooooo',
+      clave: 'x..x..x...x.x...x..x..x...x.x...x..x..x...x.x...x..x..x...x.x...................................x..x..x...x.x...x..x..x...x.x...',
+      crash: '................................................................................................x...............................',
+      bass: '1..1..1.1..2..1.1..1..1.1..2..1.1..1..1.1..2..3.2..2..2.2..3..2.1...............1.......2.......1..1..1.1..2..1.1.1.1.1.2.2.3.2.',
+      pad: '................................................................1-------------------------------................................',
+      marimba: '................................................................5...6...5...3...2...3...2...1...................................'}},
+    // an 8-bar kalimba tune over pad chords; bongos join halfway
+    {id: 'night-market', title: 'Night Market', mood: 'clave and kalimba', bpm: 92, root: 60, scale: 'major-pent', seed: 41, bars: 8, echo: {kalimba: 0.32}, parts: {
+      clave: 'x..x..x...x.x...',
+      bongo_lo: 'x.....x.x.......',
+      shaker: '.o.o.o.o.o.o.o.o',
+      bongo_hi: '....................................................................o.......o..o....o.......o..o....o.......o..oo.o.o..oo.o.oooo',
+      kalimba: '1.3.5.6.5.3.2...1.3.5.6.8.6.5...5.6.8.9.8.6.5...3.5.3.2.1.......6.5.6.8.6.5.3...2.3.5.3.2.1.2...1.3.5.6.5.3.2...3.2.1.......1...',
+      bass: '1...5...6...4...1...5...6...4...6...5...4...5...1...4...5.......6...4...5...1...2...4...5...4...1...5...6...4...4...5...1...5...',
+      pad: '1-------4-------1-------4-------6-------4-------1-------5-------6-------4-------2-------5-------1-------4-------4-------5-------'}},
+    // a marimba melody over pad chords, a soft bass, kalimba drops
+    {id: 'panda-trail', title: 'Panda Trail', mood: 'gentle toms', bpm: 78, root: 57, scale: 'minor', seed: 7, bars: 8, mix: {bass: 0.6}, echo: {marimba: 0.2, kalimba: 0.4}, parts: {
+      tom_lo: 'x.......o.......',
+      tom_hi: '....o.......o..o....o.......o..o....o.......o..o....o.......o..o....o.......o..o....o.......o..o....o.......o..o....o...o.o.o..o',
+      shaker: 'o...o...o...o...',
+      marimba: '5.....3.....1...5.....6.....5...3.....4.....5...6.....5.....3...8.....7.....5...6.....5.....3...4.....3.....2...5...............',
+      pad: '1-------6-------1-------6-------4-------5-------6-------5-------1-------6-------4-------3-------4-------5-------5-------5-------',
+      bass: '1.......6.......1.......6.......4.......5.......6.......5.......1.......6.......4.......3.......4.......5.......5.......5.......',
+      kalimba: '....................................................................8.......9...........6...........4.......5...................'}},
+    // slow pad chords, sparse kalimba with a long echo
+    {id: 'cellar-light', title: 'Cellar Light', mood: 'ambient', bpm: 68, root: 50, scale: 'dorian', seed: 3, bars: 8, echo: {kalimba: 0.45}, parts: {
+      pad: '1-------------------------------4-------------------------------6---------------5---------------1-------------------------------',
+      kalimba: '5.......3...2...........1.......6.......5...4...........2.......7.......6...5...4...........3...5.......3...2...1...............',
+      tom_lo: 'o...............',
+      bass: '1.......5.......1.......5.......4.......4.......4.......3.......6.......5.......5.......5.......1.......5.......1.......1.......'}},
     // Lucky Monkey (the game): jungle at night. A drone and birds, growing into shaker, bongos, marimba over
     // Am-F-C-G, a cuica and a low tom as the threat rises. The game sets the intensity with setLevel (0..1.5).
     {id: 'lucky-monkey-jungle', title: 'Lucky Monkey: Jungle at Night', mood: 'the game: drone and birds into a groove', game: 'luckymonkey',

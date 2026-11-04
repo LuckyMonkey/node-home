@@ -72,10 +72,10 @@
       horn: '1...1.......1...2...1...2...1...1...2.......1...2...1...2...1...1...1.......1...2...1...2...1...1...2.......4...2...4...2...4...',
       brass: '1...1...1...1...2...1...2...1...1...1...2...1...2...1...2...1...1...1...1...1...2...1...2...1...1...1...2...1...4...2...4...2...',
       pad: '1-------------------------------------------------------------------------------------------------------------------------------'}},
-    // Tunnel Fight: an original industrial groove (C# phrygian, 99 BPM) on the industrial voices, written to the
+    // Disrupted Distillation: an original industrial groove (C# phrygian, 99 BPM) on the industrial voices, written to the
     // measured feel of a Half-Life 2: Episode One combat cue (sub-heavy boom, metal crack, distorted lead, drone,
     // buzzing gulls); none of that cue's notes. Music page only.
-    {id: 'tunnel-fight', title: 'Tunnel Fight', mood: 'industrial, heavy', player: false,
+    {id: 'disrupted-distillation', title: 'Disrupted Distillation', mood: 'industrial, heavy', player: false,
       bpm: 99, root: 49, scale: 'phrygian', seed: 17, bars: 8, exact: true, parts: {
       boom: 'x.....x...x.....x.....x.x...x...',
       crack: '....x.......x.......x.......x.o.',

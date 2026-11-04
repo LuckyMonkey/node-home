@@ -62,8 +62,8 @@
       lm_marimba: '3...7...5...7.3.1...5...3...5.1.5...9...7...9.5.2...6...4...6.2.',
       cuica: '......x.......o.', lm_tom: 'x.......x.......'}},
     // Kaon (Half-Life, Kelly Bailey): a cover, transcribed note for note from bars 2-9 of a fan MIDI (the main loop;
-    // the bridge and the intro are left out). E phrygian, 180 BPM, straight. Only on the music page (player: false).
-    {id: 'kaon', title: 'Kaon (Half-Life cover)', mood: 'industrial, fast', player: false,
+    // the bridge and the intro are left out). E phrygian, 180 BPM, straight. 
+    {id: 'kaon', title: 'Kaon (Half-Life cover)', mood: 'industrial, fast',
       bpm: 180, root: 52, scale: 'phrygian', seed: 9, bars: 8, exact: true, parts: {
       tom_lo: 'x...x.........x.....x...........x...x.........x.....x...........x...x.........x.....x...........x...x.........x.....x...........',
       snare: 'o.o.o.o.x.o.o.o.o.o.o.o.x.o.o.o.o.o.o.o.x.o.o.o.o.o.o.o.x.o.o.o.o.o.o.o.x.o.o.o.o.o.o.o.x.o.o.o.o.o.o.o.x.o.o.x.xxx.o.x.xxx.o.x.',
@@ -76,8 +76,8 @@
       pad: '1-------------------------------------------------------------------------------------------------------------------------------'}},
     // Control (Metro Station cover): an 8-bar loop - the keyboard riff (an E pedal under A-C-E, then the E-F rock), the
     // chorus power-chord line and Am-C-F-E roots, from fan tabs, with Kalimba doubling the riff an octave up; written as a MIDI file and brought in with the music
-    // page's MIDI import (A minor, written as D dorian so the riff fits the note rows). Music page only.
-    {id: 'control-cover', title: 'Control (Metro Station cover)', mood: 'synth-pop, bright', player: false,
+    // page's MIDI import (A minor, written as D dorian so the riff fits the note rows).
+    {id: 'control-cover', title: 'Control (Metro Station cover)', mood: 'synth-pop, bright',
       bpm: 95, root: 62, scale: 'dorian', seed: 3, bars: 8, exact: true, parts: {
       kick: 'x.......x.x.....x.......x.x.....x.......x.x.....x.......x.x.....x...x...x...x...x...x...x...x...x...x...x...x...x.......x.x.....',
       snare: '....x.......x.......x.......x.......x.......x.......x.......x.......x.......x.......x.......x.......x.......x.......x.......xodo',
@@ -91,8 +91,8 @@
     // Disrupted Distillation: an original industrial piece (C# phrygian, 99 BPM) led by a didgeridoo solo over buzz
     // pads, hard booms and metal, written to the measured feel of a Half-Life 2: Episode One combat cue; none of that
     // cue's notes. Bar 4 breaks down low (sub drop, deep didgeridoo), pound toms add off-beat half beats, and bar 8
-    // builds a pat-patapat crescendo into the pow (boom + crash) of bar 1. Music page only.
-    {id: 'disrupted-distillation', title: 'Disrupted Distillation', mood: 'industrial, didgeridoo', player: false,
+    // builds a pat-patapat crescendo into the pow (boom + crash) of bar 1.
+    {id: 'disrupted-distillation', title: 'Disrupted Distillation', mood: 'industrial, didgeridoo',
       bpm: 99, root: 49, scale: 'phrygian', seed: 17, bars: 8, exact: true, parts: {
       boom: 'x.......x.x.....x.....x...x.x...x.......x.x.....x...............x.......x.x.....x.....x...x.x...x.......x.x.....x.......x...x.x.',
       crack: '....x.......x.......x.......x.......x.......x...........x...........x.......x.......x.......x.......x.......x.......x...x.d.dxdx',
@@ -112,7 +112,12 @@
     dorian: [0, 2, 3, 5, 7, 9, 10], phrygian: [0, 1, 3, 5, 7, 8, 10], major: [0, 2, 4, 5, 7, 9, 11], lydian: [0, 2, 4, 6, 7, 9, 11]
   };
   function customSongs() { try { var a = JSON.parse(localStorage.getItem(SONGS_KEY) || '[]'); return Array.isArray(a) ? a.filter(function (s) { return s && s.id && s.parts; }) : []; } catch (e) { return []; } }
-  function allSongs() { return BUILT_IN.concat(customSongs()); }
+  // a site's own songs (go.fridge.run's music-songs.js sets window.FridgeMusicSongs): listed after the built-in ones
+  function extraSongs() {
+    var x = window.FridgeMusicSongs; if (!Array.isArray(x)) return [];
+    return x.filter(function (s) { return s && s.id && s.parts && !BUILT_IN.some(function (b) { return b.id === s.id; }); });
+  }
+  function allSongs() { return BUILT_IN.concat(extraSongs(), customSongs()); }
   function songById(id) { return allSongs().find(function (s) { return s.id === id; }) || BUILT_IN[0]; }
 
   // ---- instruments: tiny synthesized voices -----------------------------------------------------------------------

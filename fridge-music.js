@@ -18,7 +18,8 @@
  * Songs may span several bars (a part's pattern is 16 steps per bar; shorter patterns repeat), may name `layers`
  * (part -> the intensity it needs, 0..1.5, see setLevel) and `bpmRise` (extra BPM at full intensity), and may set
  * `bed: true` for a continuous drone, `player: false` to stay off the little player (music page only), and
- * `next` (a song id) to play on into that song when it ends - songs linked into parts. One engine for every fridge sound: fridge.run, go.fridge.run/music and the
+ * `next` (a song id) to play on into that song when it ends - songs linked into parts - and `shift` (semitones per
+ * bar, e.g. [0, 0, 0, -5]) to move a bar's notes into another key, for breakdowns. One engine for every fridge sound: fridge.run, go.fridge.run/music and the
  * Lucky Monkey game (its jungle music is the song `lucky-monkey-jungle`, driven by the game's threat level).
  */
 (function () {
@@ -306,9 +307,9 @@
   function freqOf(song, degree) { var sc = SCALES[song.scale] || SCALES.minor, d = degree - 1, oct = Math.floor(d / sc.length); return 440 * Math.pow(2, ((song.root || 57) + sc[((d % sc.length) + sc.length) % sc.length] + 12 * oct - 69) / 12); }
   var song = null, step = 0, nextAt = 0, timer = 0, rand = null, stepFns = [], vol = 0.4, muted = false, intensity = 1;
   function barsOf(s) { return Math.max(1, Math.min(8, +s.bars || 1)); }
-  function noteName(s, degree, octShift) {   // octShift: the instrument's octave (marimba +1, bass -1)
+  function noteName(s, degree, octShift, semis) {   // octShift: the instrument's octave (marimba +1, bass -1); semis: the bar's key change
     var NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'], sc = SCALES[s.scale] || SCALES.minor, d = degree - 1, oct = Math.floor(d / sc.length);
-    var midi = (s.root || 57) + sc[((d % sc.length) + sc.length) % sc.length] + 12 * oct; midi += 12 * (octShift || 0); return NAMES[midi % 12] + (Math.floor(midi / 12) - 1);
+    var midi = (s.root || 57) + sc[((d % sc.length) + sc.length) % sc.length] + 12 * oct; midi += 12 * (octShift || 0) + (+semis || 0); return NAMES[midi % 12] + (Math.floor(midi / 12) - 1);
   }
   function level() { return muted ? 0 : vol * vol * 0.9; }
   // Linked songs: a song may name `next` (a song id); when it ends, the engine plays on into that song.
@@ -339,7 +340,8 @@
           if (!/[1-9]/.test(c)) return;
           var len = dur; if (ins.held) { for (var k = at0 + 1; k < pat.length && pat.charAt(k) === '-'; k++) len += dur; }
           var deg = +c + (!song.exact && rand() < 0.12 ? (rand() < 0.5 ? 1 : -1) : 0);   // a passing note now and then
-          ins.play(nextAt, 0.85 + rand() * 0.15, freqOf(song, deg), len);
+          var semis = song.shift ? (+song.shift[Math.floor(g / 16)] || 0) : 0;            // this bar's key change
+          ins.play(nextAt, 0.85 + rand() * 0.15, freqOf(song, deg) * Math.pow(2, semis / 12), len);
           return;
         }
         var v = c === 'x' || c === 'd' ? 1 : c === 'o' ? 0.55 : 0;

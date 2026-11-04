@@ -99,33 +99,45 @@
       font: 600 14px/1.2 inherit; font-family: inherit; color: var(--ink-2); --place: var(--c-monkey); }
     .links button.games:hover { background: linear-gradient(120deg, color-mix(in srgb, var(--place) 20%, white), color-mix(in srgb, var(--place) 6%, white)); color: color-mix(in srgb, var(--place) 70%, black); }
     .links button.games:focus-visible { outline: none; box-shadow: var(--focus); }
-    dialog.gm { width: min(720px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); padding: 0; border: 0; border-radius: 20px;
-      background: var(--paper); color: var(--ink); box-shadow: var(--shadow); overflow: auto; }
+    dialog.gm { width: min(980px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); padding: 0; border: 0; border-radius: 20px;
+      background: var(--paper); color: var(--ink); box-shadow: var(--shadow); overflow: auto; overscroll-behavior: contain; }
     dialog.gm::backdrop { background: rgba(8, 9, 12, .72); }
-    .gm-head { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 10px; padding: 16px 18px 12px; background: var(--paper); border-bottom: 1px solid var(--paper-3); }
-    .gm-head h2 { margin: 0; font-size: 20px; flex: 1; text-align: left; }
+    .gm-head { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 12px; padding: 16px 20px 12px; background: var(--paper); border-bottom: 1px solid var(--paper-3); text-align: left; }
+    .gm-head > div { flex: 1; min-width: 0; }
+    .gm-head h2 { margin: 0; font-size: 20px; }
     .gm-head p { margin: 2px 0 0; font-size: 13.5px; color: var(--dim); font-weight: 600; }
-    .gm-x { width: 38px; height: 38px; border-radius: 12px; border: 1px solid var(--edge); background: var(--paper-2); font-size: 20px; line-height: 1; cursor: pointer; color: var(--ink-2); }
+    .gm-x { flex: none; width: 38px; height: 38px; border-radius: 12px; border: 1px solid var(--edge); background: var(--paper-2); font-size: 22px; line-height: 1; cursor: pointer; color: var(--ink-2); }
+    .gm-x:hover { background: #fff; }
     .gm-x:focus-visible { outline: none; box-shadow: var(--focus); }
-    .gm-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; padding: 16px 18px; }
-    .gm-card { display: flex; flex-direction: column; border-radius: 16px; overflow: hidden; background: #fff; border: 1px solid var(--edge); text-align: left; }
-    .gm-card img { display: block; width: 100%; height: auto; aspect-ratio: 600 / 315; object-fit: cover; background: #0d0e11; }
-    .gm-body { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px 14px; flex: 1; }
-    .gm-body h3 { margin: 0; font-size: 17px; }
-    .gm-body p { margin: 0; font-size: 13.5px; line-height: 1.45; color: var(--ink-2); flex: 1; }
-    .gm-tags { display: flex; flex-wrap: wrap; gap: 5px; }
-    .gm-tags span { font-size: 11.5px; font-weight: 800; padding: 3px 8px; border-radius: 99px; background: var(--paper); color: var(--dim); }
+    .gm-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; padding: 18px 20px; }
+    /* every card: picture, title, one row of tags, text, then the buttons pinned to the bottom so rows line up */
+    .gm-card { display: flex; flex-direction: column; border-radius: 16px; overflow: hidden; background: #fff; border: 1px solid var(--edge); text-align: left;
+      transition: transform .12s ease, box-shadow .12s ease; }
+    .gm-card:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0, 0, 0, .14); }
+    .gm-card img { display: block; width: 100%; height: auto; aspect-ratio: 600 / 315; object-fit: cover; background: #0d0e11; border-bottom: 1px solid var(--paper-3); }
+    .gm-body { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px 16px; flex: 1; }
+    .gm-body h3 { margin: 0; font-size: 17px; line-height: 1.25; }
+    .gm-tags { display: flex; flex-wrap: nowrap; gap: 6px; overflow: hidden; }
+    .gm-tags span { flex: none; font-size: 11.5px; font-weight: 800; line-height: 1; padding: 5px 9px; border-radius: 99px; background: var(--paper); color: var(--dim); white-space: nowrap; }
     .gm-tags .new { background: #fff1d6; color: #8a5300; }
-    .gm-body .btn { margin-top: 6px; justify-content: center; }
-    .gm-alt { font-size: 12.5px; color: var(--dim); text-align: center; }
-    .gm-alt a { color: var(--mint-strong); font-weight: 700; }
-    .gm-test { margin: 0 18px 18px; padding: 16px; border-radius: 16px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; text-align: left;
+    .gm-tags .wip { background: #ece6ff; color: #5b3fc4; }
+    .gm-body p { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--ink-2); flex: 1; }
+    .gm-act { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 6px; }
+    .gm-act .btn { justify-content: center; min-height: 44px; margin: 0; }
+    .gm-act .btn.alt { padding-left: 14px; padding-right: 14px; font-size: 14px; white-space: nowrap; }
+    .gm-act .btn.alt::after { content: none; }
+    .gm-test { margin: 0 20px 20px; padding: 16px 18px; border-radius: 16px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; text-align: left;
       background: linear-gradient(120deg, #e3f6f0, #e6eefb); border: 1px solid #bfe3d8; }
-    .gm-test div { flex: 1 1 260px; }
+    .gm-test div { flex: 1 1 280px; }
     .gm-test h3 { margin: 0 0 4px; font-size: 17px; }
     .gm-test p { margin: 0; font-size: 13.5px; line-height: 1.45; color: var(--ink-2); }
-    .gm-test .btn { flex: none; }
-    @media (max-width: 480px) { .gm-list { padding: 12px; gap: 12px; } .gm-test { margin: 0 12px 12px; } .gm-test .btn { width: 100%; justify-content: center; } }
+    .gm-test .btn { flex: none; min-height: 44px; }
+    @media (max-width: 520px) {
+      .gm-list { padding: 12px; gap: 12px; grid-template-columns: 1fr; }
+      .gm-head { padding: 14px 14px 10px; }
+      .gm-test { margin: 0 12px 12px; }
+      .gm-test .btn { width: 100%; justify-content: center; }
+    }
     .fine { margin: 16px 0 0; font-size: 14px; line-height: 1.5; font-weight: 600; color: #c3c6cd; text-align: center; letter-spacing: .02em; text-shadow: 0 1px 6px rgba(0, 0, 0, .8); }
   </style>
 </head>
@@ -166,7 +178,7 @@
     </section>
     <dialog class="gm" id="games" aria-labelledby="gm-title">
       <div class="gm-head">
-        <div style="flex:1"><h2 id="gm-title">🎮 Games on the fridge</h2><p>Free, in your browser, no account or install.</p></div>
+        <div><h2 id="gm-title">🎮 Games on the fridge</h2><p>Free, in your browser, no account or install.</p></div>
         <button type="button" class="gm-x" data-games-close aria-label="Close">×</button>
       </div>
       <div class="gm-list">
@@ -174,9 +186,9 @@
           <img src="./media/games/whaleship.jpg" alt="WHALESHIP: container whales against Kubernetes carriers" width="600" height="315" loading="lazy">
           <div class="gm-body">
             <h3>🐋 WHALESHIP</h3>
-            <div class="gm-tags"><span>Solo or 2 players</span><span>~5 min quick mode</span></div>
+            <div class="gm-tags"><span>Solo or 2 players</span><span>~5 min</span></div>
             <p>Battleship where the ships are infrastructure. Sink their stack, then send a friend the link and they're playing.</p>
-            <a class="btn primary" href="https://go.fridge.run/whaleship/">Play</a>
+            <div class="gm-act"><a class="btn primary" href="https://go.fridge.run/whaleship/">Play</a><a class="btn alt" href="https://github.com/LuckyMonkey/whaleship">Code</a></div>
           </div>
         </article>
         <article class="gm-card">
@@ -185,17 +197,34 @@
             <h3>🐵 Lucky Monkey</h3>
             <div class="gm-tags"><span class="new">Early build</span><span>Desktop best</span></div>
             <p>Keep the jungle network running until 17:00: spot trouble, send your crew, fix nodes before they fall.</p>
-            <a class="btn primary" href="https://go.fridge.run/luckymonkey/">Play</a>
-            <div class="gm-alt">Fridge offline? <a href="https://luckymonkey.github.io/luckymonkey/">Play the GitHub copy</a></div>
+            <div class="gm-act"><a class="btn primary" href="https://go.fridge.run/luckymonkey/">Play</a><a class="btn alt" href="https://luckymonkey.github.io/luckymonkey/">Mirror</a></div>
           </div>
         </article>
         <article class="gm-card">
           <img src="./media/games/hedgepets.jpg" alt="HedgePets: a hedgehog made of leaves" width="600" height="315" loading="lazy">
           <div class="gm-body">
             <h3>🦔 HedgePets</h3>
-            <div class="gm-tags"><span class="new">Playtest</span><span>Saves in your browser</span></div>
+            <div class="gm-tags"><span class="new">Playtest</span><span>Saves in browser</span></div>
             <p>Plant creatures in an ordinary backyard. Type five letters to show you're a person, then grow your garden.</p>
-            <a class="btn primary" href="https://go.fridge.run/play">Play</a>
+            <div class="gm-act"><a class="btn primary" href="https://go.fridge.run/play">Play</a><a class="btn alt" href="https://github.com/LuckyMonkey/hedgepets">Code</a></div>
+          </div>
+        </article>
+        <article class="gm-card">
+          <img src="./media/games/eightpaint.jpg" alt="EightPaint: a colourful hex-grid painting" width="600" height="315" loading="lazy">
+          <div class="gm-body">
+            <h3>🎨 EightPaint</h3>
+            <div class="gm-tags"><span>Toy</span><span>Share by link</span></div>
+            <p>Paint an endless hex grid: every click colours a hex and its neighbours. Your picture lives in the link, so you can send it.</p>
+            <div class="gm-act"><a class="btn primary" href="https://luckymonkey.github.io/eightpaint/">Play</a><a class="btn alt" href="https://github.com/LuckyMonkey/eightpaint">Code</a></div>
+          </div>
+        </article>
+        <article class="gm-card">
+          <img src="./media/games/shrinkcity.jpg" alt="Shrink City: shoppers and a store guard" width="600" height="315" loading="lazy">
+          <div class="gm-body">
+            <h3>🛒 Shrink City</h3>
+            <div class="gm-tags"><span class="wip">In development</span><span>Tycoon</span></div>
+            <p>Run a store and keep shrink down without scaring off shoppers: cameras, guards, staff and five-day campaigns.</p>
+            <div class="gm-act"><a class="btn primary" href="https://github.com/LuckyMonkey/shrinkCity">Follow it</a><a class="btn alt" href="https://github.com/LuckyMonkey/shrinkCity/blob/main/GAMEPLAY.md">Plan</a></div>
           </div>
         </article>
       </div>

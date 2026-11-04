@@ -72,17 +72,19 @@
       horn: '1...1.......1...2...1...2...1...1...2.......1...2...1...2...1...1...1.......1...2...1...2...1...1...2.......4...2...4...2...4...',
       brass: '1...1...1...1...2...1...2...1...1...1...2...1...2...1...2...1...1...1...1...1...2...1...2...1...1...1...2...1...4...2...4...2...',
       pad: '1-------------------------------------------------------------------------------------------------------------------------------'}},
-    // Disrupted Distillation: an original industrial groove (C# phrygian, 99 BPM) on the industrial voices, written to the
-    // measured feel of a Half-Life 2: Episode One combat cue (sub-heavy boom, metal crack, distorted lead, drone,
-    // buzzing gulls); none of that cue's notes. Music page only.
-    {id: 'disrupted-distillation', title: 'Disrupted Distillation', mood: 'industrial, heavy', player: false,
+    // Disrupted Distillation: an original industrial piece (C# phrygian, 99 BPM) led by a didgeridoo solo over buzz
+    // pads, hard booms and metal, written to the measured feel of a Half-Life 2: Episode One combat cue; none of that
+    // cue's notes. Music page only.
+    {id: 'disrupted-distillation', title: 'Disrupted Distillation', mood: 'industrial, didgeridoo', player: false,
       bpm: 99, root: 49, scale: 'phrygian', seed: 17, bars: 8, exact: true, parts: {
-      boom: 'x.....x...x.....x.....x.x...x...',
-      crack: '....x.......x.......x.......x.o.',
-      synth_bass: '1.....1.1...2...1.....1.5...4...1.....1.1...2...1...7...6...5...',
-      didge: '1-------------------------------1---------------2---------------1-------------------------------5---------------2---------------',
-      dist_lead: '................................5.....4.5...2...1...............5.....4.5...6...5...4...2.......8.......7.....5.4...2...1.......',
-      gulls: '........................x.......................x.........................................x.........................x...........'}}
+      boom: 'x.......x.x.....x.....x...x.x...',
+      crack: '....x.......x...',
+      clank: '..o...x....o.x....o...x..o...x.o',
+      steam: '........................................................x.......',
+      didge: '1---------------1-------1---1---1-----1-----1---1---1---1-1-1---1---------------1-------1-1-1-1-1-----1-----1-1-1---1---1---1-1-',
+      didge_toot: '............................5.........................5.......4...........................5.........5.........6...5.......5.....',
+      buzz_pad: '1-------------------------------2---------------1---------------1-------------------------------2---------------4---------------',
+      gulls: '........................................o...............................................................o.......................'}}
   ];
   var SCALES = {
     'minor-pent': [0, 3, 5, 7, 10], 'major-pent': [0, 2, 4, 7, 9], minor: [0, 2, 3, 5, 7, 8, 10],
@@ -140,20 +142,22 @@
     if (!curves[k]) { var n = 1025, c = new Float32Array(n); for (var i = 0; i < n; i++) { var x = i * 2 / (n - 1) - 1; c[i] = (1 + k) * x / (1 + k * Math.abs(x)); } curves[k] = c; }
     var w = ctx.createWaveShaper(); w.curve = curves[k]; w.oversample = '2x'; return w;
   }
-  // Boom: a huge, muffled sub hit (pitch-dropping sine, a low thump of noise, gently driven, low-passed).
+  // Metal: noise ringing through a few narrow, inharmonic band-passes, slightly driven - struck sheet metal, pipes.
+  function metal(t, peak, freqs, decay) {
+    var g = ctx.createGain(), w = shaper(4); env(g, t, peak, 0.001, decay); w.connect(g); g.connect(master);
+    freqs.forEach(function (f, i) { var n = ctx.createBufferSource(), bp = ctx.createBiquadFilter(), bg = ctx.createGain(); n.buffer = noiseBuf;
+      bp.type = 'bandpass'; bp.frequency.value = f; bp.Q.value = 28; bg.gain.value = 6 / (i + 1);
+      n.connect(bp); bp.connect(bg); bg.connect(w); n.start(t, Math.random() * 0.5); n.stop(t + decay + 0.05); });
+  }
+  // Boom: a hard industrial hit - a fast pitch-dropping sine driven into distortion, a click on top, short tail.
   function boom(t, peak) {
-    var o = ctx.createOscillator(), g = ctx.createGain(), w = shaper(3), lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 260;
-    o.frequency.setValueAtTime(82, t); o.frequency.exponentialRampToValueAtTime(36, t + 0.45);
-    env(g, t, peak, 0.004, 0.75); o.connect(w); w.connect(lp); lp.connect(g); g.connect(master); o.start(t); o.stop(t + 0.85);
-    noise(t, 380, peak * 0.35, 0.12, 'lowpass');
+    var o = ctx.createOscillator(), g = ctx.createGain(), w = shaper(9), lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1100;
+    o.frequency.setValueAtTime(130, t); o.frequency.exponentialRampToValueAtTime(46, t + 0.16);
+    env(g, t, peak, 0.002, 0.34); o.connect(w); w.connect(lp); lp.connect(g); g.connect(master); o.start(t); o.stop(t + 0.42);
+    noise(t, 2500, peak * 0.5, 0.015);
   }
-  // Crack: industrial metal - a bright noise burst plus two clanging, inharmonic square partials.
-  function crack(t, peak) {
-    noise(t, 3200, peak, 0.16, 'bandpass');
-    [540, 1187].forEach(function (f, i) { var o = ctx.createOscillator(), g = ctx.createGain(), bp = ctx.createBiquadFilter(); o.type = 'square'; o.frequency.value = f;
-      bp.type = 'bandpass'; bp.frequency.value = 2600; bp.Q.value = 1.2; env(g, t, peak * (i ? 0.25 : 0.35), 0.002, 0.09);
-      o.connect(bp); bp.connect(g); g.connect(master); o.start(t); o.stop(t + 0.12); });
-  }
+  // Crack: a snapping noise burst with a short metallic ring (no tones).
+  function crack(t, peak) { noise(t, 2800, peak, 0.14, 'bandpass'); metal(t, peak * 0.5, [1830, 2970, 4130], 0.09); }
   // Distorted lead: two detuned saws driven hard into a waveshaper, then tamed with a low-pass.
   function distLead(t, freq, peak, len) {
     var w = shaper(40), lp = ctx.createBiquadFilter(), g = ctx.createGain(); lp.type = 'lowpass'; lp.frequency.value = 1500; lp.Q.value = 1;
@@ -161,14 +165,37 @@
     [1, 1.008].forEach(function (r) { var o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = freq * r; o.connect(w); o.start(t); o.stop(t + len + 0.05); });
     w.connect(lp); lp.connect(g); g.connect(master);
   }
-  // Didgeridoo-style drone: a low buzzy pulse through two vocal formants that sweep slowly (the "wah"), held.
-  function didge(t, freq, peak, len) {
-    var o = ctx.createOscillator(), g = ctx.createGain(), mix = ctx.createGain(); o.type = 'sawtooth'; o.frequency.value = freq; mix.gain.value = 1;
-    var lfo = ctx.createOscillator(), lg = ctx.createGain(); lfo.frequency.value = 1.6; lg.gain.value = 160; lfo.connect(lg);
-    [[340, 7, 1], [1150, 9, 0.5]].forEach(function (fm) { var bp = ctx.createBiquadFilter(), bg = ctx.createGain(); bp.type = 'bandpass'; bp.frequency.value = fm[0]; bp.Q.value = fm[1]; bg.gain.value = fm[2];
-      lg.connect(bp.frequency); o.connect(bp); bp.connect(bg); bg.connect(mix); });
-    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(peak, t + 0.08); g.gain.setValueAtTime(peak, t + Math.max(0.1, len - 0.15)); g.gain.linearRampToValueAtTime(0.0001, t + len);
-    mix.connect(g); g.connect(master); o.start(t); lfo.start(t); o.stop(t + len + 0.05); lfo.stop(t + len + 0.05);
+  // Didgeridoo: buzzing lips (a lightly driven saw that scoops up into pitch), a growl (fast wobble in loudness),
+  // breath, and two mouth formants the tongue moves about three times a second - the "wah-wah" of a solo. Held.
+  function didge(t, freq, peak, len, toot) {
+    var o = ctx.createOscillator(), w = shaper(5), mix = ctx.createGain(), g = ctx.createGain(); o.type = 'sawtooth';
+    o.frequency.setValueAtTime(freq * (toot ? 0.85 : 0.94), t); o.frequency.exponentialRampToValueAtTime(freq, t + (toot ? 0.06 : 0.11));
+    var mouth = ctx.createOscillator(), mg = ctx.createGain(); mouth.type = 'triangle'; mouth.frequency.value = toot ? 7 : 3.3; mg.gain.value = 1; mouth.connect(mg);
+    [[420, 6, 1, 230], [1450, 8, 0.6, 520], [2600, 10, 0.25, 300]].forEach(function (fm) { var bp = ctx.createBiquadFilter(), bg = ctx.createGain(), depth = ctx.createGain();
+      bp.type = 'bandpass'; bp.frequency.value = fm[0]; bp.Q.value = fm[1]; bg.gain.value = fm[2]; depth.gain.value = fm[3];
+      mg.connect(depth); depth.connect(bp.frequency); w.connect(bp); bp.connect(bg); bg.connect(mix); });
+    var growl = ctx.createOscillator(), gg = ctx.createGain(), am = ctx.createGain(); growl.frequency.value = 27; gg.gain.value = 0.3; am.gain.value = 0.75;
+    var body = ctx.createBiquadFilter(), bdg = ctx.createGain(); body.type = 'lowpass'; body.frequency.value = toot ? 400 : 180; bdg.gain.value = 0.1;   // the drone's own low body
+    growl.connect(gg); gg.connect(am.gain); o.connect(w); w.connect(body); body.connect(bdg); bdg.connect(mix); mix.connect(am);
+    var br = ctx.createBufferSource(), bf = ctx.createBiquadFilter(), bgn = ctx.createGain(); br.buffer = noiseBuf; br.loop = true; bf.type = 'bandpass'; bf.frequency.value = 900; bgn.gain.value = 0.05;
+    br.connect(bf); bf.connect(bgn); bgn.connect(am);
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(peak, t + 0.04); g.gain.setValueAtTime(peak, t + Math.max(0.06, len - 0.08)); g.gain.linearRampToValueAtTime(0.0001, t + len);
+    am.connect(g); g.connect(master);
+    [o, mouth, growl, br].forEach(function (n) { n.start(t); n.stop(t + len + 0.05); });
+  }
+  // Buzz pad: a hard, buzzy chord - detuned saws on the root, fifth and octave, distorted, low end cut, upper mids lifted.
+  function buzzPad(t, freq, peak, len) {
+    var w = shaper(7), hp = ctx.createBiquadFilter(), pk = ctx.createBiquadFilter(), g = ctx.createGain();
+    hp.type = 'highpass'; hp.frequency.value = 160; pk.type = 'peaking'; pk.frequency.value = 2200; pk.gain.value = 7; pk.Q.value = 0.8;
+    [[1, 0], [1.007, 0], [1.498, 0], [2.003, 0], [0.996, 0]].forEach(function (r) { var o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = freq * r[0]; o.connect(w); o.start(t); o.stop(t + len + 0.1); });
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(peak, t + Math.min(0.35, len * 0.3)); g.gain.setValueAtTime(peak, t + len * 0.85); g.gain.linearRampToValueAtTime(0.0001, t + len);
+    w.connect(hp); hp.connect(pk); pk.connect(g); g.connect(master);
+  }
+  // Steam: a hiss that swells and cuts (a pressure valve).
+  function steam(t, peak) {
+    var n = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain(); n.buffer = noiseBuf; n.loop = true; f.type = 'highpass'; f.frequency.value = 3500;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.35); g.gain.setValueAtTime(peak, t + 0.4); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.48);
+    n.connect(f); f.connect(g); g.connect(master); n.start(t); n.stop(t + 0.55);
   }
   // Gulls: a buzzing, distorted cry - a pitch that leaps up and sags, roughened by fast vibrato.
   function gulls(t, peak) {
@@ -199,10 +226,14 @@
     synth_bass: {label: 'Synth bass', melodic: true, oct: -2, play: function (t, v, f) { synth(t, f / 4, 0.34 * v, 0.3, 'sawtooth', 900, 160, [1, 1.006]); }},
     horn: {label: 'Horn', melodic: true, play: function (t, v, f) { synth(t, f, 0.13 * v, 0.32, 'sawtooth', 2400, 600, [1, 1.004]); }},
     brass: {label: 'Brass', melodic: true, play: function (t, v, f) { synth(t, f, 0.1 * v, 0.3, 'square', 1800, 450, [0.997, 1.003]); }},
-    boom: {label: 'Boom', play: function (t, v) { boom(t, 0.55 * v); }},
-    crack: {label: 'Metal crack', play: function (t, v) { crack(t, 2 * v); }},
+    boom: {label: 'Boom', play: function (t, v) { boom(t, 0.36 * v); }},
+    crack: {label: 'Metal crack', play: function (t, v) { crack(t, 1.4 * v); }},
+    clank: {label: 'Clank', play: function (t, v) { metal(t, 0.5 * v, [523, 1311, 2207, 3460], 0.26); }},
+    steam: {label: 'Steam', play: function (t, v) { steam(t, 0.07 * v); }},
     dist_lead: {label: 'Distorted lead', melodic: true, play: function (t, v, f) { distLead(t, f, 0.1 * v, 0.34); }},
-    didge: {label: 'Didgeridoo drone', melodic: true, held: true, oct: -1, play: function (t, v, f, len) { didge(t, f / 2, 0.22 * v, len); }},
+    didge: {label: 'Didgeridoo', melodic: true, held: true, oct: -1, play: function (t, v, f, len) { didge(t, f / 2, 0.7 * v, len); }},
+    didge_toot: {label: 'Didgeridoo toot', melodic: true, play: function (t, v, f) { didge(t, f, 0.45 * v, 0.2, true); }},
+    buzz_pad: {label: 'Buzz pad', melodic: true, held: true, play: function (t, v, f, len) { buzzPad(t, f, 0.035 * v, len); }},
     gulls: {label: 'Gulls', play: function (t, v) { gulls(t, 0.12 * v); }},
     cuica: {label: 'Cuica', play: function (t, v) { cuica(t, 0.17 * v); }},
     birds: {label: 'Birds', chance: 0.45, play: function (t, v) { birds(t, 0.09 * v); }},

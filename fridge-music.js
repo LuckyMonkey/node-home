@@ -50,16 +50,18 @@
     // Lucky Monkey (the game): jungle at night. A drone and birds, growing into shaker, bongos, marimba over
     // Am-F-C-G, a cuica and a low tom as the threat rises. The game sets the intensity with setLevel (0..1.5).
     {id: 'lucky-monkey-jungle', title: 'Lucky Monkey: Jungle at Night', mood: 'the game: drone and birds into a groove', game: 'luckymonkey',
-      bpm: 92, bpmRise: 20, root: 57, scale: 'minor', seed: 5, bars: 4, bed: true,
-      layers: {birds: 0.01, shaker: 0.3, bongo_lo: 0.45, bongo_hi: 0.45, marimba: 0.6, cuica: 0.7, tom_lo: 0.9}, parts: {
+      // Note for note from the game: Am-F-C-G marimba (rows F4..G5, so F lydian = A minor's notes), straight time,
+      // no variations (exact), the game's own voices (lm_*), a drone on A (bedRoot) at the game's loudness.
+      bpm: 92, bpmRise: 20, root: 53, scale: 'lydian', seed: 5, bars: 4, bed: true, bedRoot: 57, bedGain: 3.5, exact: true,
+      layers: {birds: 0.01, lm_shaker: 0.3, lm_bongo_lo: 0.45, lm_bongo_hi: 0.45, lm_marimba: 0.6, cuica: 0.7, lm_tom: 0.9}, parts: {
       birds: 'o...............o...............o...............o...............',
-      shaker: 'o.x.o.x.o.x.o.x.', bongo_lo: 'x....x..x....x..', bongo_hi: '...x..x...x...xx',
-      marimba: '1...5...3...5.1.6...3...8...3.6.3...7...5...7.3.7...4...2...4.7.',
-      cuica: '......x.......o.', tom_lo: 'x.......x.......'}}
+      lm_shaker: 'o.x.o.x.o.x.o.x.', lm_bongo_lo: 'x....x..x....x..', lm_bongo_hi: '...x..x...x...xx',
+      lm_marimba: '3...7...5...7.3.1...5...3...5.1.5...9...7...9.5.2...6...4...6.2.',
+      cuica: '......x.......o.', lm_tom: 'x.......x.......'}}
   ];
   var SCALES = {
     'minor-pent': [0, 3, 5, 7, 10], 'major-pent': [0, 2, 4, 7, 9], minor: [0, 2, 3, 5, 7, 8, 10],
-    dorian: [0, 2, 3, 5, 7, 9, 10], phrygian: [0, 1, 3, 5, 7, 8, 10], major: [0, 2, 4, 5, 7, 9, 11]
+    dorian: [0, 2, 3, 5, 7, 9, 10], phrygian: [0, 1, 3, 5, 7, 8, 10], major: [0, 2, 4, 5, 7, 9, 11], lydian: [0, 2, 4, 6, 7, 9, 11]
   };
   function customSongs() { try { var a = JSON.parse(localStorage.getItem(SONGS_KEY) || '[]'); return Array.isArray(a) ? a.filter(function (s) { return s && s.id && s.parts; }) : []; } catch (e) { return []; } }
   function allSongs() { return BUILT_IN.concat(customSongs()); }
@@ -112,8 +114,14 @@
     marimba: {label: 'Marimba', melodic: true, oct: 1, play: function (t, v, f) { tone(t, f * 2, 0.26 * v, 0.4, 'sine', 3.9); }},
     bass: {label: 'Bass', melodic: true, oct: -1, play: function (t, v, f) { tone(t, f / 2, 0.36 * v, 0.34, 'triangle'); }},
     pad: {label: 'Pad', melodic: true, held: true, play: function (t, v, f, len) { pad(t, f, 0.05 * v, len); }},
-    cuica: {label: 'Cuica', play: function (t, v) { cuica(t, 0.2 * v); }},
-    birds: {label: 'Birds', chance: 0.45, play: function (t, v) { birds(t, 0.06 * v); }}
+    cuica: {label: 'Cuica', play: function (t, v) { cuica(t, 0.17 * v); }},
+    birds: {label: 'Birds', chance: 0.45, play: function (t, v) { birds(t, 0.09 * v); }},
+    // Lucky Monkey's own voices, exactly as the game synthesized them (louder by the engine's master ratio):
+    lm_bongo_hi: {label: 'Bongo high (Lucky Monkey)', play: function (t, v) { drum(t, 420, 300, 0.18, 0.31 * v, 'sine', [2500, 0.16 * v, 0.03]); }},
+    lm_bongo_lo: {label: 'Bongo low (Lucky Monkey)', play: function (t, v) { drum(t, 280, 190, 0.18, 0.31 * v, 'sine', [1500, 0.16 * v, 0.03]); }},
+    lm_marimba: {label: 'Marimba (Lucky Monkey)', melodic: true, oct: 1, play: function (t, v, f) { tone(t, f * 2, 0.17 * v, 0.5, 'sine'); tone(t, f * 8, 0.045 * v, 0.09, 'sine'); }},
+    lm_tom: {label: 'Low tom (Lucky Monkey)', play: function (t, v) { drum(t, 110, 50, 0.35, 0.42 * v, 'sine'); }},
+    lm_shaker: {label: 'Shaker (Lucky Monkey)', play: function (t, v) { noise(t, 6500, 0.07 * v, 0.05); }}
   };
   // Cuica: the friction drum's "whoop", a pitch glide up then down (Lucky Monkey).
   function cuica(t, peak) {
@@ -136,7 +144,7 @@
   var bed = null;
   function bedOn(s) {
     if (bed || !s.bed) return;
-    var g = ctx.createGain(), lp = ctx.createBiquadFilter(), f0 = 440 * Math.pow(2, ((s.root || 57) - 69) / 12) / 4;
+    var g = ctx.createGain(), lp = ctx.createBiquadFilter(), f0 = 440 * Math.pow(2, ((s.bedRoot || s.root || 57) - 69) / 12) / 4;
     g.gain.value = 0; lp.type = 'lowpass'; lp.frequency.value = 220; lp.Q.value = 0.7;
     var oscs = [[f0, 'sawtooth', 1], [f0 * 1.005, 'sawtooth', 1], [f0 * 1.498, 'sine', 0.4]].map(function (x) {
       var o = ctx.createOscillator(), og = ctx.createGain(); o.type = x[1]; o.frequency.value = x[0]; og.gain.value = x[2];
@@ -146,7 +154,7 @@
   }
   function bedLevel() {
     if (!bed) return; var now = ctx.currentTime;
-    bed.g.gain.setTargetAtTime(intensity > 0 ? 0.05 + intensity * 0.02 : 0, now, 1.2);
+    bed.g.gain.setTargetAtTime(intensity > 0 ? (0.05 + intensity * 0.02) * ((song && song.bedGain) || 1) : 0, now, 1.2);
     bed.lp.frequency.setTargetAtTime(200 + intensity * 320, now, 1.5);
   }
   function bedOff() { if (!bed) return; var b = bed; bed = null; b.g.gain.setTargetAtTime(0, ctx.currentTime, 0.3); window.setTimeout(function () { b.oscs.forEach(function (o) { try { o.stop(); } catch (e) {} }); }, 1500); }
@@ -172,20 +180,22 @@
         if (ins.melodic) {
           if (!/[1-9]/.test(c)) return;
           var len = dur; if (ins.held) { for (var k = at0 + 1; k < pat.length && pat.charAt(k) === '-'; k++) len += dur; }
-          var deg = +c + (rand() < 0.12 ? (rand() < 0.5 ? 1 : -1) : 0);           // a passing note now and then
+          var deg = +c + (!song.exact && rand() < 0.12 ? (rand() < 0.5 ? 1 : -1) : 0);   // a passing note now and then
           ins.play(nextAt, 0.85 + rand() * 0.15, freqOf(song, deg), len);
           return;
         }
         var v = c === 'x' ? 1 : c === 'o' ? 0.55 : 0;
         if (v && ins.chance && rand() > ins.chance) v = 0;                                  // birds call now and then
+        if (!song.exact) {
         if (!v && fill && /tom|conga|djembe|bongo/.test(name) && rand() < 0.45) v = 0.6;   // fills at the end of every fourth bar
         if (!v && rand() < 0.03 && /bongo|conga|shaker/.test(name)) v = 0.3;               // ghost notes
         if (v && rand() < 0.04 && c !== 'x') v = 0;                                          // the odd drop
+        }
         if (v) ins.play(nextAt + (rand() - 0.5) * 0.006, v);
       });
       var at = nextAt, st = s, gst = g;
       stepFns.forEach(function (fn) { try { fn(st, at, gst); } catch (e) {} });          // step in bar, time, step in song
-      nextAt += dur * (s % 2 ? 0.94 : 1.06);                                                // a little swing
+      nextAt += song.exact ? dur : dur * (s % 2 ? 0.94 : 1.06);                              // a little swing (not for exact songs)
       step++;
     }
   }

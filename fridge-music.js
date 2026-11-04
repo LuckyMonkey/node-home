@@ -3,7 +3,7 @@
  *
  * Each song is a few step patterns (16 steps a bar) for synthesized instruments - bongos, congas, djembe and
  * jungle toms, shaker, clave, kalimba, marimba, bass, pad; a rock kit (snare, hats, crash) and synth bass, horn and
- * brass for darker songs - and a seed. A small Web Audio sequencer plays them
+ * brass for darker songs; boom, crack, distorted lead, didgeridoo drone and gulls for industrial ones - and a seed. A small Web Audio sequencer plays them
  * with seeded variations and a fill every fourth bar, so a song never repeats exactly. No audio files.
  *
  *   <script src="https://fridge.run/fridge-music.js" defer></script>        off until you turn it on (go.fridge.run)
@@ -71,7 +71,18 @@
       synth_bass: '1...1...1.....2.....1...2...1...1...1...1.....3.....1...4...1...1...1...1.....2.....1...2...1...3...3...3.....4.....2...4...2...',
       horn: '1...1.......1...2...1...2...1...1...2.......1...2...1...2...1...1...1.......1...2...1...2...1...1...2.......4...2...4...2...4...',
       brass: '1...1...1...1...2...1...2...1...1...1...2...1...2...1...2...1...1...1...1...1...2...1...2...1...1...1...2...1...4...2...4...2...',
-      pad: '1-------------------------------------------------------------------------------------------------------------------------------'}}
+      pad: '1-------------------------------------------------------------------------------------------------------------------------------'}},
+    // Tunnel Fight: an original industrial groove (C# phrygian, 99 BPM) on the industrial voices, written to the
+    // measured feel of a Half-Life 2: Episode One combat cue (sub-heavy boom, metal crack, distorted lead, drone,
+    // buzzing gulls); none of that cue's notes. Music page only.
+    {id: 'tunnel-fight', title: 'Tunnel Fight', mood: 'industrial, heavy', player: false,
+      bpm: 99, root: 49, scale: 'phrygian', seed: 17, bars: 8, exact: true, parts: {
+      boom: 'x.....x...x.....x.....x.x...x...',
+      crack: '....x.......x.......x.......x.o.',
+      synth_bass: '1.....1.1...2...1.....1.5...4...1.....1.1...2...1...7...6...5...',
+      didge: '1-------------------------------1---------------2---------------1-------------------------------5---------------2---------------',
+      dist_lead: '................................5.....4.5...2...1...............5.....4.5...6...5...4...2.......8.......7.....5.4...2...1.......',
+      gulls: '........................x.......................x.........................................x.........................x...........'}}
   ];
   var SCALES = {
     'minor-pent': [0, 3, 5, 7, 10], 'major-pent': [0, 2, 4, 7, 9], minor: [0, 2, 3, 5, 7, 8, 10],
@@ -123,6 +134,50 @@
     (detunes || [1]).forEach(function (r) { var o = ctx.createOscillator(); o.type = type; o.frequency.value = freq * r; o.connect(f); o.start(t); o.stop(t + len + 0.05); });
     f.connect(g); g.connect(master);
   }
+  // A soft-clipping waveshaper (distortion), one curve per amount. Odd length and symmetric, so silence stays 0 (no DC offset).
+  var curves = {};
+  function shaper(k) {
+    if (!curves[k]) { var n = 1025, c = new Float32Array(n); for (var i = 0; i < n; i++) { var x = i * 2 / (n - 1) - 1; c[i] = (1 + k) * x / (1 + k * Math.abs(x)); } curves[k] = c; }
+    var w = ctx.createWaveShaper(); w.curve = curves[k]; w.oversample = '2x'; return w;
+  }
+  // Boom: a huge, muffled sub hit (pitch-dropping sine, a low thump of noise, gently driven, low-passed).
+  function boom(t, peak) {
+    var o = ctx.createOscillator(), g = ctx.createGain(), w = shaper(3), lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 260;
+    o.frequency.setValueAtTime(82, t); o.frequency.exponentialRampToValueAtTime(36, t + 0.45);
+    env(g, t, peak, 0.004, 0.75); o.connect(w); w.connect(lp); lp.connect(g); g.connect(master); o.start(t); o.stop(t + 0.85);
+    noise(t, 380, peak * 0.35, 0.12, 'lowpass');
+  }
+  // Crack: industrial metal - a bright noise burst plus two clanging, inharmonic square partials.
+  function crack(t, peak) {
+    noise(t, 3200, peak, 0.16, 'bandpass');
+    [540, 1187].forEach(function (f, i) { var o = ctx.createOscillator(), g = ctx.createGain(), bp = ctx.createBiquadFilter(); o.type = 'square'; o.frequency.value = f;
+      bp.type = 'bandpass'; bp.frequency.value = 2600; bp.Q.value = 1.2; env(g, t, peak * (i ? 0.25 : 0.35), 0.002, 0.09);
+      o.connect(bp); bp.connect(g); g.connect(master); o.start(t); o.stop(t + 0.12); });
+  }
+  // Distorted lead: two detuned saws driven hard into a waveshaper, then tamed with a low-pass.
+  function distLead(t, freq, peak, len) {
+    var w = shaper(40), lp = ctx.createBiquadFilter(), g = ctx.createGain(); lp.type = 'lowpass'; lp.frequency.value = 1500; lp.Q.value = 1;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.01); g.gain.setValueAtTime(peak, t + len * 0.7); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+    [1, 1.008].forEach(function (r) { var o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = freq * r; o.connect(w); o.start(t); o.stop(t + len + 0.05); });
+    w.connect(lp); lp.connect(g); g.connect(master);
+  }
+  // Didgeridoo-style drone: a low buzzy pulse through two vocal formants that sweep slowly (the "wah"), held.
+  function didge(t, freq, peak, len) {
+    var o = ctx.createOscillator(), g = ctx.createGain(), mix = ctx.createGain(); o.type = 'sawtooth'; o.frequency.value = freq; mix.gain.value = 1;
+    var lfo = ctx.createOscillator(), lg = ctx.createGain(); lfo.frequency.value = 1.6; lg.gain.value = 160; lfo.connect(lg);
+    [[340, 7, 1], [1150, 9, 0.5]].forEach(function (fm) { var bp = ctx.createBiquadFilter(), bg = ctx.createGain(); bp.type = 'bandpass'; bp.frequency.value = fm[0]; bp.Q.value = fm[1]; bg.gain.value = fm[2];
+      lg.connect(bp.frequency); o.connect(bp); bp.connect(bg); bg.connect(mix); });
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(peak, t + 0.08); g.gain.setValueAtTime(peak, t + Math.max(0.1, len - 0.15)); g.gain.linearRampToValueAtTime(0.0001, t + len);
+    mix.connect(g); g.connect(master); o.start(t); lfo.start(t); o.stop(t + len + 0.05); lfo.stop(t + len + 0.05);
+  }
+  // Gulls: a buzzing, distorted cry - a pitch that leaps up and sags, roughened by fast vibrato.
+  function gulls(t, peak) {
+    var base = 780 + Math.random() * 260, o = ctx.createOscillator(), g = ctx.createGain(), w = shaper(25), bp = ctx.createBiquadFilter(); o.type = 'sawtooth';
+    var vib = ctx.createOscillator(), vg = ctx.createGain(); vib.frequency.value = 34; vg.gain.value = base * 0.06; vib.connect(vg); vg.connect(o.frequency);
+    o.frequency.setValueAtTime(base, t); o.frequency.exponentialRampToValueAtTime(base * 1.7, t + 0.07); o.frequency.exponentialRampToValueAtTime(base * 0.8, t + 0.42);
+    bp.type = 'bandpass'; bp.frequency.value = 1700; bp.Q.value = 1.5; env(g, t, peak, 0.02, 0.45);
+    o.connect(w); w.connect(bp); bp.connect(g); g.connect(master); o.start(t); vib.start(t); o.stop(t + 0.5); vib.stop(t + 0.5);
+  }
   var INSTRUMENTS = {
     bongo_hi: {label: 'Bongo high', play: function (t, v) { drum(t, 470, 330, 0.12, 0.5 * v, 'sine', [3200, 0.12 * v, 0.02]); }},
     bongo_lo: {label: 'Bongo low', play: function (t, v) { drum(t, 300, 210, 0.16, 0.55 * v, 'sine', [2400, 0.1 * v, 0.02]); }},
@@ -144,6 +199,11 @@
     synth_bass: {label: 'Synth bass', melodic: true, oct: -2, play: function (t, v, f) { synth(t, f / 4, 0.34 * v, 0.3, 'sawtooth', 900, 160, [1, 1.006]); }},
     horn: {label: 'Horn', melodic: true, play: function (t, v, f) { synth(t, f, 0.13 * v, 0.32, 'sawtooth', 2400, 600, [1, 1.004]); }},
     brass: {label: 'Brass', melodic: true, play: function (t, v, f) { synth(t, f, 0.1 * v, 0.3, 'square', 1800, 450, [0.997, 1.003]); }},
+    boom: {label: 'Boom', play: function (t, v) { boom(t, 0.55 * v); }},
+    crack: {label: 'Metal crack', play: function (t, v) { crack(t, 2 * v); }},
+    dist_lead: {label: 'Distorted lead', melodic: true, play: function (t, v, f) { distLead(t, f, 0.1 * v, 0.34); }},
+    didge: {label: 'Didgeridoo drone', melodic: true, held: true, oct: -1, play: function (t, v, f, len) { didge(t, f / 2, 0.22 * v, len); }},
+    gulls: {label: 'Gulls', play: function (t, v) { gulls(t, 0.12 * v); }},
     cuica: {label: 'Cuica', play: function (t, v) { cuica(t, 0.17 * v); }},
     birds: {label: 'Birds', chance: 0.45, play: function (t, v) { birds(t, 0.09 * v); }},
     // Lucky Monkey's own voices, exactly as the game synthesized them (louder by the engine's master ratio):

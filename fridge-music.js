@@ -74,6 +74,20 @@
       horn: '1...1.......1...2...1...2...1...1...2.......1...2...1...2...1...1...1.......1...2...1...2...1...1...2.......4...2...4...2...4...',
       brass: '1...1...1...1...2...1...2...1...1...1...2...1...2...1...2...1...1...1...1...1...2...1...2...1...1...1...2...1...4...2...4...2...',
       pad: '1-------------------------------------------------------------------------------------------------------------------------------'}},
+    // Control (Metro Station cover): an 8-bar loop - the keyboard riff (an E pedal under A-C-E, then the E-F rock), the
+    // chorus power-chord line and Am-C-F-E roots, from fan tabs, with Kalimba doubling the riff an octave up; written as a MIDI file and brought in with the music
+    // page's MIDI import (A minor, written as D dorian so the riff fits the note rows). Music page only.
+    {id: 'control-cover', title: 'Control (Metro Station cover)', mood: 'synth-pop, bright', player: false,
+      bpm: 95, root: 62, scale: 'dorian', seed: 3, bars: 8, exact: true, parts: {
+      kick: 'x.......x.x.....x.......x.x.....x.......x.x.....x.......x.x.....x...x...x...x...x...x...x...x...x...x...x...x...x.......x.x.....',
+      snare: '....x.......x.......x.......x.......x.......x.......x.......x.......x.......x.......x.......x.......x.......x.......x.......xodo',
+      hat: 'x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x.x...x...x...x...x...x...x...x...x...x...x...x...x.x.x.x.x.x.x.x.',
+      hat_open: '..................................................................o...o...o...o...o...o...o...o...o...o...o...o.................',
+      crash: 'x...............................................................x...............................................................',
+      horn: '25252729232323272525272924242523252527292323232725252729242425237.7.4.4.3.3.2.2.1.2.1.2.6.7.6.7.7.7.4.4.3.3.2.2.2525272923232327',
+      kalimba: '2525272923232327252527292424252325252729232323272525272924242523................................................2525272923232327',
+      synth_bass: '5.5.5.5.5.5.5.5.7.7.7.7.7.7.7.7.3.3.3.3.3.3.3.3.2.2.2.9.2.2.2.9.7.7.4.4.3.3.2.2.1.2.1.2.6.7.6.7.7.7.4.4.3.3.2.2.2.2.2.2.2.2.2.2.',
+      pad: '7---------------9---------------5---------------6---------------9-------8-------7-------6-------9-------8-------6---------------'}},
     // Disrupted Distillation: an original industrial piece (C# phrygian, 99 BPM) led by a didgeridoo solo over buzz
     // pads, hard booms and metal, written to the measured feel of a Half-Life 2: Episode One combat cue; none of that
     // cue's notes. Bar 4 breaks down low (sub drop, deep didgeridoo), pound toms add off-beat half beats, and bar 8

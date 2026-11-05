@@ -4,7 +4,7 @@
  * Each song is a few step patterns (16 steps a bar) for synthesized instruments - bongos, congas, djembe and
  * jungle toms, shaker, clave, kalimba, marimba, bass, pad; a rock kit (snare, hats, crash) and synth bass, horn and
  * brass for darker songs; boom, crack, distorted lead, didgeridoo drone and gulls for industrial ones - and a seed. A small Web Audio sequencer plays them
- * with seeded variations and a fill every fourth bar (song.mix sets a part's volume, song.echo sends parts to one shared tempo echo), so a song never repeats exactly. No audio files.
+ * with seeded variations and a fill every fourth bar; parts named smp_<id> play short samples (see 'samples' below) (song.mix sets a part's volume, song.echo sends parts to one shared tempo echo), so a song never repeats exactly. No audio files.
  *
  *   <script src="https://fridge.run/fridge-music.js" defer></script>        off until you turn it on (go.fridge.run)
  *   <script src="/fridge-music.js" data-autostart defer></script>           on unless you turned it off (fridge.run)
@@ -408,13 +408,19 @@
     return n && n.parts ? n : null;
   }
   function schedule() {
-    while (nextAt < ctx.currentTime + 0.12) {
+    // a throttled tab (timers slowed) can fall behind: skip the missed time rather than play it all at once; while the
+    // tab is hidden, plan further ahead so background timers (about once a second) keep the music unbroken
+    if (nextAt < ctx.currentTime - 0.25) nextAt = ctx.currentTime + 0.05;
+    var ahead = document.hidden ? 1.5 : 0.12;
+    syncSamples();
+    while (nextAt < ctx.currentTime + ahead) {
       var total = 16 * barsOf(song);
       if (step > 0 && step % total === 0) {
         var nx = nextOf(song);
         if (nx && nx !== song) {
           var sameBed = bed && nx.bed && (nx.bedRoot || nx.root) === (song.bedRoot || song.root);   // linked parts on one drone: it carries on
           song = nx; step = 0; total = 16 * barsOf(song); if (!sameBed) { bedOff(); bedOn(song); } bedLevel();
+          prefetchSongSamples(nextOf(song));
           songFns.forEach(function (fn) { try { fn(nx); } catch (e) {} });
         }
       }
@@ -455,8 +461,160 @@
       step++;
     }
   }
+  // ---- samples: short compressed recordings (<= 5 s) as instruments --------------------------------------------
+  // A sample is one more kind of instrument, never a kind of song: its part is named smp_<id> and plays on the same
+  // step grid (x loud, o soft, d double), with the same volume (song.mix) and echo (song.echo). Songs reference samples
+  // by id; the audio lives in a catalog, never in the song. Catalog entries come from window.FridgeMusicSamples (a
+  // site's bundled manifest: id, name, category, src: [{src: '/assets/samples/x.opus', type}, ...]) and from samples
+  // saved in this browser (IndexedDB 'fridge-music' / 'samples', added with Engine.addSample).
+  // Rules: a sample is fetched and decoded once and reused; a hit whose sample is not ready yet is skipped (the clock
+  // never waits); bounded voices, fetches and decoded memory; bad files are rejected, not trimmed; failures retry slowly.
+  var SAMPLE = {seconds: 5, slack: 0.08 /* encoder padding (MP3 adds ~50 ms) */, encoded: 262144, decoded: 2621440,
+    cache: 16 * 1048576, voices: 16, perSample: 4, fetches: 4, timeout: 10000, retryMs: 60000, tries: 3};
+  var SAMPLE_PATH = /^\/assets\/samples\/[a-z0-9_.-]+\.(opus|ogg|webm|mp3|m4a)$/;   // bundled samples: this site's own folder only
+  var sampleCat = {}, sbuf = {}, voicesNow = [], fetchQ = [], fetching = 0, cacheBytes = 0, sampleFns = [], seenManifest = null;
+  function sampleNote(id, state, msg) { sampleFns.forEach(function (fn) { try { fn(id, state, msg || ''); } catch (e) {} }); }
+  function addSample(e) {
+    if (!e || !/^[a-z0-9_]{1,20}$/.test(e.id || '')) return null;
+    var src = (Array.isArray(e.src) ? e.src : []).filter(function (s) { return s && typeof s.src === 'string' && SAMPLE_PATH.test(s.src); }).slice(0, 4);
+    if (!src.length && typeof e.load !== 'function') return null;
+    var name = String(e.name || e.id).replace(/[<>&"]/g, '').slice(0, 40);
+    sampleCat[e.id] = {id: e.id, name: name, category: String(e.category || 'samples').slice(0, 20), src: src, load: e.load || null, local: !!e.load};
+    INSTRUMENTS['smp_' + e.id] = {label: name, sample: e.id, category: sampleCat[e.id].category, local: !!e.load,
+      play: function (t, v) { playSample(e.id, t, v); }};
+    return sampleCat[e.id];
+  }
+  function syncSamples() {    // the bundled manifest may load after the engine: pick it up whenever it appears
+    loadLocalSamples();
+    var m = window.FridgeMusicSamples; if (m === seenManifest || !Array.isArray(m)) return; seenManifest = m; m.forEach(addSample);
+  }
+  function canPlay(type) { try { return !type || !!document.createElement('audio').canPlayType(type); } catch (e) { return true; } }
+  function decode(buf) {      // promise or callback decodeAudioData (older Safari)
+    return new Promise(function (ok, no) { var p = ctx.decodeAudioData(buf, ok, no); if (p && p.then) p.then(ok, no); });
+  }
+  function checkSample(buf) { // the one gate every sample passes: size, decodes, length, memory
+    if (!buf || !buf.byteLength) return Promise.reject(new Error('The file is empty.'));
+    if (buf.byteLength > SAMPLE.encoded) return Promise.reject(new Error('The file is over ' + (SAMPLE.encoded >> 10) + ' KB.'));
+    audio();
+    return decode(buf.slice(0)).then(function (b) {
+      if (!b || !b.length || !b.duration) throw new Error('No sound in that file.');
+      if (b.duration > SAMPLE.seconds + SAMPLE.slack) throw new Error('It is ' + b.duration.toFixed(2) + ' s long; samples can be ' + SAMPLE.seconds + ' s at most.');
+      var bytes = b.length * b.numberOfChannels * 4;
+      if (bytes > SAMPLE.decoded) throw new Error('It decodes too large (' + (bytes / 1048576).toFixed(1) + ' MB).');
+      return b;
+    }, function (e) { throw new Error(e && /over|empty|long|large/.test(e.message) ? e.message : 'This browser cannot decode that file (corrupt or an unsupported format).'); });
+  }
+  function fetchBytes(url) {
+    var ac = window.AbortController ? new AbortController() : null, tm = ac && window.setTimeout(function () { ac.abort(); }, SAMPLE.timeout);
+    return fetch(url, {credentials: 'same-origin', signal: ac && ac.signal}).then(function (r) {
+      if (!r.ok) throw new Error('Not found (' + r.status + ').');
+      var n = +r.headers.get('content-length'); if (n > SAMPLE.encoded) throw new Error('The file is over ' + (SAMPLE.encoded >> 10) + ' KB.');
+      return r.arrayBuffer();
+    }).then(function (b) { if (tm) window.clearTimeout(tm); return b; }, function (e) { if (tm) window.clearTimeout(tm); throw e; });
+  }
+  function requestSample(id) {   // ask for a sample; never waits, never repeats a request in flight
+    syncSamples(); var c = sampleCat[id], e = sbuf[id];
+    if (!c || !ctx) return;
+    if (e && (e.state === 'ready' || e.state === 'loading' || e.state === 'queued')) return;
+    if (e && e.state === 'failed' && (e.tries >= SAMPLE.tries || Date.now() < e.retryAt)) return;
+    sbuf[id] = {state: 'queued', tries: e ? e.tries : 0, active: 0, used: 0}; fetchQ.push(id); pumpSamples();
+  }
+  function pumpSamples() {
+    while (fetching < SAMPLE.fetches && fetchQ.length) loadSample(fetchQ.shift());
+  }
+  function loadSample(id) {
+    var c = sampleCat[id], e = sbuf[id]; if (!c || !e) return; e.state = 'loading'; fetching++;
+    var srcs = c.load ? [null] : c.src.filter(function (s) { return canPlay(s.type); });
+    if (!srcs.length) srcs = c.src.slice();                    // canPlayType is a hint: still try them all
+    var attempt = function (i, lastErr) {
+      if (i >= srcs.length) return Promise.reject(lastErr || new Error('No playable source.'));
+      var get = c.load ? Promise.resolve().then(c.load) : fetchBytes(srcs[i].src);
+      return get.then(checkSample).catch(function (err) { return attempt(i + 1, err); });
+    };
+    attempt(0).then(function (b) {
+      var bytes = b.length * b.numberOfChannels * 4; evictSamples(bytes);
+      if (cacheBytes + bytes > SAMPLE.cache) throw new Error('The sample memory is full; it will try again later.');
+      e.state = 'ready'; e.buffer = b; e.bytes = bytes; e.used = ctx.currentTime; cacheBytes += bytes; sampleNote(id, 'ready');
+    }).catch(function (err) {
+      e.state = 'failed'; e.tries++; e.retryAt = Date.now() + SAMPLE.retryMs * e.tries; e.err = String(err && err.message || err);
+      sampleNote(id, 'failed', e.err);
+    }).then(function () { fetching--; pumpSamples(); });
+  }
+  function evictSamples(need) {  // least recently played first; never a sample that is sounding or in the song playing
+    if (cacheBytes + need <= SAMPLE.cache) return;
+    var inSong = song && song.parts ? song.parts : {};
+    Object.keys(sbuf).filter(function (id) { var e = sbuf[id]; return e.state === 'ready' && !e.active && !inSong['smp_' + id]; })
+      .sort(function (a, b) { return sbuf[a].used - sbuf[b].used; }).some(function (id) {
+        cacheBytes -= sbuf[id].bytes; delete sbuf[id]; sampleNote(id, 'evicted'); return cacheBytes + need <= SAMPLE.cache;
+      });
+  }
+  function releaseVoice(vo, at) {  // a short fade, not a click
+    var i = voicesNow.indexOf(vo); if (i >= 0) voicesNow.splice(i, 1);
+    try { vo.g.gain.cancelScheduledValues(at); vo.g.gain.setValueAtTime(vo.g.gain.value, at); vo.g.gain.setTargetAtTime(0, at, 0.006); vo.src.stop(at + 0.04); } catch (e) {}
+  }
+  function playSample(id, t, v) {
+    var e = sbuf[id];
+    if (!e || e.state !== 'ready') { requestSample(id); return; }   // not ready: skip this hit, the song goes on
+    var at = Math.max(t, ctx.currentTime); e.used = at;
+    var mine = voicesNow.filter(function (x) { return x.id === id; });
+    if (mine.length >= SAMPLE.perSample) releaseVoice(mine[0], at);
+    if (voicesNow.length >= SAMPLE.voices) releaseVoice(voicesNow[0], at);
+    var src = ctx.createBufferSource(), g = ctx.createGain(); src.buffer = e.buffer; g.gain.value = 0.9 * v;
+    src.connect(g); g.connect(out()); src.start(at);
+    var vo = {id: id, src: src, g: g}; voicesNow.push(vo); e.active++;
+    src.onended = function () { var i = voicesNow.indexOf(vo); if (i >= 0) voicesNow.splice(i, 1); e.active = Math.max(0, e.active - 1); try { src.disconnect(); g.disconnect(); } catch (x) {} };
+  }
+  function prefetchSongSamples(s) {
+    if (!s || !s.parts || !ctx) return; syncSamples();
+    Object.keys(s.parts).forEach(function (k) { if (/^smp_/.test(k) && INSTRUMENTS[k]) requestSample(INSTRUMENTS[k].sample); });
+  }
+  function stopVoices(at) { voicesNow.slice().forEach(function (vo) { releaseVoice(vo, at); }); }
+  // samples saved in this browser (the music page's sample import): listed at once, their bytes read only when played
+  function idb() {
+    return new Promise(function (ok, no) {
+      if (!window.indexedDB) { no(new Error('No IndexedDB')); return; }
+      var r = indexedDB.open('fridge-music', 1);   // 'samples': name and length (listed); 'audio': the bytes (read when played)
+      r.onupgradeneeded = function () { r.result.createObjectStore('samples', {keyPath: 'id'}); r.result.createObjectStore('audio', {keyPath: 'id'}); };
+      r.onsuccess = function () { ok(r.result); }; r.onerror = function () { no(r.error); };
+    });
+  }
+  function localLoader(id) {
+    return function () { return idb().then(function (db) { return new Promise(function (ok, no) {
+      var q = db.transaction('audio').objectStore('audio').get(id);
+      q.onsuccess = function () { if (q.result && q.result.bytes) ok(q.result.bytes); else no(new Error('That sample is not on this browser.')); };
+      q.onerror = function () { no(q.error); };
+    }); }); };
+  }
+  var localReady = null;
+  function loadLocalSamples() {   // once, on first use of samples - not on every page load
+    return localReady || (localReady = idb().then(function (db) { return new Promise(function (ok) {
+      var q = db.transaction('samples').objectStore('samples').getAll();
+      q.onsuccess = function () {
+        (q.result || []).forEach(function (r) { addSample({id: r.id, name: r.name, category: 'yours', load: localLoader(r.id)}); });
+        if ((q.result || []).length) sampleNote('*', 'catalog');   // the list grew: menus can redraw
+        ok();
+      };
+      q.onerror = function () { ok(); };
+    }); }).catch(function () {}));
+  }
+  // the music page's import: check a file, keep it in this browser, add it as an instrument
+  function importSample(name, bytes) {
+    return checkSample(bytes).then(function (b) {
+      var id = 'u' + Math.random().toString(36).slice(2, 9).replace(/[^a-z0-9]/g, '0');
+      return idb().then(function (db) { return new Promise(function (ok, no) {
+        var tx = db.transaction(['samples', 'audio'], 'readwrite');
+        tx.objectStore('samples').put({id: id, name: String(name).slice(0, 40), duration: b.duration, size: bytes.byteLength, added: Date.now()});
+        tx.objectStore('audio').put({id: id, bytes: bytes});
+        tx.oncomplete = function () { ok(); }; tx.onerror = function () { no(tx.error || new Error('This browser would not store it.')); };
+      }); }).then(function () {
+        addSample({id: id, name: name, category: 'yours', load: localLoader(id)});
+        return {id: id, instrument: 'smp_' + id, duration: b.duration};
+      });
+    });
+  }
+
   var Engine = {
-    get songs() { return allSongs(); }, builtIn: BUILT_IN, instruments: INSTRUMENTS, scales: SCALES, customKey: SONGS_KEY,
+    get songs() { return allSongs(); }, builtIn: BUILT_IN, get instruments() { syncSamples(); return INSTRUMENTS; }, scales: SCALES, customKey: SONGS_KEY,
     songById: songById, noteName: noteName, barsOf: barsOf,
     get level() { return intensity; },
     setLevel: function (x) { intensity = Math.max(0, Math.min(1.5, +x || 0)); if (ctx) bedLevel(); },
@@ -465,6 +623,7 @@
       if (!AC) return Promise.reject(new Error('No Web Audio here'));
       audio(); Engine.stop(true);
       song = s; step = 0; rand = rng(s.seed || 1); nextAt = ctx.currentTime + 0.08; bedOff(); bedOn(s);
+      prefetchSongSamples(s); prefetchSongSamples(nextOf(s));
       return (ctx.state === 'suspended' ? ctx.resume() : Promise.resolve()).then(function () {
         master.gain.cancelScheduledValues(ctx.currentTime); master.gain.setValueAtTime(master.gain.value, ctx.currentTime);
         master.gain.linearRampToValueAtTime(level(), ctx.currentTime + 0.6);
@@ -473,13 +632,22 @@
     },
     stop: function (quick) {
       if (!timer) return; window.clearInterval(timer); timer = 0; bedOff();
+      if (ctx) stopVoices(ctx.currentTime + (quick ? 0.08 : 0.5));
       if (ctx) { master.gain.cancelScheduledValues(ctx.currentTime); master.gain.setValueAtTime(master.gain.value, ctx.currentTime); master.gain.linearRampToValueAtTime(0, ctx.currentTime + (quick ? 0.08 : 0.5)); }
     },
     setVolume: function (v, m) { vol = Math.max(0, Math.min(1, v)); muted = !!m; if (ctx && timer) master.gain.linearRampToValueAtTime(level(), ctx.currentTime + 0.12); },
     onStep: function (fn) { stepFns.push(fn); },
     onSong: function (fn) { songFns.push(fn); },   // a linked song took over: fn(song)
     resolve: null,                                  // optional: function (id) -> the song object to play for `next`
-    get running() { return !!(ctx && ctx.state === 'running'); }
+    get running() { return !!(ctx && ctx.state === 'running'); },
+    // samples: the catalog, loading on demand, the import check, and counts for tests and the music page
+    samples: function () { syncSamples(); return Object.keys(sampleCat).map(function (id) { var c = sampleCat[id], e = sbuf[id];
+      return {id: id, name: c.name, category: c.category, local: c.local, state: e ? e.state : 'idle', error: e && e.err || ''}; }); },
+    loadSample: function (id) { audio(); requestSample(id); }, onSample: function (fn) { sampleFns.push(fn); },
+    prefetch: function (s) { if (!AC) return; audio(); prefetchSongSamples(s); },   // load a song's samples before it plays
+    importSample: importSample, checkSample: checkSample, sampleLimits: SAMPLE, localSamples: function () { localReady = null; return loadLocalSamples(); },
+    sampleStats: function () { return {voices: voicesNow.length, cacheBytes: cacheBytes, fetching: fetching, queued: fetchQ.length,
+      loaded: Object.keys(sbuf).filter(function (id) { return sbuf[id].state === 'ready'; }).length}; }
   };
   window.FridgeMusic = Engine;
   if (ENGINE_ONLY) return;

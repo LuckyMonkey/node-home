@@ -19,7 +19,10 @@
  * (part -> the intensity it needs, 0..1.5, see setLevel) and `bpmRise` (extra BPM at full intensity), and may set
  * `bed: true` for a continuous drone, `player: false` to stay off the little player (music page only), and
  * `next` (a song id) to play on into that song when it ends - songs linked into parts - and `shift` (semitones per
- * bar, e.g. [0, 0, 0, -5]) to move a bar's notes into another key, for breakdowns. One engine for every fridge sound: fridge.run, go.fridge.run/music and the
+ * bar, e.g. [0, 0, 0, -5]) to move a bar's notes into another key, for breakdowns.
+ * Wet sounds (all optional): `space` (part -> 0..0.6, a send to one dark reverb, built only when used), `glitch`
+ * (sample part -> 0..1, a pitched-down, stuttered echo made from the sample itself), and the shared echo's
+ * `echoTime` (steps, default 3: a dotted eighth), `echoFeedback` (0..0.8, default 0.38) and `echoTone` (Hz, default 2600). One engine for every fridge sound: fridge.run, go.fridge.run/music and the
  * Lucky Monkey game (its jungle music is the song `lucky-monkey-jungle`, driven by the game's threat level).
  */
 (function () {
@@ -167,7 +170,7 @@
   function songById(id) { return allSongs().find(function (s) { return s.id === id; }) || BUILT_IN[0]; }
 
   // ---- instruments: tiny synthesized voices -----------------------------------------------------------------------
-  var ctx = null, master = null, noiseBuf = null, echo = null, send = 0;
+  var ctx = null, master = null, noiseBuf = null, echo = null, send = 0, space = null, spaceSend = 0, glitchAmt = 0, stepDur = 0.12;
   function audio() {
     if (!ctx) {
       ctx = new AC(); master = ctx.createGain(); master.gain.value = 0; master.connect(ctx.destination);
@@ -182,9 +185,30 @@
     return ctx;
   }
   // where a voice plays into: the master, plus the echo when the part being played sends to it
+  // (and the space - a reverb - when it sends to that)
   function out() {
-    if (!send) return master;
-    var dry = ctx.createGain(), wet = ctx.createGain(); wet.gain.value = send; dry.connect(master); dry.connect(wet); wet.connect(echo.inp); return dry;
+    if (!send && !spaceSend) return master;
+    var dry = ctx.createGain(); dry.connect(master);
+    if (send) { var wet = ctx.createGain(); wet.gain.value = send; dry.connect(wet); wet.connect(echo.inp); }
+    if (spaceSend) { var sp = ctx.createGain(); sp.gain.value = spaceSend; dry.connect(sp); sp.connect(spaceBus().inp); }
+    return dry;
+  }
+  // Space: one dark reverb (a convolver with a made-up 2.4 s room: noise that decays and darkens), built only when a
+  // song sends to it (song.space[part], 0-0.6) - the wet, washed sound. One for the whole page.
+  function spaceBus() {
+    if (space) return space;
+    var sr = ctx.sampleRate, n = Math.floor(sr * 2.4), ir = ctx.createBuffer(2, n, sr), pre = Math.floor(sr * 0.018);
+    for (var c = 0; c < 2; c++) {
+      var d = ir.getChannelData(c), lp = 0;
+      for (var i = pre; i < n; i++) {
+        var k = (i - pre) / sr, a = 0.55 - 0.42 * Math.min(1, k / 1.6);   // later reflections darker
+        lp += a * ((Math.random() * 2 - 1) - lp); d[i] = lp * Math.exp(-k * 2.9);
+      }
+    }
+    space = {inp: ctx.createGain(), hp: ctx.createBiquadFilter(), conv: ctx.createConvolver(), g: ctx.createGain()};
+    space.hp.type = 'highpass'; space.hp.frequency.value = 140; space.conv.buffer = ir; space.g.gain.value = 0.9;
+    space.inp.connect(space.hp); space.hp.connect(space.conv); space.conv.connect(space.g); space.g.connect(master);
+    return space;
   }
   // a raw square wave: the plain electronic buzz (an alarm, an IV pump), a fast attack, held for the note, no distortion
   function square(t, freq, peak, len) {
@@ -245,6 +269,28 @@
     o.frequency.setValueAtTime(130, t); o.frequency.exponentialRampToValueAtTime(46, t + 0.16);
     env(g, t, peak, 0.002, 0.34); o.connect(w); w.connect(lp); lp.connect(g); g.connect(out()); o.start(t); o.stop(t + 0.42);
     noise(t, 2500, peak * 0.5, 0.015);
+  }
+  // Deep kick: a click, then a sine that falls into the sub - tuned to the song's root (folded to 36-52 Hz) - and rings
+  // for most of a second, lightly driven so its harmonics carry on small speakers. The very deep hit of bass house.
+  function deepKick(t, peak) {
+    var r = song && song.root ? 440 * Math.pow(2, (song.root - 69) / 12) : 41.2; while (r > 52) r /= 2; while (r < 36) r *= 2;
+    var o = ctx.createOscillator(), g = ctx.createGain(), w = shaper(2), lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 600;
+    o.frequency.setValueAtTime(155, t); o.frequency.exponentialRampToValueAtTime(r * 1.25, t + 0.05); o.frequency.exponentialRampToValueAtTime(r, t + 0.28);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.003); g.gain.setTargetAtTime(peak * 0.55, t + 0.05, 0.1); g.gain.setTargetAtTime(0.0001, t + 0.2, 0.13);
+    o.connect(w); w.connect(lp); lp.connect(g); g.connect(out()); o.start(t); o.stop(t + 1.25);
+    noise(t, 3000, peak * 0.22, 0.012);
+  }
+  // Pumping sub: a held sine sub (a touch driven, for its harmonics) that ducks on every beat and swells back on the
+  // off-beat - the sidechain pump of house music, made with the note's own envelope (no compressor). Held.
+  function subPump(t, freq, peak, len) {
+    var o = ctx.createOscillator(), g = ctx.createGain(), w = shaper(1.5), beat = stepDur * 4, end = t + Math.max(0.1, len);
+    o.frequency.value = freq; g.gain.setValueAtTime(0.0001, t);
+    for (var b = t; b < end - 0.02; b += beat) {
+      g.gain.setValueAtTime(0.0001, b); g.gain.linearRampToValueAtTime(peak * 0.35, b + beat * 0.3);
+      g.gain.linearRampToValueAtTime(peak, b + beat * 0.62); g.gain.setValueAtTime(peak, Math.min(end, b + beat) - 0.012);
+      g.gain.linearRampToValueAtTime(0.0001, Math.min(end, b + beat));
+    }
+    o.connect(w); w.connect(g); g.connect(out()); o.start(t); o.stop(end + 0.05);
   }
   // Crack: a snapping noise burst with a short metallic ring (no tones).
   function crack(t, peak) { noise(t, 2800, peak, 0.14, 'bandpass'); metal(t, peak * 0.5, [1830, 2970, 4130], 0.09); }
@@ -329,6 +375,8 @@
     horn: {label: 'Horn', melodic: true, play: function (t, v, f) { synth(t, f, 0.13 * v, 0.32, 'sawtooth', 2400, 600, [1, 1.004]); }},
     brass: {label: 'Brass', melodic: true, play: function (t, v, f) { synth(t, f, 0.1 * v, 0.3, 'square', 1800, 450, [0.997, 1.003]); }},
     boom: {label: 'Boom', play: function (t, v) { boom(t, 0.36 * v); }},
+    deep_kick: {label: 'Deep kick', play: function (t, v) { deepKick(t, 0.62 * v); }},
+    sub_pump: {label: 'Sub (pumping)', melodic: true, held: true, oct: -1, play: function (t, v, f, len) { subPump(t, f / 2, 0.42 * v, len); }},
     crack: {label: 'Metal crack', play: function (t, v) { crack(t, 1.4 * v); }},
     clank: {label: 'Clank', play: function (t, v) { metal(t, 0.5 * v, [523, 1311, 2207, 3460], 0.26); }},
     pound: {label: 'Pound (industrial tom)', play: function (t, v) { pound(t, 0.5 * v); }},
@@ -433,11 +481,19 @@
       }
       var dur = 60 / ((song.bpm || 100) + (song.bpmRise || 0) * Math.min(intensity, 1.4) / 1.4) / 4;
       var g = step % total, s = g % 16, bar = Math.floor(step / 16), fill = bar % 4 === 3 && s >= 12;
-      var dt = Math.min(1.4, dur * 3);                                                       // the echo: a dotted eighth
+      // the echo: a dotted eighth, unless the song sets its own (echoTime in steps 1-8, echoFeedback 0-0.8, echoTone Hz)
+      var es = Math.max(1, Math.min(8, +song.echoTime || 3)), dt = Math.min(1.4, dur * es);
+      var efb = song.echoFeedback != null ? Math.max(0, Math.min(0.8, +song.echoFeedback || 0)) : 0.38;
+      var etn = song.echoTone ? Math.max(400, Math.min(6000, +song.echoTone)) : 2600;
       if (Math.abs(echo.d.delayTime.value - dt) > 0.002) echo.d.delayTime.setTargetAtTime(dt, ctx.currentTime, 0.05);
+      if (Math.abs(echo.fb.gain.value - efb) > 0.005) echo.fb.gain.setTargetAtTime(efb, ctx.currentTime, 0.1);
+      if (Math.abs(echo.lp.frequency.value - etn) > 5) echo.lp.frequency.setTargetAtTime(etn, ctx.currentTime, 0.1);
+      stepDur = dur;
       Object.keys(song.parts).forEach(function (name) {
         var ins = INSTRUMENTS[name], pat = String(song.parts[name] || ''); if (!ins || !pat) return;
         send = song.echo ? Math.max(0, Math.min(0.6, +song.echo[name] || 0)) : 0;          // how much of this part echoes
+        spaceSend = song.space ? Math.max(0, Math.min(0.6, +song.space[name] || 0)) : 0;    // and how much goes to the space
+        glitchAmt = song.glitch ? Math.max(0, Math.min(1, +song.glitch[name] || 0)) : 0;    // a sample's glitch echo
         var mix = song.mix && song.mix[name] != null ? Math.max(0, Math.min(1.5, +song.mix[name])) : 1;   // this part's volume
         if (!mix) return;
         if (song.layers && song.layers[name] != null && intensity < song.layers[name]) return;   // not loud enough yet
@@ -461,7 +517,7 @@
         if (v) ins.play(nextAt + (rand() - 0.5) * 0.006, v);
         if (v && c === 'd') ins.play(nextAt + (song.exact ? dur : dur * (s % 2 ? 0.94 : 1.06)) / 2, v * 0.8);   // the half beat
       });
-      send = 0;
+      send = 0; spaceSend = 0; glitchAmt = 0;
       var at = nextAt, st = s, gst = g;
       stepFns.forEach(function (fn) { try { fn(st, at, gst); } catch (e) {} });          // step in bar, time, step in song
       nextAt += song.exact ? dur : dur * (s % 2 ? 0.94 : 1.06);                              // a little swing (not for exact songs)
@@ -613,6 +669,7 @@
   function releaseVoice(vo, at) {  // a short fade, not a click
     var i = voicesNow.indexOf(vo); if (i >= 0) voicesNow.splice(i, 1);
     try { vo.g.gain.cancelScheduledValues(at); vo.g.gain.setValueAtTime(vo.g.gain.value, at); vo.g.gain.setTargetAtTime(0, at, 0.006); vo.src.stop(at + 0.04); } catch (e) {}
+    (vo.extra || []).forEach(function (x) { try { x.stop(at + 0.04); } catch (e) {} });
   }
   function playSample(id, t, v) {
     var e = sbuf[id];
@@ -624,7 +681,27 @@
     var src = ctx.createBufferSource(), g = ctx.createGain(); src.buffer = e.buffer; g.gain.value = 0.4 * v;   // samples are full-scale files: sit them with the synth voices
     src.connect(g); g.connect(out()); src.start(at);
     var vo = {id: id, src: src, g: g}; voicesNow.push(vo); e.active++;
-    src.onended = function () { var i = voicesNow.indexOf(vo); if (i >= 0) voicesNow.splice(i, 1); e.active = Math.max(0, e.active - 1); try { src.disconnect(); g.disconnect(); } catch (x) {} };
+    var last = glitchAmt ? glitchEcho(vo, e.buffer, at, glitchAmt) : src;            // song.glitch: still one voice
+    last.onended = function () { var i = voicesNow.indexOf(vo); if (i >= 0) voicesNow.splice(i, 1); e.active = Math.max(0, e.active - 1); try { src.disconnect(); g.disconnect(); } catch (x) {} };
+  }
+  // A glitch echo (song.glitch[part], 0-1): after the hit, a few echoes on the dotted-eighth grid, each a short slice of
+  // the sample stuttered two to four times (thirty-second notes), each lower and darker than the last - a deep, broken
+  // tail made from the sample itself. All its pieces belong to the hit's voice; returns the last piece to end.
+  function glitchEcho(vo, buf, at, amt) {
+    var reps = 2 + Math.round(amt * 3), gap = stepDur * 3, sl = Math.min(0.11, buf.duration / 3), lp = ctx.createBiquadFilter(), last = vo.src, end = at + buf.duration;
+    lp.type = 'lowpass'; lp.frequency.value = 3200; lp.connect(vo.g); vo.extra = [];
+    for (var k = 1; k <= reps; k++) {
+      var off = Math.min(buf.duration - sl, (k * 0.37 % 1) * buf.duration * 0.7), rate = Math.max(0.42, 1 - 0.16 * k * (0.6 + amt * 0.5)), n = k === reps ? 4 : 2 + (k % 2);
+      for (var j = 0; j < n; j++) {
+        var s = ctx.createBufferSource(), sg = ctx.createGain(), t = at + k * gap + j * stepDur / 2, len = Math.min(sl, stepDur / 2) / rate;
+        s.buffer = buf; s.playbackRate.value = rate; sg.gain.setValueAtTime(0.0001, t); sg.gain.exponentialRampToValueAtTime(Math.pow(0.62, k) * (1 - j * 0.12), t + 0.004);
+        sg.gain.setValueAtTime(Math.pow(0.62, k) * (1 - j * 0.12), t + len * 0.8); sg.gain.exponentialRampToValueAtTime(0.0001, t + len);
+        s.connect(sg); sg.connect(lp); s.start(t, off, len * rate + 0.01); s.stop(t + len + 0.02); vo.extra.push(s);
+        if (t + len > end) { end = t + len; last = s; }
+      }
+    }
+    lp.frequency.setValueAtTime(3200, at); lp.frequency.exponentialRampToValueAtTime(700, at + reps * gap + stepDur * 2);
+    return last;
   }
   function prefetchSongSamples(s) {
     if (!s || !s.parts) return; syncSamples(); songSamples(s); if (!ctx) return;

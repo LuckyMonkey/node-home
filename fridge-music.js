@@ -508,6 +508,7 @@
     var ac = window.AbortController ? new AbortController() : null, tm = ac && window.setTimeout(function () { ac.abort(); }, SAMPLE.timeout);
     return fetch(url, {credentials: 'same-origin', signal: ac && ac.signal}).then(function (r) {
       if (!r.ok) throw new Error('Not found (' + r.status + ').');
+      if (r.redirected || /^text\//.test(r.headers.get('content-type') || '')) throw new Error('Not found (the site answered with a page, not audio).');
       var n = +r.headers.get('content-length'); if (n > SAMPLE.encoded) throw new Error('The file is over ' + (SAMPLE.encoded >> 10) + ' KB.');
       return r.arrayBuffer();
     }).then(function (b) { if (tm) window.clearTimeout(tm); return b; }, function (e) { if (tm) window.clearTimeout(tm); throw e; });

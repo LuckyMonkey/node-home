@@ -43,8 +43,8 @@
       kick: 'x.......x..x....x.......x..x....x.......x..x....x.......x..x....x.......x..x....x.......x..x....x...x...x...x...x.......x.x.x.x.',
       bass: '1...1.3.5...4.3.1...1.3.5...4.3.4...4.5.6...5.4.1...1.3.5...2.1.1...1.3.5...4.3.1...3...4...5...1.1.3.3.4.4.5.5.1.......5...4.2.',
       kalimba: '5.3.1...5.6.5...5.3.1...3.2.1...6.5.6.8.7...6.5.5.6.5.3.2...1...1.3.5...5.6.5...6.5.3...2.3.1...5.5.6.6.8.8.9...8...6...5...3.2.'}},
-    // i-IV-i-v under the marimba, pad chords, kalimba sparkles, a djembe fill
-    {id: 'canopy-drums', title: 'Canopy Drums', mood: 'congas and djembe', bpm: 98, root: 55, scale: 'dorian', seed: 23, bars: 8, echo: {kalimba: 0.3, marimba: 0.12}, parts: {
+    // i-IV-i-v under the marimba, pad chords, kalimba sparkles, a djembe fill; canopy birds (samples, where the site has them)
+    {id: 'canopy-drums', title: 'Canopy Drums', mood: 'congas and djembe', bpm: 98, root: 55, scale: 'dorian', seed: 23, bars: 8, mix: {smp_robin: 0.8, smp_cardinal: 0.75, smp_chickadee: 0.7, smp_song_sparrow: 0.7}, echo: {kalimba: 0.3, marimba: 0.12, smp_robin: 0.15, smp_cardinal: 0.15, smp_chickadee: 0.15, smp_song_sparrow: 0.15}, parts: {
       djembe: 'x..x..x...x.x...x..x..x...x.x...x..x..x...x.x...x..x..x...x.x...x..x..x...x.x...x..x..x...x.x...x..x..x...x.x...x.xxx.x.xxxxx.xx',
       conga: '.o..x..o.o..x..o',
       bongo_hi: '...o...o...o..oo...o...o...o..oo...o...o...o..oo...o...o...o..oo...o...o...o..oo...o...o...o..oo...o...o...o..oooooo...o...ooooo',
@@ -52,7 +52,11 @@
       bass: '1.....1.4.....5.1.....1.4.....5.4.....4.6.....5.4.....4.3.....2.1.....1.4.....5.1.....1.4.....5.5.....5.7.....5.4.....4.5...7.5.',
       marimba: '1.3.5.3.2.4.6.4.1.3.5.3.2.4.6.4.4.6.8.6.3.5.7.5.4.6.8.6.5.4.3.2.1.3.5.8.5.3.2.4.6.5.4.3.2.4.6.4.5.7.9.7.5.7.9.7.8.7.6.5.4.3.2...',
       pad: '1-------------------------------4-------------------------------1-------------------------------5---------------4---------------',
-      kalimba: '................................................................8.......9...............6...5...9.......8.......................'}},
+      kalimba: '................................................................8.......9...............6...5...9.......8.......................',
+      smp_robin: '......x...........................................................o.............................................................',
+      smp_cardinal: '..........................................x.....................................................................................',
+      smp_chickadee: '............................................................................................x...............o...................',
+      smp_song_sparrow: '......................................................................................................................x.........'}},
     // storm, a breakdown (drone, marimba lament), a thunder build into the crash
     {id: 'rain-dance', title: 'Rain Dance', mood: 'heavy jungle drums', bpm: 120, root: 52, scale: 'phrygian', seed: 37, bars: 8, echo: {marimba: 0.3}, parts: {
       tom_lo: 'x..x..x.x..x..x.x..x..x.x..x..x.x..x..x.x..x..x.x..x..x.x..x..x.x...............x.......x.......x..x..x.x..x..x.x.x.x.x.dxdxdxdd',
@@ -74,15 +78,18 @@
       kalimba: '1.3.5.6.5.3.2...1.3.5.6.8.6.5...5.6.8.9.8.6.5...3.5.3.2.1.......6.5.6.8.6.5.3...2.3.5.3.2.1.2...1.3.5.6.5.3.2...3.2.1.......1...',
       bass: '1...5...6...4...1...5...6...4...6...5...4...5...1...4...5.......6...4...5...1...2...4...5...4...1...5...6...4...4...5...1...5...',
       pad: '1-------4-------1-------4-------6-------4-------1-------5-------6-------4-------2-------5-------1-------4-------4-------5-------'}},
-    // a marimba melody over pad chords, a soft bass, kalimba drops
-    {id: 'panda-trail', title: 'Panda Trail', mood: 'gentle toms', bpm: 78, root: 57, scale: 'minor', seed: 7, bars: 8, mix: {bass: 0.6}, echo: {marimba: 0.2, kalimba: 0.4}, parts: {
+    // a marimba melody over pad chords, a soft bass, kalimba drops; a mourning dove and small birds (samples)
+    {id: 'panda-trail', title: 'Panda Trail', mood: 'gentle toms', bpm: 78, root: 57, scale: 'minor', seed: 7, bars: 8, mix: {bass: 0.6, smp_mourning_dove: 0.5, smp_chickadee: 0.45, smp_song_sparrow: 0.45}, echo: {marimba: 0.2, kalimba: 0.4, smp_mourning_dove: 0.2, smp_chickadee: 0.25, smp_song_sparrow: 0.25}, parts: {
       tom_lo: 'x.......o.......',
       tom_hi: '....o.......o..o....o.......o..o....o.......o..o....o.......o..o....o.......o..o....o.......o..o....o.......o..o....o...o.o.o..o',
       shaker: 'o...o...o...o...',
       marimba: '5.....3.....1...5.....6.....5...3.....4.....5...6.....5.....3...8.....7.....5...6.....5.....3...4.....3.....2...5...............',
       pad: '1-------6-------1-------6-------4-------5-------6-------5-------1-------6-------4-------3-------4-------5-------5-------5-------',
       bass: '1.......6.......1.......6.......4.......5.......6.......5.......1.......6.......4.......3.......4.......5.......5.......5.......',
-      kalimba: '....................................................................8.......9...........6...........4.......5...................'}},
+      kalimba: '....................................................................8.......9...........6...........4.......5...................',
+      smp_mourning_dove: '....x...........................................................................................................................',
+      smp_chickadee: '........................................x...............................................................o.......................',
+      smp_song_sparrow: '......................................................................x.........................................................'}},
     // slow pad chords, sparse kalimba with a long echo
     {id: 'cellar-light', title: 'Cellar Light', mood: 'ambient', bpm: 68, root: 50, scale: 'dorian', seed: 3, bars: 8, echo: {kalimba: 0.45}, parts: {
       pad: '1-------------------------------4-------------------------------6---------------5---------------1-------------------------------',
@@ -470,7 +477,59 @@
   // Rules: a sample is fetched and decoded once and reused; a hit whose sample is not ready yet is skipped (the clock
   // never waits); bounded voices, fetches and decoded memory; bad files are rejected, not trimmed; failures retry slowly.
   var SAMPLE = {seconds: 5, slack: 0.08 /* encoder padding (MP3 adds ~50 ms) */, encoded: 262144, decoded: 2621440,
-    cache: 16 * 1048576, voices: 16, perSample: 4, fetches: 4, timeout: 10000, retryMs: 60000, tries: 3};
+    cache: 16 * 1048576, voices: 16, perSample: 4, fetches: 4, timeout: 10000, retryMs: 60000, tries: 3,
+    embed: 32768, embedSong: 163840, embedCount: 8, importMax: 8388608};   // an import is compressed from a file of up to 8 MB   // samples carried inside a song (song.samples): per sample, per song
+  // A song may carry its own samples: song.samples = {id: {name, data: 'data:audio/ogg;codecs=opus;base64,...'}}. They
+  // are read only from the song itself (never a URL), checked like any other sample, and shown under "In this song".
+  var DATA_URI = /^data:audio\/(ogg|webm|mpeg|mp4|wav)(;codecs=[a-z0-9.]+)?;base64,([A-Za-z0-9+\/]+={0,2})$/;
+  function b64bytes(s) { var bin = atob(s), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u.buffer; }
+  function bytesB64(buf) { var u = new Uint8Array(buf), s = '', i; for (i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); }
+  function songSamples(s) {    // register the samples a song carries; returns how many were usable
+    if (!s || !s.samples || typeof s.samples !== 'object') return 0; var n = 0, total = 0;
+    Object.keys(s.samples).slice(0, SAMPLE.embedCount).forEach(function (id) {
+      var e = s.samples[id], m = e && typeof e.data === 'string' && DATA_URI.exec(e.data);
+      if (!/^[a-z0-9_]{1,20}$/.test(id) || !m) return;
+      var bytes = Math.floor(m[3].length * 3 / 4); total += bytes;
+      if (bytes > SAMPLE.embed || total > SAMPLE.embedSong) return;
+      var have = sampleCat[id]; if (have && !have.embedded) { n++; return; }          // the site's or this browser's copy
+      if (have && have.data === e.data) { n++; return; }
+      if (have && sbuf[id] && !sbuf[id].active) { if (sbuf[id].bytes) cacheBytes -= sbuf[id].bytes; delete sbuf[id]; }
+      var c = addSample({id: id, name: e.name || id, category: 'song', credit: e.credit, load: function () { return b64bytes(m[3]); }});
+      if (c) { c.embedded = true; c.data = e.data; c.local = false; INSTRUMENTS['smp_' + id].local = false; INSTRUMENTS['smp_' + id].embedded = true; n++; }
+    });
+    return n;
+  }
+  function sampleBytes(id) {   // a sample's encoded bytes and type: for embedding in a song
+    syncSamples(); var c = sampleCat[id]; if (!c) return Promise.reject(new Error('No such sample.'));
+    if (c.load) return Promise.resolve().then(c.load).then(function (b) { var m = c.data && DATA_URI.exec(c.data);
+      return {bytes: b, type: m ? 'audio/' + m[1] + (m[2] || '') : guessType(b)}; });
+    var src = c.src.filter(function (x) { return canPlay(x.type); })[0] || c.src[0];
+    return fetchBytes(src.src).then(function (b) { return {bytes: b, type: src.type.replace(/\s+/g, '')}; });
+  }
+  function guessType(b) {
+    var h = new Uint8Array(b.slice(0, 40)), t = String.fromCharCode.apply(null, h);
+    return /^OggS/.test(t) ? (/OpusHead/.test(t) ? 'audio/ogg;codecs=opus' : 'audio/ogg') : h[0] === 0x1a && h[1] === 0x45 ? 'audio/webm;codecs=opus'
+      : /^RIFF/.test(t) ? 'audio/wav' : /ftyp/.test(t) ? 'audio/mp4' : 'audio/mpeg';
+  }
+  function sampleDataUri(id) { return sampleBytes(id).then(function (r) {
+    if (r.bytes.byteLength > SAMPLE.embed) throw new Error('It is ' + Math.round(r.bytes.byteLength / 1024) + ' KB; a sample kept in a song can be ' + (SAMPLE.embed >> 10) + ' KB.');
+    return 'data:' + r.type + ';base64,' + bytesB64(r.bytes); }); }
+  // play one sample now, on its own (the tracker's preview); resolves when it starts
+  function previewSample(id, vol) {
+    audio(); var go = function () {
+      var e = sbuf[id]; if (!e || e.state !== 'ready') return false;
+      var src = ctx.createBufferSource(), g = ctx.createGain(); src.buffer = e.buffer; g.gain.value = (vol == null ? 0.6 : vol) * 0.9;
+      src.connect(g); g.connect(ctx.destination); src.start(); src.onended = function () { try { src.disconnect(); g.disconnect(); } catch (x) {} }; return true;
+    };
+    return (ctx.state === 'suspended' ? ctx.resume() : Promise.resolve()).then(function () {
+      if (go()) return true; requestSample(id);
+      return new Promise(function (ok, no) {
+        var tries = 0, t = window.setInterval(function () { var e = sbuf[id];
+          if (e && e.state === 'ready') { window.clearInterval(t); ok(go()); }
+          else if ((e && e.state === 'failed') || ++tries > 100) { window.clearInterval(t); no(new Error(e && e.err || 'The sample did not load.')); } }, 50);
+      });
+    });
+  }
   var SAMPLE_PATH = /^\/assets\/samples\/[a-z0-9_.-]+\.(opus|ogg|webm|mp3|m4a)$/;   // bundled samples: this site's own folder only
   var sampleCat = {}, sbuf = {}, voicesNow = [], fetchQ = [], fetching = 0, cacheBytes = 0, sampleFns = [], seenManifest = null;
   function sampleNote(id, state, msg) { sampleFns.forEach(function (fn) { try { fn(id, state, msg || ''); } catch (e) {} }); }
@@ -478,9 +537,10 @@
     if (!e || !/^[a-z0-9_]{1,20}$/.test(e.id || '')) return null;
     var src = (Array.isArray(e.src) ? e.src : []).filter(function (s) { return s && typeof s.src === 'string' && SAMPLE_PATH.test(s.src); }).slice(0, 4);
     if (!src.length && typeof e.load !== 'function') return null;
-    var name = String(e.name || e.id).replace(/[<>&"]/g, '').slice(0, 40);
-    sampleCat[e.id] = {id: e.id, name: name, category: String(e.category || 'samples').slice(0, 20), src: src, load: e.load || null, local: !!e.load};
-    INSTRUMENTS['smp_' + e.id] = {label: name, sample: e.id, category: sampleCat[e.id].category, local: !!e.load,
+    var name = String(e.name || e.id).replace(/[<>&"]/g, '').slice(0, 40), clean = function (x, n) { return String(x || '').replace(/[<>"]/g, '').slice(0, n); };
+    sampleCat[e.id] = {id: e.id, name: name, category: String(e.category || 'samples').slice(0, 20), src: src, load: e.load || null, local: !!e.load,
+      credit: clean(e.credit, 200), license: clean(e.license, 40), url: /^https:\/\/[\w.\/%:()-]+$/.test(e.url || '') ? e.url : '', duration: +e.duration || 0};
+    INSTRUMENTS['smp_' + e.id] = {label: name, sample: e.id, category: sampleCat[e.id].category, local: !!e.load, credit: sampleCat[e.id].credit,
       play: function (t, v) { playSample(e.id, t, v); }};
     return sampleCat[e.id];
   }
@@ -492,9 +552,10 @@
   function decode(buf) {      // promise or callback decodeAudioData (older Safari)
     return new Promise(function (ok, no) { var p = ctx.decodeAudioData(buf, ok, no); if (p && p.then) p.then(ok, no); });
   }
-  function checkSample(buf) { // the one gate every sample passes: size, decodes, length, memory
+  function checkSample(buf, maxBytes) { // the one gate every sample passes: size, decodes, length, memory
+    var cap = maxBytes || SAMPLE.encoded;   // a file about to be compressed (an import) may start bigger
     if (!buf || !buf.byteLength) return Promise.reject(new Error('The file is empty.'));
-    if (buf.byteLength > SAMPLE.encoded) return Promise.reject(new Error('The file is over ' + (SAMPLE.encoded >> 10) + ' KB.'));
+    if (buf.byteLength > cap) return Promise.reject(new Error('The file is over ' + (cap >> 10) + ' KB.'));
     audio();
     return decode(buf.slice(0)).then(function (b) {
       if (!b || !b.length || !b.duration) throw new Error('No sound in that file.');
@@ -560,13 +621,13 @@
     var mine = voicesNow.filter(function (x) { return x.id === id; });
     if (mine.length >= SAMPLE.perSample) releaseVoice(mine[0], at);
     if (voicesNow.length >= SAMPLE.voices) releaseVoice(voicesNow[0], at);
-    var src = ctx.createBufferSource(), g = ctx.createGain(); src.buffer = e.buffer; g.gain.value = 0.9 * v;
+    var src = ctx.createBufferSource(), g = ctx.createGain(); src.buffer = e.buffer; g.gain.value = 0.4 * v;   // samples are full-scale files: sit them with the synth voices
     src.connect(g); g.connect(out()); src.start(at);
     var vo = {id: id, src: src, g: g}; voicesNow.push(vo); e.active++;
     src.onended = function () { var i = voicesNow.indexOf(vo); if (i >= 0) voicesNow.splice(i, 1); e.active = Math.max(0, e.active - 1); try { src.disconnect(); g.disconnect(); } catch (x) {} };
   }
   function prefetchSongSamples(s) {
-    if (!s || !s.parts || !ctx) return; syncSamples();
+    if (!s || !s.parts) return; syncSamples(); songSamples(s); if (!ctx) return;
     Object.keys(s.parts).forEach(function (k) { if (/^smp_/.test(k) && INSTRUMENTS[k]) requestSample(INSTRUMENTS[k].sample); });
   }
   function stopVoices(at) { voicesNow.slice().forEach(function (vo) { releaseVoice(vo, at); }); }
@@ -643,9 +704,11 @@
     get running() { return !!(ctx && ctx.state === 'running'); },
     // samples: the catalog, loading on demand, the import check, and counts for tests and the music page
     samples: function () { syncSamples(); return Object.keys(sampleCat).map(function (id) { var c = sampleCat[id], e = sbuf[id];
-      return {id: id, name: c.name, category: c.category, local: c.local, state: e ? e.state : 'idle', error: e && e.err || ''}; }); },
+      return {id: id, name: c.name, category: c.category, local: c.local, embedded: !!c.embedded, credit: c.credit, license: c.license, url: c.url,
+        duration: e && e.buffer ? e.buffer.duration : c.duration, state: e ? e.state : 'idle', error: e && e.err || ''}; }); },
+    songSamples: songSamples, sampleDataUri: sampleDataUri, previewSample: previewSample,
     loadSample: function (id) { audio(); requestSample(id); }, onSample: function (fn) { sampleFns.push(fn); },
-    prefetch: function (s) { if (!AC) return; audio(); prefetchSongSamples(s); },   // load a song's samples before it plays
+    prefetch: function (s) { songSamples(s); if (!AC) return; audio(); prefetchSongSamples(s); },   // load a song's samples before it plays
     importSample: importSample, checkSample: checkSample, sampleLimits: SAMPLE, localSamples: function () { localReady = null; return loadLocalSamples(); },
     sampleStats: function () { return {voices: voicesNow.length, cacheBytes: cacheBytes, fetching: fetching, queued: fetchQ.length,
       loaded: Object.keys(sbuf).filter(function (id) { return sbuf[id].state === 'ready'; }).length}; }
@@ -707,7 +770,7 @@
     box.classList.toggle('fm-on', on && !state.muted);
     play.setAttribute('aria-pressed', String(on || wanted));
     play.title = (on ? 'Pause' : wanted ? 'Tap anywhere to start' : 'Play') + ' · ' + s.title + ' (' + s.mood + ')';
-    play.querySelector('.fm-sr').textContent = on || wanted ? 'Pause background music' : 'Play background music';
+    play.querySelector('.fm-sr').textContent = on ? 'Pause background music' : wanted ? 'Start background music' : 'Play background music';
     mute.setAttribute('aria-pressed', String(state.muted));
     mute.textContent = state.muted || state.vol === 0 ? '🔇' : '🔉';
     live.textContent = s.title;
@@ -715,7 +778,8 @@
   function start() { var s = songById(state.track); Engine.setVolume(state.vol, state.muted); return Engine.start(s).then(function () { wanted = false; disarm(); save(); render(); if (chan) chan.postMessage('playing'); }, function () {}); }
   function stop() { wanted = false; disarm(); Engine.stop(); save(); render(); }
 
-  play.addEventListener('click', function () { if (Engine.playing || wanted) stop(); else start(); });
+  // waiting to resume after a page change (wanted, not yet audible): pressing play is the gesture that starts it
+  play.addEventListener('click', function () { if (Engine.playing) stop(); else start(); });
   select.addEventListener('change', function () { state.track = select.value; save(); if (Engine.playing) start(); render(); });
   next.addEventListener('click', function () { var all = playerSongs(), i = all.findIndex(function (s) { return s.id === state.track; }); state.track = all[(i + 1) % all.length].id; select.value = state.track; save(); if (Engine.playing || wanted) start(); render(); });
   mute.addEventListener('click', function () { state.muted = !state.muted; Engine.setVolume(state.vol, state.muted); save(); render(); });

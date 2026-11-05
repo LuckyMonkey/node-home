@@ -158,7 +158,8 @@
   ];
   var SCALES = {
     'minor-pent': [0, 3, 5, 7, 10], 'major-pent': [0, 2, 4, 7, 9], minor: [0, 2, 3, 5, 7, 8, 10],
-    dorian: [0, 2, 3, 5, 7, 9, 10], phrygian: [0, 1, 3, 5, 7, 8, 10], major: [0, 2, 4, 5, 7, 9, 11], lydian: [0, 2, 4, 6, 7, 9, 11]
+    dorian: [0, 2, 3, 5, 7, 9, 10], phrygian: [0, 1, 3, 5, 7, 8, 10], major: [0, 2, 4, 5, 7, 9, 11], lydian: [0, 2, 4, 6, 7, 9, 11],
+    locrian: [0, 1, 3, 5, 6, 8, 10]   // a lowered 2nd and 5th: the darkest mode (metal riffs on the flat fifth)
   };
   function customSongs() { try { var a = JSON.parse(localStorage.getItem(SONGS_KEY) || '[]'); return Array.isArray(a) ? a.filter(function (s) { return s && s.id && s.parts; }) : []; } catch (e) { return []; } }
   // a site's own songs (go.fridge.run's music-songs.js sets window.FridgeMusicSongs): listed after the built-in ones
@@ -292,6 +293,27 @@
     }
     o.connect(w); w.connect(g); g.connect(out()); o.start(t); o.stop(end + 0.05);
   }
+  // Distorted guitar: a power chord (root, fifth, octave) of detuned saws driven hard into a waveshaper, then a
+  // speaker-cabinet curve (no fizz above ~3.4 kHz, no mud below ~90 Hz). Held: a note of one step is palm-muted
+  // (darker, a quick choke - the chug); longer notes ring for their length.
+  function distGuitar(t, freq, peak, len) {
+    var mute = len < stepDur * 1.5, w = shaper(70), hp = ctx.createBiquadFilter(), lp = ctx.createBiquadFilter(), mid = ctx.createBiquadFilter(), g = ctx.createGain();
+    hp.type = 'highpass'; hp.frequency.value = 90; lp.type = 'lowpass'; lp.Q.value = 0.8; mid.type = 'peaking'; mid.frequency.value = 900; mid.Q.value = 1; mid.gain.value = -5;
+    lp.frequency.setValueAtTime(mute ? 1500 : 3400, t); if (mute) lp.frequency.exponentialRampToValueAtTime(700, t + 0.12);
+    var end = t + Math.max(0.08, len);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.004);
+    if (mute) g.gain.setTargetAtTime(0.0001, t + 0.03, 0.05);
+    else { g.gain.setTargetAtTime(peak * 0.7, t + 0.05, 0.3); g.gain.setValueAtTime(peak * 0.6, Math.max(t + 0.06, end - 0.02)); g.gain.exponentialRampToValueAtTime(0.0001, end + 0.05); }
+    var stop = mute ? t + 0.3 : end + 0.08;
+    [[1, 1], [1.007, 0.8], [1.5, 0.75], [2, 0.5]].forEach(function (r) { var o = ctx.createOscillator(), og = ctx.createGain(); o.type = 'sawtooth'; o.frequency.value = freq * r[0]; og.gain.value = r[1]; o.connect(og); og.connect(w); o.start(t); o.stop(stop); });
+    w.connect(hp); hp.connect(mid); mid.connect(lp); lp.connect(g); g.connect(out());
+  }
+  // Metal kick: tight and clicky for double-bass runs - a short, fast-falling thump with a hard beater click on top.
+  function metalKick(t, peak) {
+    var o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.setValueAtTime(190, t); o.frequency.exponentialRampToValueAtTime(52, t + 0.045);
+    env(g, t, peak, 0.002, 0.15); o.connect(g); g.connect(out()); o.start(t); o.stop(t + 0.2);
+    noise(t, 3500, peak * 0.45, 0.008, 'bandpass'); tone(t, 1100, peak * 0.12, 0.012, 'triangle');
+  }
   // Crack: a snapping noise burst with a short metallic ring (no tones).
   function crack(t, peak) { noise(t, 2800, peak, 0.14, 'bandpass'); metal(t, peak * 0.5, [1830, 2970, 4130], 0.09); }
   // Distorted lead: two detuned saws driven hard into a waveshaper, then tamed with a low-pass.
@@ -376,6 +398,8 @@
     brass: {label: 'Brass', melodic: true, play: function (t, v, f) { synth(t, f, 0.1 * v, 0.3, 'square', 1800, 450, [0.997, 1.003]); }},
     boom: {label: 'Boom', play: function (t, v) { boom(t, 0.36 * v); }},
     deep_kick: {label: 'Deep kick', play: function (t, v) { deepKick(t, 0.62 * v); }},
+    metal_kick: {label: 'Metal kick', play: function (t, v) { metalKick(t, 0.8 * v); }},
+    dist_guitar: {label: 'Distorted guitar', melodic: true, held: true, play: function (t, v, f, len) { distGuitar(t, f, 0.34 * v, len); }},
     sub_pump: {label: 'Sub (pumping)', melodic: true, held: true, oct: -1, play: function (t, v, f, len) { subPump(t, f / 2, 0.42 * v, len); }},
     crack: {label: 'Metal crack', play: function (t, v) { crack(t, 1.4 * v); }},
     clank: {label: 'Clank', play: function (t, v) { metal(t, 0.5 * v, [523, 1311, 2207, 3460], 0.26); }},

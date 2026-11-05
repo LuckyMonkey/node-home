@@ -19,7 +19,8 @@
  * (part -> the intensity it needs, 0..1.5, see setLevel) and `bpmRise` (extra BPM at full intensity), and may set
  * `bed: true` for a continuous drone, `player: false` to stay off the little player (music page only), and
  * `next` (a song id) to play on into that song when it ends - songs linked into parts - and `shift` (semitones per
- * bar, e.g. [0, 0, 0, -5]) to move a bar's notes into another key, for breakdowns.
+ * bar, e.g. [0, 0, 0, -5]) to move a bar's notes into another key, for breakdowns. A song is 1-32 bars; `tempo` (BPM
+ * per bar) lets a song speed up or slow down section by section, and `sections` ({bar index: name}) names its parts.
  * Wet sounds (all optional): `space` (part -> 0..0.6, a send to one dark reverb, built only when used), `glitch`
  * (sample part -> 0..1, a pitched-down, stuttered echo made from the sample itself), and the shared echo's
  * `echoTime` (steps, default 3: a dotted eighth), `echoFeedback` (0..0.8, default 0.38) and `echoTone` (Hz, default 2600). One engine for every fridge sound: fridge.run, go.fridge.run/music and the
@@ -472,7 +473,7 @@
   function rng(seed) { var x = seed >>> 0 || 1; return function () { x ^= x << 13; x ^= x >>> 17; x ^= x << 5; return ((x >>> 0) % 10000) / 10000; }; }
   function freqOf(song, degree) { var sc = SCALES[song.scale] || SCALES.minor, d = degree - 1, oct = Math.floor(d / sc.length); return 440 * Math.pow(2, ((song.root || 57) + sc[((d % sc.length) + sc.length) % sc.length] + 12 * oct - 69) / 12); }
   var song = null, step = 0, nextAt = 0, timer = 0, rand = null, stepFns = [], vol = 0.4, muted = false, intensity = 1;
-  function barsOf(s) { return Math.max(1, Math.min(8, +s.bars || 1)); }
+  function barsOf(s) { return Math.max(1, Math.min(32, +s.bars || 1)); }
   function noteName(s, degree, octShift, semis) {   // octShift: the instrument's octave (marimba +1, bass -1); semis: the bar's key change
     var NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'], sc = SCALES[s.scale] || SCALES.minor, d = degree - 1, oct = Math.floor(d / sc.length);
     var midi = (s.root || 57) + sc[((d % sc.length) + sc.length) % sc.length] + 12 * oct; midi += 12 * (octShift || 0) + (+semis || 0); return NAMES[midi % 12] + (Math.floor(midi / 12) - 1);
@@ -503,7 +504,8 @@
           songFns.forEach(function (fn) { try { fn(nx); } catch (e) {} });
         }
       }
-      var dur = 60 / ((song.bpm || 100) + (song.bpmRise || 0) * Math.min(intensity, 1.4) / 1.4) / 4;
+      var tb = song.tempo ? +song.tempo[Math.floor((step % total) / 16)] : 0;               // a bar's own tempo (song.tempo)
+      var dur = 60 / ((tb >= 40 && tb <= 200 ? tb : song.bpm || 100) + (song.bpmRise || 0) * Math.min(intensity, 1.4) / 1.4) / 4;
       var g = step % total, s = g % 16, bar = Math.floor(step / 16), fill = bar % 4 === 3 && s >= 12;
       // the echo: a dotted eighth, unless the song sets its own (echoTime in steps 1-8, echoFeedback 0-0.8, echoTone Hz)
       var es = Math.max(1, Math.min(8, +song.echoTime || 3)), dt = Math.min(1.4, dur * es);

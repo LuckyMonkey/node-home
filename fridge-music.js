@@ -19,8 +19,9 @@
  * (part -> the intensity it needs, 0..1.5, see setLevel) and `bpmRise` (extra BPM at full intensity), and may set
  * `bed: true` for a continuous drone, `player: false` to stay off the little player (music page only), and
  * `next` (a song id) to play on into that song when it ends - songs linked into parts - and `shift` (semitones per
- * bar, e.g. [0, 0, 0, -5]) to move a bar's notes into another key, for breakdowns. A song is 1-32 bars; `tempo` (BPM
+ * bar, e.g. [0, 0, 0, -5]) to move a bar's notes into another key, for breakdowns. A song is 1-16 bars (two 8-bar sections at most; link songs for more); `tempo` (BPM
  * per bar) lets a song speed up or slow down section by section, and `sections` ({bar index: name}) names its parts.
+ * `keys` ({part: {root, scale}}) gives a part its own key (scales include 'chromatic' for melodies outside any mode).
  * Wet sounds (all optional): `space` (part -> 0..0.6, a send to one dark reverb, built only when used), `glitch`
  * (sample part -> 0..1, a pitched-down, stuttered echo made from the sample itself), and the shared echo's
  * `echoTime` (steps, default 3: a dotted eighth), `echoFeedback` (0..0.8, default 0.38) and `echoTone` (Hz, default 2600). One engine for every fridge sound: fridge.run, go.fridge.run/music and the
@@ -160,7 +161,9 @@
   var SCALES = {
     'minor-pent': [0, 3, 5, 7, 10], 'major-pent': [0, 2, 4, 7, 9], minor: [0, 2, 3, 5, 7, 8, 10],
     dorian: [0, 2, 3, 5, 7, 9, 10], phrygian: [0, 1, 3, 5, 7, 8, 10], major: [0, 2, 4, 5, 7, 9, 11], lydian: [0, 2, 4, 6, 7, 9, 11],
-    locrian: [0, 1, 3, 5, 6, 8, 10]   // a lowered 2nd and 5th: the darkest mode (metal riffs on the flat fifth)
+    locrian: [0, 1, 3, 5, 6, 8, 10],  // a lowered 2nd and 5th: the darkest mode (metal riffs on the flat fifth)
+    mixolydian: [0, 2, 4, 5, 7, 9, 10],   // a major scale with a lowered 7th
+    chromatic: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]   // every semitone: degrees 1-9 are the root and the eight semitones above it
   };
   function customSongs() { try { var a = JSON.parse(localStorage.getItem(SONGS_KEY) || '[]'); return Array.isArray(a) ? a.filter(function (s) { return s && s.id && s.parts; }) : []; } catch (e) { return []; } }
   // a site's own songs (go.fridge.run's music-songs.js sets window.FridgeMusicSongs): listed after the built-in ones
@@ -309,6 +312,38 @@
     [[1, 1], [1.007, 0.8], [1.5, 0.75], [2, 0.5]].forEach(function (r) { var o = ctx.createOscillator(), og = ctx.createGain(); o.type = 'sawtooth'; o.frequency.value = freq * r[0]; og.gain.value = r[1]; o.connect(og); og.connect(w); o.start(t); o.stop(stop); });
     w.connect(hp); hp.connect(mid); mid.connect(lp); lp.connect(g); g.connect(out());
   }
+  // Music box: a plucked steel tine - a pure fundamental, a quiet octave and a short, slightly inharmonic shimmer,
+  // a tiny click, and a long ringing decay (the toy-box / celesta sound of gothic synth rock).
+  function musicBox(t, freq, peak) {
+    [[1, 1, 1.4], [2.001, 0.22, 0.6], [5.43, 0.07, 0.12]].forEach(function (h) {
+      var o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.value = freq * h[0];
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak * h[1], t + 0.003); g.gain.setTargetAtTime(0.0001, t + 0.01, h[2] / 4);
+      o.connect(g); g.connect(out()); o.start(t); o.stop(t + h[2] * 1.6 + 0.05);
+    });
+    noise(t, 6000, peak * 0.05, 0.004);
+  }
+  // Choir: an "aah" - detuned saws on the root, fifth and octave through two vowel formants, a slow swell and a gentle
+  // vibrato. Held: chords that breathe under the band.
+  function choir(t, freq, peak, len) {
+    var f1 = ctx.createBiquadFilter(), f2 = ctx.createBiquadFilter(), lp = ctx.createBiquadFilter(), g = ctx.createGain(), end = t + Math.max(0.2, len);
+    f1.type = 'bandpass'; f1.frequency.value = 760; f1.Q.value = 3; f2.type = 'bandpass'; f2.frequency.value = 1180; f2.Q.value = 4; lp.type = 'lowpass'; lp.frequency.value = 2600;
+    var vib = ctx.createOscillator(), vg = ctx.createGain(); vib.frequency.value = 5.2; vg.gain.value = freq * 0.006; vib.connect(vg); vib.start(t); vib.stop(end + 0.4);
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(peak, t + Math.min(0.35, len * 0.4)); g.gain.setValueAtTime(peak, Math.max(t + 0.36, end - 0.05)); g.gain.linearRampToValueAtTime(0.0001, end + 0.3);
+    [[1, 1], [1.004, 0.8], [0.996, 0.8], [1.5, 0.55], [2, 0.4]].forEach(function (r) {
+      var o = ctx.createOscillator(), og = ctx.createGain(); o.type = 'sawtooth'; o.frequency.value = freq * r[0]; og.gain.value = r[1]; vg.connect(o.frequency);
+      o.connect(og); og.connect(f1); og.connect(f2); o.start(t); o.stop(end + 0.35);
+    });
+    f1.connect(lp); f2.connect(lp); lp.connect(g); g.connect(out());
+  }
+  // Synth lead: a bright saw with a square an octave below (GM "bass + lead"), through a low-pass that closes - quick
+  // arpeggios.
+  function synthLead(t, freq, peak, len) {
+    var lp = ctx.createBiquadFilter(), g = ctx.createGain(), d = Math.max(0.08, len * 0.95);
+    lp.type = 'lowpass'; lp.Q.value = 3; lp.frequency.setValueAtTime(3200, t); lp.frequency.exponentialRampToValueAtTime(900, t + d);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.005); g.gain.setTargetAtTime(peak * 0.5, t + 0.02, 0.08); g.gain.setTargetAtTime(0.0001, t + d, 0.03);
+    [['sawtooth', 1, 1], ['sawtooth', 1.007, 0.6], ['square', 0.5, 0.5]].forEach(function (r) { var o = ctx.createOscillator(), og = ctx.createGain(); o.type = r[0]; o.frequency.value = freq * r[1]; og.gain.value = r[2]; o.connect(og); og.connect(lp); o.start(t); o.stop(t + d + 0.2); });
+    lp.connect(g); g.connect(out());
+  }
   // Metal kick: tight and clicky for double-bass runs - a short, fast-falling thump with a hard beater click on top.
   function metalKick(t, peak) {
     var o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.setValueAtTime(190, t); o.frequency.exponentialRampToValueAtTime(52, t + 0.045);
@@ -399,6 +434,10 @@
     brass: {label: 'Brass', melodic: true, play: function (t, v, f) { synth(t, f, 0.1 * v, 0.3, 'square', 1800, 450, [0.997, 1.003]); }},
     boom: {label: 'Boom', play: function (t, v) { boom(t, 0.36 * v); }},
     deep_kick: {label: 'Deep kick', play: function (t, v) { deepKick(t, 0.62 * v); }},
+    music_box: {label: 'Music box', melodic: true, oct: 1, play: function (t, v, f) { musicBox(t, f * 2, 0.42 * v); }},
+    music_box_2: {label: 'Music box (2nd line)', melodic: true, oct: 1, play: function (t, v, f) { musicBox(t, f * 2, 0.42 * v); }},
+    choir: {label: 'Choir', melodic: true, held: true, play: function (t, v, f, len) { choir(t, f, 0.13 * v, len); }},
+    synth_lead: {label: 'Synth lead', melodic: true, held: true, play: function (t, v, f, len) { synthLead(t, f, 0.17 * v, len); }},
     metal_kick: {label: 'Metal kick', play: function (t, v) { metalKick(t, 0.8 * v); }},
     dist_guitar: {label: 'Distorted guitar', melodic: true, held: true, play: function (t, v, f, len) { distGuitar(t, f, 0.34 * v, len); }},
     sub_pump: {label: 'Sub (pumping)', melodic: true, held: true, oct: -1, play: function (t, v, f, len) { subPump(t, f / 2, 0.42 * v, len); }},
@@ -471,9 +510,11 @@
 
   // ---- the sequencer -------------------------------------------------------------------------------------------
   function rng(seed) { var x = seed >>> 0 || 1; return function () { x ^= x << 13; x ^= x >>> 17; x ^= x << 5; return ((x >>> 0) % 10000) / 10000; }; }
+  // A part may have its own key (song.keys[part] = {root, scale}): e.g. a chromatic music-box line over a band in D locrian.
+  function keyOf(song, part) { var k = song.keys && song.keys[part]; return k && k.root >= 24 && k.root <= 96 && SCALES[k.scale] ? {root: +k.root, scale: k.scale} : song; }
   function freqOf(song, degree) { var sc = SCALES[song.scale] || SCALES.minor, d = degree - 1, oct = Math.floor(d / sc.length); return 440 * Math.pow(2, ((song.root || 57) + sc[((d % sc.length) + sc.length) % sc.length] + 12 * oct - 69) / 12); }
   var song = null, step = 0, nextAt = 0, timer = 0, rand = null, stepFns = [], vol = 0.4, muted = false, intensity = 1;
-  function barsOf(s) { return Math.max(1, Math.min(32, +s.bars || 1)); }
+  function barsOf(s) { return Math.max(1, Math.min(16, +s.bars || 1)); }
   function noteName(s, degree, octShift, semis) {   // octShift: the instrument's octave (marimba +1, bass -1); semis: the bar's key change
     var NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'], sc = SCALES[s.scale] || SCALES.minor, d = degree - 1, oct = Math.floor(d / sc.length);
     var midi = (s.root || 57) + sc[((d % sc.length) + sc.length) % sc.length] + 12 * oct; midi += 12 * (octShift || 0) + (+semis || 0); return NAMES[midi % 12] + (Math.floor(midi / 12) - 1);
@@ -529,7 +570,7 @@
           var len = dur; if (ins.held) { for (var k = at0 + 1; k < pat.length && pat.charAt(k) === '-'; k++) len += dur; }
           var deg = +c + (!song.exact && rand() < 0.12 ? (rand() < 0.5 ? 1 : -1) : 0);   // a passing note now and then
           var semis = song.shift ? (+song.shift[Math.floor(g / 16)] || 0) : 0;            // this bar's key change
-          ins.play(nextAt, (0.85 + rand() * 0.15) * mix, freqOf(song, deg) * Math.pow(2, semis / 12), len);
+          ins.play(nextAt, (0.85 + rand() * 0.15) * mix, freqOf(keyOf(song, name), deg) * Math.pow(2, semis / 12), len);
           return;
         }
         var v = c === 'x' || c === 'd' ? 1 : c === 'o' ? 0.55 : 0;
@@ -780,7 +821,7 @@
 
   var Engine = {
     get songs() { return allSongs(); }, builtIn: BUILT_IN, get instruments() { syncSamples(); return INSTRUMENTS; }, scales: SCALES, customKey: SONGS_KEY,
-    songById: songById, noteName: noteName, barsOf: barsOf,
+    songById: songById, noteName: noteName, barsOf: barsOf, keyOf: keyOf,
     get level() { return intensity; },
     setLevel: function (x) { intensity = Math.max(0, Math.min(1.5, +x || 0)); if (ctx) bedLevel(); },
     get playing() { return !!timer; }, get song() { return song; },

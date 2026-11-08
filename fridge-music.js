@@ -40,7 +40,7 @@
   // ---- songs: x = accent, o = soft, d = double (a hit, then another half a step later), . = rest; melodic lines use scale degrees 1-9, - holds, . rests ---------------
   var BUILT_IN = [
     // A A', bars 5-6 lifted a 4th, a bongo build, a turnaround
-    {id: 'jungle-run', artist: 'fridge.run', genre: 'Jungle', title: 'Jungle Run', mood: 'bongos, easy', bpm: 96, root: 57, scale: 'minor-pent', seed: 11, bars: 8, shift: [0,0,0,0,5,5,0,0], mix: {bongo_hi: 0.8, shaker: 0.7, conga: 0.85}, echo: {kalimba: 0.22}, space: {kalimba: 0.22, bass: 0.05}, parts: {
+    {id: 'jungle-run', artist: 'fridge.run', genre: 'Jungle', title: 'Jungle Run', mood: 'bongos, easy', bpm: 96, root: 57, scale: 'minor-pent', seed: 11, bars: 8, ghosts: 0.8, shift: [0,0,0,0,5,5,0,0], mix: {bongo_hi: 0.8, shaker: 0.7, conga: 0.85}, echo: {kalimba: 0.22}, space: {kalimba: 0.22, bass: 0.05}, parts: {
       bongo_hi: 'x..o..x.x..o.x..x..o..x.x..o.x..x..o..x.x..o.x..x..o..x.x..o.x..x..o..x.x..o.x..x..o..x.x..o.x..x.xox.xox.xoxxxxx..o..x.x..o....',
       bongo_lo: '..x...x...x...xo..x...x...x...xo..x...x...x...xo..x...x...x...xo..x...x...x...xo..x...x...x...xo..x...x...x.x.xx..x...x.........',
       conga: 'x...o.x.x...o.x.x...o.x.x...o.x.x...o.x.x...o.x.x...o.x.x...o.x.x...o.x.x...o.x.x...o.x.x...o.x.x...o.x.x...o.x.x...o.x.x...oooo',
@@ -49,7 +49,7 @@
       bass: '1...1.3.5...4.3.1...1.3.5...4.3.4...4.5.6...5.4.1...1.3.5...2.1.1...1.3.5...4.3.1...3...4...5...1.1.3.3.4.4.5.5.1.......5...4.2.',
       kalimba: '5.3.1...5.6.5...5.3.1...3.2.1...6.5.6.8.7...6.5.5.6.5.3.2...1...1.3.5...5.6.5...6.5.3...2.3.1...5.5.6.6.8.8.9...8...6...5...3.2.'}},
     // i-IV-i-v under the marimba, pad chords, kalimba sparkles, a djembe fill; canopy birds (samples, where the site has them)
-    {id: 'canopy-drums', artist: 'fridge.run', genre: 'Jungle', title: 'Canopy Drums', mood: 'congas and djembe', bpm: 84, root: 55, scale: 'dorian', seed: 23, bars: 8, mix: {djembe: 0.85, bongo_hi: 0.75, smp_robin: 0.55, smp_chickadee: 0.5}, echo: {kalimba: 0.3, marimba: 0.12, smp_robin: 0.15, smp_chickadee: 0.15}, space: {marimba: 0.18, kalimba: 0.25, pad: 0.3, smp_robin: 0.25, smp_chickadee: 0.25}, parts: {
+    {id: 'canopy-drums', artist: 'fridge.run', genre: 'Jungle', title: 'Canopy Drums', mood: 'congas and djembe', bpm: 84, root: 55, scale: 'dorian', seed: 23, bars: 8, ghosts: 0.7, mix: {djembe: 0.85, bongo_hi: 0.75, smp_robin: 0.55, smp_chickadee: 0.5}, echo: {kalimba: 0.3, marimba: 0.12, smp_robin: 0.15, smp_chickadee: 0.15}, space: {marimba: 0.18, kalimba: 0.25, pad: 0.3, smp_robin: 0.25, smp_chickadee: 0.25}, parts: {
       djembe: 'x..x..x...x.x...x..x..x...x.x...x..x..x...x.x...x..x..x...x.x...x..x..x...x.x...x..x..x...x.x...x..x..x...x.x...x.xxx.x.xxxxx.xx',
       conga: '.o..x..o.o..x..o',
       bongo_hi: '...o...o...o..oo...o...o...o..oo...o...o...o..oo...o...o...o..oo...o...o...o..oo...o...o...o..oo...o...o...o..oooooo...o...ooooo',
@@ -61,7 +61,7 @@
       smp_robin: '......x.........................................................................................................................',
       smp_chickadee: '............................................................................................x...................................'}},
     // storm, a breakdown (drone, marimba lament), a thunder build into the crash
-    {id: 'rain-dance', artist: 'fridge.run', genre: 'Jungle', title: 'Rain Dance', mood: 'heavy jungle drums', bpm: 100, root: 52, scale: 'phrygian', seed: 37, bars: 8, mix: {shaker: 0.6, clave: 0.8, tom_hi: 0.85}, echo: {marimba: 0.3}, space: {marimba: 0.2, pad: 0.3, tom_lo: 0.08}, parts: {
+    {id: 'rain-dance', artist: 'fridge.run', genre: 'Jungle', title: 'Rain Dance', mood: 'heavy jungle drums', bpm: 100, root: 52, scale: 'phrygian', seed: 37, bars: 8, ghosts: 0.8, mix: {shaker: 0.6, clave: 0.8, tom_hi: 0.85}, echo: {marimba: 0.3}, space: {marimba: 0.2, pad: 0.3, tom_lo: 0.08}, parts: {
       tom_lo: 'x..x..x.x..x..x.x..x..x.x..x..x.x..x..x.x..x..x.x..x..x.x..x..x.x...............x.......x.......x..x..x.x..x..x.x.x.x.x.dxdxdxdd',
       tom_hi: '..o...o...o.o.o...o...o...o.o.o...o...o...o.o.o...o...o...o.o.o.........................o...o.....o...o...o.o.o...o.o.o.o.o.dddd',
       djembe: 'x.x...x.x.x...x.x.x...x.x.x...x.x.x...x.x.x...x.x.x...x.x.x...x.........................x.x.x.x.x.x...x.x.x...x.x.x.x.x.x.x.xxxx',
@@ -73,7 +73,7 @@
       pad: '................................................................1-------------------------------................................',
       marimba: '................................................................5...6...5...3...2...3...2...1...................................'}},
     // an 8-bar kalimba tune over pad chords; bongos join halfway
-    {id: 'night-market', artist: 'fridge.run', genre: 'Ambient', title: 'Night Market', mood: 'clave and kalimba', bpm: 80, root: 60, scale: 'major-pent', seed: 41, bars: 8, mix: {shaker: 0.75, clave: 0.85}, echo: {kalimba: 0.32}, space: {kalimba: 0.25, pad: 0.3}, parts: {
+    {id: 'night-market', artist: 'fridge.run', genre: 'Ambient', title: 'Night Market', mood: 'clave and kalimba', bpm: 80, root: 60, scale: 'major-pent', seed: 41, bars: 8, ghosts: 0.6, mix: {shaker: 0.75, clave: 0.85}, echo: {kalimba: 0.32}, space: {kalimba: 0.25, pad: 0.3}, parts: {
       clave: 'x..x..x...x.x...',
       bongo_lo: 'x.....x.x.......',
       shaker: '.o.o.o.o.o.o.o.o',
@@ -82,7 +82,7 @@
       bass: '1...5...6...4...1...5...6...4...6...5...4...5...1...4...5.......6...4...5...1...2...4...5...4...1...5...6...4...4...5...1...5...',
       pad: '1-------4-------1-------4-------6-------4-------1-------5-------6-------4-------2-------5-------1-------4-------4-------5-------'}},
     // a marimba melody over pad chords, a soft bass, kalimba drops; a mourning dove and small birds (samples)
-    {id: 'panda-trail', artist: 'fridge.run', genre: 'Ambient', title: 'Panda Trail', mood: 'gentle toms', bpm: 68, root: 57, scale: 'minor', seed: 7, bars: 8, mix: {bass: 0.6, smp_mourning_dove: 0.5, smp_chickadee: 0.45, smp_song_sparrow: 0.45}, echo: {marimba: 0.2, kalimba: 0.4, smp_mourning_dove: 0.2, smp_chickadee: 0.25, smp_song_sparrow: 0.25}, space: {marimba: 0.2, kalimba: 0.25, pad: 0.3}, parts: {
+    {id: 'panda-trail', artist: 'fridge.run', genre: 'Ambient', title: 'Panda Trail', mood: 'gentle toms', bpm: 68, root: 57, scale: 'minor', seed: 7, bars: 8, ghosts: 0.5, mix: {bass: 0.6, smp_mourning_dove: 0.5, smp_chickadee: 0.45, smp_song_sparrow: 0.45}, echo: {marimba: 0.2, kalimba: 0.4, smp_mourning_dove: 0.2, smp_chickadee: 0.25, smp_song_sparrow: 0.25}, space: {marimba: 0.2, kalimba: 0.25, pad: 0.3}, parts: {
       tom_lo: 'x.......o.......',
       tom_hi: '....o.......o..o....o.......o..o....o.......o..o....o.......o..o....o.......o..o....o.......o..o....o.......o..o....o...o.o.o..o',
       shaker: 'o...o...o...o...',
@@ -566,11 +566,28 @@
   function bedOff() { if (!bed) return; var b = bed; bed = null; b.g.gain.setTargetAtTime(0, ctx.currentTime, 0.3); window.setTimeout(function () { b.oscs.forEach(function (o) { try { o.stop(); } catch (e) {} }); }, 1500); }
 
   // ---- the sequencer -------------------------------------------------------------------------------------------
+  // Ghost grooves (song.ghosts 0-1, songs without `exact`): each seed picks its own ghost steps per drum - a few quiet
+  // hits on fixed steps of the bar, so a shuffle (a new seed) gives the song a different groove that repeats, not noise.
+  // Its own random stream: songs without `ghosts` play exactly as before.
+  var GHOSTABLE = /bongo|conga|djembe|tom|shaker|clave|snare|hat/;
+  function grooveOf(s) {
+    var amt = s && !s.exact ? Math.max(0, Math.min(1, +s.ghosts || 0)) : 0; if (!amt) return null;
+    var r = rng(((s.seed || 1) * 7919) ^ 0x5bd1e995), out = {};
+    Object.keys(s.parts).forEach(function (name) {
+      if (!GHOSTABLE.test(name) || !INSTRUMENTS[name] || INSTRUMENTS[name].melodic) return;
+      var pat = String(s.parts[name] || ''), open = [];
+      for (var i = 0; i < 16; i++) { var c = pat.charAt(i % pat.length); if (c === '.' || c === '') open.push(i); }
+      var n = Math.round(amt * (1 + r() * 3)), steps = {};
+      for (var k = 0; k < n && open.length; k++) { var j = Math.floor(r() * open.length); steps[open.splice(j, 1)[0]] = 0.18 + r() * 0.17; }
+      out[name] = steps;
+    });
+    return {amt: amt, steps: out};
+  }
   function rng(seed) { var x = seed >>> 0 || 1; return function () { x ^= x << 13; x ^= x >>> 17; x ^= x << 5; return ((x >>> 0) % 10000) / 10000; }; }
   // A part may have its own key (song.keys[part] = {root, scale}): e.g. a chromatic music-box line over a band in D locrian.
   function keyOf(song, part) { var k = song.keys && song.keys[part]; return k && k.root >= 24 && k.root <= 96 && SCALES[k.scale] ? {root: +k.root, scale: k.scale} : song; }
   function freqOf(song, degree) { var sc = SCALES[song.scale] || SCALES.minor, d = degree - 1, oct = Math.floor(d / sc.length); return 440 * Math.pow(2, ((song.root || 57) + sc[((d % sc.length) + sc.length) % sc.length] + 12 * oct - 69) / 12); }
-  var song = null, step = 0, nextAt = 0, timer = 0, rand = null, stepFns = [], vol = 0.4, muted = false, intensity = 1;
+  var song = null, step = 0, nextAt = 0, timer = 0, rand = null, groove = null, grand = null, stepFns = [], vol = 0.4, muted = false, intensity = 1;
   function barsOf(s) { return Math.max(1, Math.min(16, +s.bars || 1)); }
   function noteName(s, degree, octShift, semis) {   // octShift: the instrument's octave (marimba +1, bass -1); semis: the bar's key change
     var NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'], sc = SCALES[s.scale] || SCALES.minor, d = degree - 1, oct = Math.floor(d / sc.length);
@@ -597,7 +614,7 @@
         var nx = nextOf(song);
         if (nx && nx !== song) {
           var sameBed = bed && nx.bed && (nx.bedRoot || nx.root) === (song.bedRoot || song.root);   // linked parts on one drone: it carries on
-          song = nx; step = 0; total = 16 * barsOf(song); if (!sameBed) { bedOff(); bedOn(song); } bedLevel();
+          song = nx; step = 0; total = 16 * barsOf(song); groove = grooveOf(song); grand = rng(((song.seed || 1) * 104729) >>> 0); if (!sameBed) { bedOff(); bedOn(song); } bedLevel();
           prefetchSongSamples(nextOf(song));
           songFns.forEach(function (fn) { try { fn(nx); } catch (e) {} });
         }
@@ -626,6 +643,7 @@
           if (!/[1-9]/.test(c)) return;
           var len = dur; if (ins.held) { for (var k = at0 + 1; k < pat.length && pat.charAt(k) === '-'; k++) len += dur; }
           var deg = +c + (!song.exact && rand() < 0.12 ? (rand() < 0.5 ? 1 : -1) : 0);   // a passing note now and then
+          if (groove && grand() < groove.amt * 0.08) deg += grand() < 0.5 ? 2 : -1;        // a ghost-groove song wanders a little more
           var semis = song.shift ? (+song.shift[Math.floor(g / 16)] || 0) : 0;            // this bar's key change
           ins.play(nextAt, (0.85 + rand() * 0.15) * mix, freqOf(keyOf(song, name), deg) * Math.pow(2, semis / 12), len);
           return;
@@ -635,6 +653,7 @@
         if (!song.exact) {
         if (!v && fill && /tom|conga|djembe|bongo/.test(name) && rand() < 0.45) v = 0.6;   // fills at the end of every fourth bar
         if (!v && rand() < 0.03 && /bongo|conga|shaker/.test(name)) v = 0.3;               // ghost notes
+        if (!v && groove && groove.steps[name] && groove.steps[name][s] && grand() < 0.55 + groove.amt * 0.4) v = groove.steps[name][s];   // this seed's ghost groove
         if (v && rand() < 0.04 && c !== 'x') v = 0;                                          // the odd drop
         }
         v *= mix;
@@ -885,7 +904,7 @@
     start: function (s) {
       if (!AC) return Promise.reject(new Error('No Web Audio here'));
       audio(); Engine.stop(true);
-      song = s; step = 0; rand = rng(s.seed || 1); nextAt = ctx.currentTime + 0.08; bedOff(); bedOn(s);
+      song = s; step = 0; rand = rng(s.seed || 1); groove = grooveOf(s); grand = rng(((s.seed || 1) * 104729) >>> 0); nextAt = ctx.currentTime + 0.08; bedOff(); bedOn(s);
       prefetchSongSamples(s); prefetchSongSamples(nextOf(s));
       return (ctx.state === 'suspended' ? ctx.resume() : Promise.resolve()).then(function () {
         master.gain.cancelScheduledValues(ctx.currentTime); master.gain.setValueAtTime(master.gain.value, ctx.currentTime);

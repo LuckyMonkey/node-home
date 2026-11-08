@@ -40,7 +40,7 @@
   // ---- songs: x = accent, o = soft, d = double (a hit, then another half a step later), . = rest; melodic lines use scale degrees 1-9, - holds, . rests ---------------
   var BUILT_IN = [
     // A A', bars 5-6 lifted a 4th, a bongo build, a turnaround
-    {id: 'jungle-run', title: 'Jungle Run', mood: 'bongos, quick', bpm: 112, root: 57, scale: 'minor-pent', seed: 11, bars: 8, shift: [0,0,0,0,5,5,0,0], echo: {kalimba: 0.22}, parts: {
+    {id: 'jungle-run', artist: 'fridge.run', genre: 'Jungle', title: 'Jungle Run', mood: 'bongos, easy', bpm: 96, root: 57, scale: 'minor-pent', seed: 11, bars: 8, shift: [0,0,0,0,5,5,0,0], mix: {bongo_hi: 0.8, shaker: 0.7, conga: 0.85}, echo: {kalimba: 0.22}, space: {kalimba: 0.22, bass: 0.05}, parts: {
       bongo_hi: 'x..o..x.x..o.x..x..o..x.x..o.x..x..o..x.x..o.x..x..o..x.x..o.x..x..o..x.x..o.x..x..o..x.x..o.x..x.xox.xox.xoxxxxx..o..x.x..o....',
       bongo_lo: '..x...x...x...xo..x...x...x...xo..x...x...x...xo..x...x...x...xo..x...x...x...xo..x...x...x...xo..x...x...x.x.xx..x...x.........',
       conga: 'x...o.x.x...o.x.x...o.x.x...o.x.x...o.x.x...o.x.x...o.x.x...o.x.x...o.x.x...o.x.x...o.x.x...o.x.x...o.x.x...o.x.x...o.x.x...oooo',
@@ -49,7 +49,7 @@
       bass: '1...1.3.5...4.3.1...1.3.5...4.3.4...4.5.6...5.4.1...1.3.5...2.1.1...1.3.5...4.3.1...3...4...5...1.1.3.3.4.4.5.5.1.......5...4.2.',
       kalimba: '5.3.1...5.6.5...5.3.1...3.2.1...6.5.6.8.7...6.5.5.6.5.3.2...1...1.3.5...5.6.5...6.5.3...2.3.1...5.5.6.6.8.8.9...8...6...5...3.2.'}},
     // i-IV-i-v under the marimba, pad chords, kalimba sparkles, a djembe fill; canopy birds (samples, where the site has them)
-    {id: 'canopy-drums', title: 'Canopy Drums', mood: 'congas and djembe', bpm: 98, root: 55, scale: 'dorian', seed: 23, bars: 8, mix: {smp_robin: 0.8, smp_cardinal: 0.75, smp_chickadee: 0.7, smp_song_sparrow: 0.7}, echo: {kalimba: 0.3, marimba: 0.12, smp_robin: 0.15, smp_cardinal: 0.15, smp_chickadee: 0.15, smp_song_sparrow: 0.15}, parts: {
+    {id: 'canopy-drums', artist: 'fridge.run', genre: 'Jungle', title: 'Canopy Drums', mood: 'congas and djembe', bpm: 84, root: 55, scale: 'dorian', seed: 23, bars: 8, mix: {djembe: 0.85, bongo_hi: 0.75, smp_robin: 0.55, smp_chickadee: 0.5}, echo: {kalimba: 0.3, marimba: 0.12, smp_robin: 0.15, smp_chickadee: 0.15}, space: {marimba: 0.18, kalimba: 0.25, pad: 0.3, smp_robin: 0.25, smp_chickadee: 0.25}, parts: {
       djembe: 'x..x..x...x.x...x..x..x...x.x...x..x..x...x.x...x..x..x...x.x...x..x..x...x.x...x..x..x...x.x...x..x..x...x.x...x.xxx.x.xxxxx.xx',
       conga: '.o..x..o.o..x..o',
       bongo_hi: '...o...o...o..oo...o...o...o..oo...o...o...o..oo...o...o...o..oo...o...o...o..oo...o...o...o..oo...o...o...o..oooooo...o...ooooo',
@@ -58,12 +58,10 @@
       marimba: '1.3.5.3.2.4.6.4.1.3.5.3.2.4.6.4.4.6.8.6.3.5.7.5.4.6.8.6.5.4.3.2.1.3.5.8.5.3.2.4.6.5.4.3.2.4.6.4.5.7.9.7.5.7.9.7.8.7.6.5.4.3.2...',
       pad: '1-------------------------------4-------------------------------1-------------------------------5---------------4---------------',
       kalimba: '................................................................8.......9...............6...5...9.......8.......................',
-      smp_robin: '......x...........................................................o.............................................................',
-      smp_cardinal: '..........................................x.....................................................................................',
-      smp_chickadee: '............................................................................................x...............o...................',
-      smp_song_sparrow: '......................................................................................................................x.........'}},
+      smp_robin: '......x.........................................................................................................................',
+      smp_chickadee: '............................................................................................x...................................'}},
     // storm, a breakdown (drone, marimba lament), a thunder build into the crash
-    {id: 'rain-dance', title: 'Rain Dance', mood: 'heavy jungle drums', bpm: 120, root: 52, scale: 'phrygian', seed: 37, bars: 8, echo: {marimba: 0.3}, parts: {
+    {id: 'rain-dance', artist: 'fridge.run', genre: 'Jungle', title: 'Rain Dance', mood: 'heavy jungle drums', bpm: 100, root: 52, scale: 'phrygian', seed: 37, bars: 8, mix: {shaker: 0.6, clave: 0.8, tom_hi: 0.85}, echo: {marimba: 0.3}, space: {marimba: 0.2, pad: 0.3, tom_lo: 0.08}, parts: {
       tom_lo: 'x..x..x.x..x..x.x..x..x.x..x..x.x..x..x.x..x..x.x..x..x.x..x..x.x...............x.......x.......x..x..x.x..x..x.x.x.x.x.dxdxdxdd',
       tom_hi: '..o...o...o.o.o...o...o...o.o.o...o...o...o.o.o...o...o...o.o.o.........................o...o.....o...o...o.o.o...o.o.o.o.o.dddd',
       djembe: 'x.x...x.x.x...x.x.x...x.x.x...x.x.x...x.x.x...x.x.x...x.x.x...x.........................x.x.x.x.x.x...x.x.x...x.x.x.x.x.x.x.xxxx',
@@ -75,7 +73,7 @@
       pad: '................................................................1-------------------------------................................',
       marimba: '................................................................5...6...5...3...2...3...2...1...................................'}},
     // an 8-bar kalimba tune over pad chords; bongos join halfway
-    {id: 'night-market', title: 'Night Market', mood: 'clave and kalimba', bpm: 92, root: 60, scale: 'major-pent', seed: 41, bars: 8, echo: {kalimba: 0.32}, parts: {
+    {id: 'night-market', artist: 'fridge.run', genre: 'Ambient', title: 'Night Market', mood: 'clave and kalimba', bpm: 80, root: 60, scale: 'major-pent', seed: 41, bars: 8, mix: {shaker: 0.75, clave: 0.85}, echo: {kalimba: 0.32}, space: {kalimba: 0.25, pad: 0.3}, parts: {
       clave: 'x..x..x...x.x...',
       bongo_lo: 'x.....x.x.......',
       shaker: '.o.o.o.o.o.o.o.o',
@@ -84,7 +82,7 @@
       bass: '1...5...6...4...1...5...6...4...6...5...4...5...1...4...5.......6...4...5...1...2...4...5...4...1...5...6...4...4...5...1...5...',
       pad: '1-------4-------1-------4-------6-------4-------1-------5-------6-------4-------2-------5-------1-------4-------4-------5-------'}},
     // a marimba melody over pad chords, a soft bass, kalimba drops; a mourning dove and small birds (samples)
-    {id: 'panda-trail', title: 'Panda Trail', mood: 'gentle toms', bpm: 78, root: 57, scale: 'minor', seed: 7, bars: 8, mix: {bass: 0.6, smp_mourning_dove: 0.5, smp_chickadee: 0.45, smp_song_sparrow: 0.45}, echo: {marimba: 0.2, kalimba: 0.4, smp_mourning_dove: 0.2, smp_chickadee: 0.25, smp_song_sparrow: 0.25}, parts: {
+    {id: 'panda-trail', artist: 'fridge.run', genre: 'Ambient', title: 'Panda Trail', mood: 'gentle toms', bpm: 68, root: 57, scale: 'minor', seed: 7, bars: 8, mix: {bass: 0.6, smp_mourning_dove: 0.5, smp_chickadee: 0.45, smp_song_sparrow: 0.45}, echo: {marimba: 0.2, kalimba: 0.4, smp_mourning_dove: 0.2, smp_chickadee: 0.25, smp_song_sparrow: 0.25}, space: {marimba: 0.2, kalimba: 0.25, pad: 0.3}, parts: {
       tom_lo: 'x.......o.......',
       tom_hi: '....o.......o..o....o.......o..o....o.......o..o....o.......o..o....o.......o..o....o.......o..o....o.......o..o....o...o.o.o..o',
       shaker: 'o...o...o...o...',
@@ -96,14 +94,14 @@
       smp_chickadee: '........................................x...............................................................o.......................',
       smp_song_sparrow: '......................................................................x.........................................................'}},
     // slow pad chords, sparse kalimba with a long echo
-    {id: 'cellar-light', title: 'Cellar Light', mood: 'ambient', bpm: 68, root: 50, scale: 'dorian', seed: 3, bars: 8, echo: {kalimba: 0.45}, parts: {
+    {id: 'cellar-light', artist: 'fridge.run', genre: 'Ambient', title: 'Cellar Light', mood: 'ambient', bpm: 68, root: 50, scale: 'dorian', seed: 3, bars: 8, echo: {kalimba: 0.45}, parts: {
       pad: '1-------------------------------4-------------------------------6---------------5---------------1-------------------------------',
       kalimba: '5.......3...2...........1.......6.......5...4...........2.......7.......6...5...4...........3...5.......3...2...1...............',
       tom_lo: 'o...............',
       bass: '1.......5.......1.......5.......4.......4.......4.......3.......6.......5.......5.......5.......1.......5.......1.......1.......'}},
     // Lucky Monkey (the game): jungle at night. A drone and birds, growing into shaker, bongos, marimba over
     // Am-F-C-G, a cuica and a low tom as the threat rises. The game sets the intensity with setLevel (0..1.5).
-    {id: 'lucky-monkey-jungle', title: 'Lucky Monkey: Jungle at Night', mood: 'the game: drone and birds into a groove', game: 'luckymonkey',
+    {id: 'lucky-monkey-jungle', artist: 'Lucky Monkey (the game)', genre: 'Game', title: 'Lucky Monkey: Jungle at Night', mood: 'the game: drone and birds into a groove', game: 'luckymonkey',
       // Note for note from the game: Am-F-C-G marimba (rows F4..G5, so F lydian = A minor's notes), straight time,
       // no variations (exact), the game's own voices (lm_*), a drone on A (bedRoot) at the game's loudness.
       bpm: 92, bpmRise: 20, root: 53, scale: 'lydian', seed: 5, bars: 4, bed: true, bedRoot: 57, bedGain: 3.5, exact: true,
@@ -114,7 +112,7 @@
       cuica: '......x.......o.', lm_tom: 'x.......x.......'}},
     // Kaon (Half-Life, Kelly Bailey): a cover, transcribed note for note from bars 2-9 of a fan MIDI (the main loop;
     // the bridge and the intro are left out). E phrygian, 180 BPM, straight. 
-    {id: 'kaon', title: 'Kaon (Half-Life cover)', mood: 'industrial, fast',
+    {id: 'kaon', artist: 'Kelly Bailey (Half-Life)', genre: 'Industrial', title: 'Kaon (Half-Life cover)', mood: 'industrial, fast',
       bpm: 180, root: 52, scale: 'phrygian', seed: 9, bars: 8, exact: true, parts: {
       tom_lo: 'x...x.........x.....x...........x...x.........x.....x...........x...x.........x.....x...........x...x.........x.....x...........',
       snare: 'o.o.o.o.x.o.o.o.o.o.o.o.x.o.o.o.o.o.o.o.x.o.o.o.o.o.o.o.x.o.o.o.o.o.o.o.x.o.o.o.o.o.o.o.x.o.o.o.o.o.o.o.x.o.o.x.xxx.o.x.xxx.o.x.',
@@ -128,7 +126,7 @@
     // Control (Metro Station cover): an 8-bar loop - the keyboard riff (an E pedal under A-C-E, then the E-F rock), the
     // chorus power-chord line and Am-C-F-E roots, from fan tabs, with Kalimba doubling the riff an octave up; written as a MIDI file and brought in with the music
     // page's MIDI import (A minor, written as D dorian so the riff fits the note rows).
-    {id: 'control-cover', title: 'Control (Metro Station cover)', mood: 'synth-pop, bright',
+    {id: 'control-cover', artist: 'Metro Station', genre: 'Synth-pop', title: 'Control (Metro Station cover)', mood: 'synth-pop, bright',
       bpm: 95, root: 62, scale: 'dorian', seed: 3, bars: 8, exact: true, parts: {
       kick: 'x.......x.x.....x.......x.x.....x.......x.x.....x.......x.x.....x...x...x...x...x...x...x...x...x...x...x...x...x.......x.x.....',
       snare: '....x.......x.......x.......x.......x.......x.......x.......x.......x.......x.......x.......x.......x.......x.......x.......xodo',
@@ -143,7 +141,7 @@
     // pads, hard booms and metal, written to the measured feel of a Half-Life 2: Episode One combat cue; none of that
     // cue's notes. Bar 4 breaks down low (sub drop, deep didgeridoo), pound toms add off-beat half beats, and bar 8
     // builds a pat-patapat crescendo into the pow (boom + crash) of bar 1.
-    {id: 'disrupted-distillation', title: 'Disrupted Distillation', mood: 'industrial, didgeridoo',
+    {id: 'disrupted-distillation', artist: 'fridge.run', genre: 'Industrial', title: 'Disrupted Distillation', mood: 'industrial, didgeridoo',
       bpm: 99, root: 49, scale: 'phrygian', seed: 17, bars: 8, exact: true, parts: {
       boom: 'x.......x.x.....x.....x...x.x...x.......x.x.....x...............x.......x.x.....x.....x...x.x...x.......x.x.....x.......x...x.x.',
       crack: '....x.......x.......x.......x.......x.......x...........x...........x.......x.......x.......x.......x.......x.......x...x.d.dxdx',
@@ -312,6 +310,59 @@
     [[1, 1], [1.007, 0.8], [1.5, 0.75], [2, 0.5]].forEach(function (r) { var o = ctx.createOscillator(), og = ctx.createGain(); o.type = 'sawtooth'; o.frequency.value = freq * r[0]; og.gain.value = r[1]; o.connect(og); og.connect(w); o.start(t); o.stop(stop); });
     w.connect(hp); hp.connect(mid); mid.connect(lp); lp.connect(g); g.connect(out());
   }
+  // Clean guitar: a real plucked string (Karplus-Strong), voiced warm - a soft, dark pick (heavily low-passed noise,
+  // plucked a fifth of the way along) circulating in a delay line one period long through a 3-tap smoothing filter, so
+  // the highs die within a few passes and the low strings ring for seconds (a nylon / neck-pickup tone, not a
+  // harpsichord). Computed once per pitch (a 2.4 s mono buffer, 16 cached). Played as two copies a few cents apart, the
+  // second 9 ms late - the chorused, washed tone of a lo-fi guitar loop - plus a quiet sine on the fundamental for body,
+  // through a gentle top cut and a low-mid bump. Not held: notes ring over each other like a picked arpeggio.
+  var plucks = [];
+  function pluckBuf(freq) {
+    var sr = ctx.sampleRate, key = Math.round(freq * 8) + '@' + sr;
+    for (var i = 0; i < plucks.length; i++) if (plucks[i].k === key) { var hit = plucks.splice(i, 1)[0]; plucks.push(hit); return hit.b; }
+    var n = Math.floor(sr * 2.4), buf = ctx.createBuffer(1, n, sr), d = new Float32Array(n), L = Math.max(3, Math.round(sr / freq));
+    var t60 = Math.max(1.2, Math.min(3.6, 300 / freq)), rho = Math.pow(0.001, L / (sr * t60)), lp = 0, pick = Math.floor(L * 0.2);
+    var seed = Math.round(freq * 1000) % 2147483647 || 1, rnd = function () { seed = seed * 16807 % 2147483647; return seed / 2147483647 * 2 - 1; };
+    var ex = new Float32Array(L); for (i = 0; i < L; i++) { lp += 0.11 * (rnd() - lp); ex[i] = lp; }    // a soft, dark pick
+    for (i = L - 1; i >= pick; i--) ex[i] -= ex[i - pick];                                                  // where it's picked (a comb)
+    for (i = 0; i < n; i++) d[i] = i < L + 1 ? (i < L ? ex[i] : 0) : rho * (0.25 * d[i - L - 1] + 0.5 * d[i - L] + 0.25 * d[i - L + 1]);
+    var m = 0; for (i = 0; i < L * 4 && i < n; i++) m = Math.max(m, Math.abs(d[i])); if (m) for (i = 0; i < n; i++) d[i] /= m;
+    buf.copyToChannel(d, 0);   // copyToChannel, not writes into getChannelData: some Web Audio implementations copy that array
+    plucks.push({k: key, b: buf}); if (plucks.length > 16) plucks.shift();
+    return buf;
+  }
+  function cleanGuitar(t, freq, peak) {
+    var lp = ctx.createBiquadFilter(), hp = ctx.createBiquadFilter(), body = ctx.createBiquadFilter(), g = ctx.createGain(), buf = pluckBuf(freq), end = t + 2.3;
+    lp.type = 'lowpass'; lp.frequency.value = 1900; lp.Q.value = 0.5; hp.type = 'highpass'; hp.frequency.value = 55;
+    body.type = 'peaking'; body.frequency.value = 180; body.Q.value = 0.9; body.gain.value = 4;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.008); g.gain.setValueAtTime(peak, end - 0.3); g.gain.exponentialRampToValueAtTime(0.0001, end);
+    [[0.9977, 0, 0.55], [1.0023, 0.009, 0.45]].forEach(function (c) { var s = ctx.createBufferSource(), sg = ctx.createGain(); s.buffer = buf; s.playbackRate.value = c[0]; sg.gain.value = c[2];
+      s.connect(sg); sg.connect(hp); s.start(t + c[1]); s.stop(end); });
+    var o = ctx.createOscillator(), og = ctx.createGain(); o.frequency.value = freq; og.gain.setValueAtTime(0.0001, t); og.gain.exponentialRampToValueAtTime(0.22, t + 0.01); og.gain.exponentialRampToValueAtTime(0.0001, t + Math.min(2.2, 160 / freq));
+    o.connect(og); og.connect(hp); o.start(t); o.stop(end);
+    hp.connect(body); body.connect(lp); lp.connect(g); g.connect(out());
+  }
+  // 808: the trap / phonk bass - a sine that punches in from above its pitch, a click, a long sustain for the note's
+  // length and a soft release; driven for harmonics small speakers can play. drive: 2.5 clean, 14 the dirty phonk 808.
+  function bass808(t, freq, peak, len, drive) {
+    var end = t + Math.max(0.3, len), o = ctx.createOscillator(), g = ctx.createGain(), w = shaper(drive), lp = ctx.createBiquadFilter();
+    lp.type = 'lowpass'; lp.frequency.value = drive > 6 ? 2400 : 1000;
+    o.frequency.setValueAtTime(freq * 2.4, t); o.frequency.exponentialRampToValueAtTime(freq, t + 0.055);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.004); g.gain.setTargetAtTime(peak * 0.72, t + 0.03, 0.2);
+    g.gain.setTargetAtTime(0.0001, end, 0.07);
+    o.connect(w); w.connect(lp); lp.connect(g); g.connect(out()); o.start(t); o.stop(end + 0.5);
+    noise(t, 2600, peak * 0.18, 0.01);
+  }
+  // Cowbell: the 808's two detuned squares (a ratio of 1.48) through a band-pass, slightly driven - a sharp clack and a
+  // short metallic ring. Pitched, so it can carry a phonk melody.
+  function cowbell(t, freq, peak) {
+    var bp = ctx.createBiquadFilter(), g = ctx.createGain(), w = shaper(3); bp.type = 'bandpass'; bp.frequency.value = freq * 1.25; bp.Q.value = 1.3;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.002); g.gain.setTargetAtTime(peak * 0.32, t + 0.008, 0.025); g.gain.setTargetAtTime(0.0001, t + 0.05, 0.1);
+    [1, 1.48].forEach(function (r) { var o = ctx.createOscillator(); o.type = 'square'; o.frequency.value = freq * r; o.connect(bp); o.start(t); o.stop(t + 0.7); });
+    bp.connect(w); w.connect(g); g.connect(out());
+  }
+  // Clap: three quick band-passed noise bursts, then a short tail - the trap clap.
+  function clap(t, peak) { for (var i = 0; i < 3; i++) noise(t + i * 0.011, 1150, peak * 0.75, 0.012, 'bandpass'); noise(t + 0.033, 1250, peak, 0.17, 'bandpass'); }
   // Music box: a plucked steel tine - a pure fundamental, a quiet octave and a short, slightly inharmonic shimmer,
   // a tiny click, and a long ringing decay (the toy-box / celesta sound of gothic synth rock).
   function musicBox(t, freq, peak) {
@@ -439,6 +490,12 @@
     choir: {label: 'Choir', melodic: true, held: true, play: function (t, v, f, len) { choir(t, f, 0.13 * v, len); }},
     synth_lead: {label: 'Synth lead', melodic: true, held: true, play: function (t, v, f, len) { synthLead(t, f, 0.17 * v, len); }},
     metal_kick: {label: 'Metal kick', play: function (t, v) { metalKick(t, 0.8 * v); }},
+    clean_guitar: {label: 'Clean guitar', melodic: true, play: function (t, v, f) { cleanGuitar(t, f, 0.5 * v); }},
+    clean_guitar_2: {label: 'Clean guitar (2nd line)', melodic: true, play: function (t, v, f) { cleanGuitar(t, f, 0.5 * v); }},
+    bass_808: {label: '808', melodic: true, held: true, oct: -1, play: function (t, v, f, len) { bass808(t, f / 2, 0.5 * v, len, 2.5); }},
+    bass_808_dirty: {label: '808 (dirty)', melodic: true, held: true, oct: -1, play: function (t, v, f, len) { bass808(t, f / 2, 0.32 * v, len, 14); }},
+    cowbell: {label: 'Cowbell', melodic: true, oct: 2, play: function (t, v, f) { cowbell(t, f * 4, 0.26 * v); }},
+    clap: {label: 'Clap', play: function (t, v) { clap(t, 0.9 * v); }},
     dist_guitar: {label: 'Distorted guitar', melodic: true, held: true, play: function (t, v, f, len) { distGuitar(t, f, 0.34 * v, len); }},
     sub_pump: {label: 'Sub (pumping)', melodic: true, held: true, oct: -1, play: function (t, v, f, len) { subPump(t, f / 2, 0.42 * v, len); }},
     crack: {label: 'Metal crack', play: function (t, v) { crack(t, 1.4 * v); }},

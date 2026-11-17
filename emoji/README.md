@@ -25,7 +25,7 @@ This folder is intentionally independent of the home server. It is a static webs
 | `concepts/ios-inspired.svg` | Unofficial soft/rounded example |
 | `concepts/windows-inspired.svg` | Unofficial geometric/flat example |
 | `concepts/android-inspired.svg` | Unofficial bold/high-contrast example |
-| `concepts/samsung-inspired.svg` | Unofficial lighter-outline example |
+| `concepts/samsung-inspired.svg` | Unofficial flat stainless French-door refrigerator with bottom freezer drawer |
 | `assets/label-3x2.zpl` | Optional Zebra label, **hold printing until petition is live** |
 | `DESIGN.md` | Visual requirements and review criteria |
 | `DEPLOYMENT.md` | Developer / Claude handoff, local checks, release process |
@@ -35,7 +35,7 @@ This folder is intentionally independent of the home server. It is a static webs
 
 ## First three actions when resuming
 
-1. **Review the concept gallery** and choose the fridge shape. Keep **white enamel, top freezer, black right-side handles**, no gradients, and no GE or other brand logo.
+1. **Review the concept gallery** and choose the canonical fridge shape. Keep the **canonical** design white enamel, top freezer, black right-side handles; the independent Samsung-inspired example may use stainless French doors over a drawer. No gradients or brand logos.
 2. **Run the site locally** using the one-command static server in `DEPLOYMENT.md`. Check tiny icon sizes and phones.
 3. **When ready to release**, review/merge the GitHub pull request into `main`; this is the publishing trigger. Create and link the new Change.org petition separately when it exists.
 

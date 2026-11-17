@@ -3,7 +3,7 @@
 
 **Owner and public credit:** Charlie. **Public home:** https://fridge.run/emoji/  
 **Hosting:** GitHub Pages, repository `LuckyMonkey/node-home`, `main` branch, root publishing directory.  
-**Campaign status:** Preparatory / soft launch, 17 November 2026. The Change.org petition has **not** been created; do not present a signature count or functioning sign button until then.  
+**Campaign status:** Concept review, 17 November 2026. The revised design exists on the `emoji-concept-only` branch **and is not published until merge to main**. The Change.org petition has **not** been created; do not present a signature count or functioning sign button until then.  
 **Objective:** Build a credible, cheerful, high-visibility campaign to propose a **generic, unbranded refrigerator emoji** for Unicode. The campaign must survive even if the proposal fails.
 **Working budget:** $0–$100 initial out-of-pocket, prioritizing existing equipment, free distribution, and permission-based placements.
 
@@ -57,7 +57,7 @@ Campaign code lives in `node-home/emoji/`. This path is independent from the hom
 
 **Goal:** A person scanning a label understands the ask in under five seconds.
 
-**The hero:** A giant recognizable two-door refrigerator, dramatic poster typography, excellent contrast, and one sentence of humor. Core words:
+**The hero:** A modest-sized, flat, unbranded white top-freezer refrigerator with right-side black handles, dramatic campaign typography, excellent contrast, and one sentence of humor. Core words:
 - **WHERE'S OUR FRIDGE EMOJI?**
 - **IT'S FREE. IT'S COOL. TAKES A SECOND.**
 - **SIGN THE PETITION** — only after it exists.
@@ -67,9 +67,9 @@ Campaign code lives in `node-home/emoji/`. This path is independent from the hom
 **Accessibility / engineering:** semantic headings, keyboard-operable controls, descriptive alt text, 44px-ish tap targets, focus styles, reduced-motion support, no autoplay audio, no sign-in, no third-party trackers. The fridge image must stay visible even if JS fails; the signature CTA is progressively activated after the petition is configured.
 
 **Technical tasks:**
-- [x] Site directory `emoji/` on GitHub Pages.
+- [x] Isolated `emoji/` project directory in the GitHub Pages repository; new concept revision staged on a **separate review branch**, not yet published.
 - [x] Static `index.html`, `style.css`, `campaign.js`.
-- [x] Original campaign illustration `emoji/assets/fridge.svg`.
+- [x] Five small, unbranded, gradient-free refrigerator concept SVGs under `emoji/concepts/` (canonical + four OS-inspired examples).
 - [x] Share button and copy-link fallback.
 - [x] Disabled pending petition state.
 - [x] Native Zebra ZPL 3×2 QR label source.
@@ -80,26 +80,23 @@ Campaign code lives in `node-home/emoji/`. This path is independent from the hom
 
 **Completion gate:** The main CTA matches campaign state and no page functionality depends on the Fridge server.
 
-## PHASE 1A — Experimental fridge emoji implementation (working now; distinct from Unicode approval)
+## PHASE 1A — Flat refrigerator concept review (CURRENT STAGE)
 
-**Purpose:** Show, rather than merely tell, what a refrigerator emoji would do.
+**Current status:** The old custom font, PUA glyph, browser shim, scripts and OS installer were experimental premature artifacts. **They are removed from the review branch.** We are selecting the visual concept before implementing any of that.
 
-- [x] Original single-glyph custom TrueType font with **U+E900** mapping, packaged as an embedded compressed WOFF2 webfont with independent original outlines.
-- [x] Full-color refrigerator SVG usable in browsers and exported as a 256×256 PNG for opt-in chat custom emojis.
-- [x] **`:fridge:` / `:refrigerator:`** shortcode support with small browser DOM shim and MutationObserver for dynamically inserted text.
-- [x] Live prototype in `/emoji/` with copy-shortcode, copy-PUA and image export controls.
-- [x] Experimental OS font installer for Linux/fontconfig, checksum verified; no root permissions.
-- [x] Optional, non-default userscript template for explicitly permitted sites.
-- [x] A developer guide at `/emoji/IMPLEMENTATION.md`, including HTML and OS examples.
-- [ ] Test across multiple browsers and systems; investigate strict site Content Security Policies.
-- [ ] Create a versioned package/website demo matrix if other projects adopt the shortcode.
+- [x] Classic reference: white top-freezer fridge, black handles **on the right**.
+- [x] Remove GE logo, any other branding, gradients and decorative sticky notes.
+- [x] Produce four distinct platform-*inspired* design ideas (soft/rounded, geometric/flat, bold, light/minimal). The names iOS/Windows/Android/Samsung are **not official art or endorsements**.
+- [x] Display concepts in a static mobile-friendly grid at full size and 32/24/18px.
+- [x] Keep all assets, copy, runbooks and QR source in the **`emoji/` subproject**.
+- [x] Add `emoji/DESIGN.md`, `emoji/README.md` and `emoji/DEPLOYMENT.md` for a later Claude handoff.
+- [ ] Charlie reviews and chooses the reference shape.
+- [ ] Merge into `main` only when Charlie explicitly wants the public site changed.
+- [ ] Build any actual font, PUA mapping or opt-in shim **later, on a separate branch**, after design approval.
 
-**Crucial portability distinction:** Private use U+E900 is **not** a standard emoji; copying it into other applications may produce an empty box or an unrelated symbol. The portable human-readable value is `:fridge:`; the rendering shim is opt in. Native emoji picker and vendor emoji fonts cannot be universally overwritten through this static website.
-
-**Campaign message:** “We made a fridge emoji work ourselves, so you can see the gap.” Never claim it is the world's first custom fridge symbol or that Unicode has accepted it.
+**Important:** Unicode defines characters, not vendor appearance. Apple, Microsoft and other vendors may draw wholly different images if a refrigerator emoji is ever approved. No standard emoji is promised or available today.
 
 ---
-
 
 ## PHASE 2 — Publish the new Change.org petition (Days 1–5)
 

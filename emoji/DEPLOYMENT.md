@@ -113,7 +113,7 @@ Expect HTTP 200 (some redirects are normal if they resolve to HTTPS and `/emoji/
 
 Use the browser devtools Network panel to ensure **no external runtime dependencies**. A copy-link button may require HTTPS or localhost, which GitHub Pages provides.
 
-Check mobile social shares. An `og:image` PNG is intentionally **not** supplied until a final approved campaign image exists. A future social raster should be saved under `emoji/assets/` and linked with an absolute URL so LinkedIn/Facebook scrapers can retrieve it.
+Check mobile social shares. The share card is `emoji/assets/og-card.png` (1200×630: headline + before/after chat mockup), linked by absolute URL in `index.html`. The same design at 1200×675 is the Change.org petition image.
 
 ## Phase D — Change.org petition link (configured)
 

@@ -1,9 +1,9 @@
 /* Set this to your new Change.org petition URL to activate every SIGN button. */
-const PETITION_URL = "";
+const PETITION_URL = "https://c.org/wL4PCmNc9s";
 const CAMPAIGN_URL = "https://fridge.run/emoji/";
 (function(){
  const signIds=["sign","sign-bottom"];
- if(PETITION_URL && /^https:\/\/www\.change\.org\//.test(PETITION_URL)){
+ if(PETITION_URL && /^https:\/\/(?:www\.change\.org|change\.org|c\.org)\//.test(PETITION_URL)){
    for(const id of signIds){const el=document.getElementById(id);if(el){el.href=PETITION_URL;el.hidden=false;}}
    document.getElementById("pending").hidden=true;
  }

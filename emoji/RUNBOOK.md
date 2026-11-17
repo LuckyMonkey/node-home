@@ -3,7 +3,7 @@
 
 **Owner and public credit:** Charlie. **Public home:** https://fridge.run/emoji/  
 **Hosting:** GitHub Pages, repository `LuckyMonkey/node-home`, `main` branch, root publishing directory.  
-**Campaign status:** Design approved 17 November 2026; the campaign page, with the experimental Fridge Emoji font demo, publishes from `main` to fridge.run/emoji. The Change.org petition has **not** been created; do not present a signature count or functioning sign button until then.  
+**Campaign status:** Design approved 17 November 2026; the campaign page, with the experimental Fridge Emoji font demo, publishes from `main` to fridge.run/emoji. Charlie supplied a Change.org petition URL on 17 November 2026 (https://c.org/wL4PCmNc9s), now configured for the signing buttons on `main`. Independent verification of the link's destination and active status remains pending. Do not invent a signature count.  
 **Objective:** Build a credible, cheerful, high-visibility campaign to propose a **generic, unbranded refrigerator emoji** for Unicode. The campaign must survive even if the proposal fails.
 **Working budget:** $0–$100 initial out-of-pocket, prioritizing existing equipment, free distribution, and permission-based placements.
 
@@ -98,9 +98,9 @@ Campaign code lives in `node-home/emoji/`. This path is independent from the hom
 
 ---
 
-## PHASE 2 — Publish the new Change.org petition (Days 1–5)
+## PHASE 2 — Connect, verify, and publicize Change.org petition (In progress)
 
-**Goal:** One legitimate petition URL that can be safely printed on physical labels **indirectly through fridge.run**.
+**Goal:** Verify Charlie's supplied petition https://c.org/wL4PCmNc9s, already connected to the site's CTA on `main`, before printing any physical labels. The label QR remains pointed to fridge.run.
 
 Suggested title: **“Add a refrigerator emoji to Unicode!”**
 

@@ -80,6 +80,27 @@ Campaign code lives in `node-home/emoji/`. This path is independent from the hom
 
 **Completion gate:** The main CTA matches campaign state and no page functionality depends on the Fridge server.
 
+## PHASE 1A — Experimental fridge emoji implementation (working now; distinct from Unicode approval)
+
+**Purpose:** Show, rather than merely tell, what a refrigerator emoji would do.
+
+- [x] Original single-glyph custom TrueType font with **U+E900** mapping, packaged as an embedded compressed WOFF2 webfont with independent original outlines.
+- [x] Full-color refrigerator SVG usable in browsers and exported as a 256×256 PNG for opt-in chat custom emojis.
+- [x] **`:fridge:` / `:refrigerator:`** shortcode support with small browser DOM shim and MutationObserver for dynamically inserted text.
+- [x] Live prototype in `/emoji/` with copy-shortcode, copy-PUA and image export controls.
+- [x] Experimental OS font installer for Linux/fontconfig, checksum verified; no root permissions.
+- [x] Optional, non-default userscript template for explicitly permitted sites.
+- [x] A developer guide at `/emoji/IMPLEMENTATION.md`, including HTML and OS examples.
+- [ ] Test across multiple browsers and systems; investigate strict site Content Security Policies.
+- [ ] Create a versioned package/website demo matrix if other projects adopt the shortcode.
+
+**Crucial portability distinction:** Private use U+E900 is **not** a standard emoji; copying it into other applications may produce an empty box or an unrelated symbol. The portable human-readable value is `:fridge:`; the rendering shim is opt in. Native emoji picker and vendor emoji fonts cannot be universally overwritten through this static website.
+
+**Campaign message:** “We made a fridge emoji work ourselves, so you can see the gap.” Never claim it is the world's first custom fridge symbol or that Unicode has accepted it.
+
+---
+
+
 ## PHASE 2 — Publish the new Change.org petition (Days 1–5)
 
 **Goal:** One legitimate petition URL that can be safely printed on physical labels **indirectly through fridge.run**.

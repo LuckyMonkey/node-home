@@ -1,0 +1,8 @@
+/* Fridge Emoji v0.1. Experimental private-use glyph, NOT Unicode emoji. */
+@font-face {font-family: "Fridge Emoji";font-style: normal;font-weight: 400;font-display: swap;src: url("data:font/woff2;base64,d09GMgABAAAAAAKEAAoAAAAABbAAAAI7AAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAABmAANApwdQE2AiQDBgsGAAQgBYY/BzMb+gQRFYwbkK8POLkeTVgNwubQy1PFODNq1FHW8x2KQ2BQXPYHIY1lk2yKwMIRG1FN6KoMACuWVZVAso/ucgJStgI4AyBJGojr67KJDdqqWrlWV6dUC3PEkiTQ+4VOMkuzgFK+z3NNvvI7wPp2t0jwIVY9r6Do0hFMYDg98D2/N06a3w2/fA3HMZ/Xc7Iko+xXce5TwgtDEQpAtEThKxXcnWfybMcsAFQqobwDIkNSOCOVsHaBLzweX42BoI9VAAzwAlKBTADAAACvUDOzPp+SmqCqIu/YynwJpDZ7KBdoB98XIP72FK89tQ1/zIk7jtqKnY5N3U94eb5d3LhLra4BgAACN96fCGn848t9AnykJ3cHVW8U6n8XcCgAQgPYf4I8KYTCw/QfBFBS8QJAUVkw60JyBKkIgYxcQfFhAY4kFmFEsgQvAji7700ENzjE/ICfZwchVh6hBMsbHPXyC0auFsGLaO2pepOt7HjEf61lUGsJmwy5w4Y8i1trBAw8xtJDVplqJB+fYicsTdQ8P+fWJZyiVWcrznHb0+9yFUqucjl0KyW0xJXJs8rWws0IUh7z4jLylY89PdCJcosrMhPNjB6lWMm8BC2DWkvYZMgdAk1TqSrRjCEM/nbtiJKGm2XpYzRnqpEQXiz3kJrNTvjHcr7c4uy8MhFOcVewl6qWzMJoVkObOpGMlT2xprJWzfRWSmiJqxi/aZvkvBJ3DGUG8+nC7u3Urf2xbEkP02J9X3Y0uWCMXlFEA19HAAA=") format("woff2");unicode-range: U+E900;}
+.fridge-emoji-pua {font-family: "Fridge Emoji",sans-serif!important;font-weight:400;font-style:normal;line-height:1;font-size:1.1em;vertical-align:-.12em;}
+.fe-emoji {display:inline-block;inline-size:1.14em;block-size:1.14em;line-height:1;vertical-align:-.19em;white-space:nowrap;}
+.fe-emoji img {display:block;inline-size:100%;block-size:100%;object-fit:contain;}
+.fe-emoji .fe-fallback{display:none;font:400 1.04em/1 "Fridge Emoji",sans-serif;}
+.fe-emoji.fe-image-error img{display:none;}
+.fe-emoji.fe-image-error .fe-fallback{display:inline;}

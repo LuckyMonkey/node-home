@@ -24,6 +24,7 @@ GitHub Pages is configured in **legacy mode**, publishing the `main` branch at `
 | `random/` | Public redirect to the RND randomness service and machine display |
 | `status/` | Live node status; renders the node's own status document |
 | `login/` | OpenID Connect handoff to Keycloak |
+| `emoji/` | Independent refrigerator emoji campaign by Charlie; static GitHub Pages microsite, QR label, and public runbook |
 | `404.html` | Not-found page |
 | `fridge-shell.css` | **The** stylesheet — every page uses this one |
 | `fridge-iam-config.js` | Identity provider endpoint |

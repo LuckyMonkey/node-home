@@ -13,6 +13,8 @@
 <title>We need a fridge emoji! — Charlie's Refrigerator Emoji Campaign</title>
 <link rel="stylesheet" href="./style.css">
 <script src="./campaign.js" defer></script>
+<script src="./fridge-shim.js" defer></script>
+<script src="./emoji-playground.js" defer></script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to campaign</a>
@@ -39,6 +41,26 @@
     </div>
   </section>
   <div class="ticker" aria-label="It's free. It's cool. Takes a second."><div>FREE ✳ COOL ✳ TAKES A SECOND ✳ FREE ✳ COOL ✳ TAKES A SECOND ✳ FREE ✳ COOL ✳ TAKES A SECOND ✳</div></div>
+  <section class="playground" id="live-emoji" aria-labelledby="live-title">
+    <div class="section-num">00 / LIVE EXPERIMENT</div><div class="playground-body">
+      <p class="flag">UNOFFICIAL · WORKING TODAY · OPEN WEB</p>
+      <h2 id="live-title">WE MADE THE FRIDGE EMOJI <em>ANYWAY.</em> :fridge:</h2>
+      <p>Why wait for the standard? We built a tiny, original refrigerator character and a browser shim to show what the world is missing. Try the experimental emoji right here:</p>
+      <div class="demo-card">
+        <div class="demo-meta"><span>FRIDGE EMOJI LAB · V0.1</span><span>PRIVATE-USE U+E900</span></div>
+        <label for="emoji-input">YOUR SENTENCE</label>
+        <input id="emoji-input" maxlength="240" type="text" value="Put the leftovers in the :fridge: please!">
+        <div class="emoji-output" aria-live="polite" aria-label="Rendered experimental emoji"><span id="emoji-preview">Put the leftovers in the :fridge: please!</span></div>
+        <div class="demo-actions"><button class="secondary" id="copy-shortcode" type="button">COPY :FRIDGE:</button><button class="secondary ghost" id="copy-glyph" type="button">COPY GLYPH (U+E900)</button></div>
+        <p class="experiment-note"><strong>Important:</strong> The colorful symbol works wherever our shim is installed. The private-use character only works where our font is available; other apps may show a square. <code>:fridge:</code> is the portable fallback—not an official Unicode emoji.</p>
+      </div>
+      <details class="embed"><summary>Want a fridge emoji on your own website?</summary>
+        <p>Add one script tag, then type <code>:fridge:</code> anywhere in ordinary page text. No backend, user tracking, or build tools.</p>
+        <pre><code>&lt;script src="https://fridge.run/emoji/fridge-shim.js" defer&gt;&lt;/script&gt;</code></pre>
+        <p>For application integrations and Linux font setup: <a href="./IMPLEMENTATION.md">read the implementation guide</a>.</p>
+      </details>
+    </div>
+  </section>
   <section class="proof" aria-labelledby="why"><div class="section-num">01 / THE CASE</div><div>
     <h2 id="why">THE KITCHEN IS MISSING SOMETHING.</h2>
     <p>We have 🍳 cooking, 🥫 canned food, 🧊 ice, and even 📠 a fax machine. But there is no standard refrigerator emoji. A fridge is understood worldwide: a home, groceries, leftovers, food safety, the cold chain, and connected appliances. It deserves a place on the keyboard.</p>
@@ -69,6 +91,6 @@
 </main>
 <footer><div><b>AN INITIATIVE BY CHARLIE.</b> <span>PUBLIC HOME: <a href="https://fridge.run/">FRIDGE.RUN</a></span></div>
 <p>Independent community initiative. Not affiliated with or endorsed by the Unicode Consortium. Petition support creates awareness; <a href="https://www.unicode.org/emoji/proposals.html">Unicode evaluates formal proposals using published criteria</a>. No signatures are collected on this site.</p>
-<p><a href="./RUNBOOK.md">Campaign runbook</a> · Artwork is campaign illustration, not an official emoji rendering.</p></footer>
+<p><a href="./RUNBOOK.md">Campaign runbook</a> · <a href="./IMPLEMENTATION.md">Emoji implementation</a> · Artwork is campaign illustration, not an official emoji rendering.</p></footer>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden>LINK COPIED!</div>
 </body></html>

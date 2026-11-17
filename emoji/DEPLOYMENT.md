@@ -60,7 +60,7 @@ Open **http://localhost:8080/emoji/**. The favicon, CSS, icons, and JS should re
 
 Smoke checks:
 - [ ] Page heading “WHERE'S OUR FRIDGE EMOJI?” appears; hero contains the **small flat white fridge**, not the old blue one.
-- [ ] Four independent OS-inspired SVG thumbnails appear with black handles on **right**.
+- [ ] Four independent OS-inspired SVG thumbnails appear; canonical/iOS/Windows/Android are white top-freezer right-handle models, while Samsung-inspired uses flat stainless French doors over a freezer drawer.
 - [ ] The 32px, 24px, and 18px previews are readable.
 - [ ] Text states the designs are unofficial, **not** actually made by Apple/Microsoft/Google/Samsung.
 - [ ] A pending-petition message appears; **no fake Sign the Petition link**.

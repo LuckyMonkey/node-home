@@ -197,3 +197,66 @@ main{overflow:hidden}
   .before{transform:none}
 }
 @media (min-width:901px){.hero .actions{flex-wrap:nowrap}.hero .btn-quiet{min-width:0;padding:0 30px}.hero .btn-sign{min-width:320px}}
+
+/* why it's needed: stand-ins, six use cases with mock UI, who draws / who wins */
+.standins{max-width:880px;margin:0 auto 56px;text-align:center}
+.standins-title{margin:0 0 16px;font-size:14px;font-weight:600;color:var(--muted)}
+.standins ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.standins li{display:flex;flex-direction:column;align-items:center;gap:6px;padding:20px 10px;border-radius:20px;background:var(--soft)}
+.standins .si{font-size:38px;line-height:40px;height:40px}
+.standins .si img{width:40px;height:40px;vertical-align:top}
+.standins q{font-size:17px;font-weight:600;color:var(--ink);quotes:"“" "”"}
+.standins small{font-size:13px;color:var(--faint)}
+.standins li:not(.right) q{color:var(--muted);text-decoration:line-through;text-decoration-color:rgba(225,75,54,.6);text-decoration-thickness:2px}
+.standins li.right{background:#fff;box-shadow:var(--lift)}
+.standins li.right small{color:#1a7f37;font-weight:600}
+.uses{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.use{padding:20px 22px 24px;display:flex;flex-direction:column}
+.use h3{font-size:20px;margin:20px 0 6px}
+.use .who{margin:0 0 10px;font-size:13px;font-weight:600;color:var(--faint)}
+.use p{margin:0;font-size:15px;color:var(--muted)}
+.use .fridge-emoji{width:1.35em;height:1.35em;vertical-align:-.3em}
+.mock{border-radius:16px;background:var(--soft);padding:16px;min-height:150px;display:flex;flex-direction:column;justify-content:center;gap:8px;font-size:14px;color:var(--ink)}
+.mock-list .ml-head{display:flex;align-items:center;gap:6px;font-weight:700;font-size:15px}
+.mock-list .ml-head span{margin-left:auto;font-weight:500;color:var(--faint);font-size:13px}
+.mock-list .ml-row{display:flex;justify-content:space-between;padding:7px 12px;border-radius:10px;background:#fff;font-size:14px}
+.mock-list .ml-row span:last-child{color:#1a7f37;font-weight:700}
+.mock-list .ml-row.dim span:last-child{color:var(--faint);font-weight:500}
+.mock-push{justify-content:center}
+.mock-push>*{background:rgba(255,255,255,.92)}
+.mp-app{display:flex;justify-content:space-between;padding:10px 14px 0;border-radius:16px 16px 0 0;font-size:11px;color:var(--faint);letter-spacing:.04em}
+.mp-app b{color:var(--muted);font-weight:700}
+.mp-text{margin-top:-8px;padding:6px 14px 12px;border-radius:0 0 16px 16px;font-size:15px;line-height:1.4;box-shadow:0 10px 24px -14px rgba(0,0,0,.3)}
+.mock-label{align-items:center}
+.mock-label>div{width:100%;max-width:240px;background:#fff;text-align:center}
+.lab-top{padding:8px;border-radius:10px 10px 0 0;border:2px dashed #cfd3da;border-bottom:0;font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--faint)}
+.lab-main{margin-top:-8px;padding:6px 8px;border-left:2px dashed #cfd3da;border-right:2px dashed #cfd3da;font-size:22px;font-weight:800;letter-spacing:-.02em}
+.lab-sub{margin-top:-8px;padding:4px 8px 10px;border-radius:0 0 10px 10px;border:2px dashed #cfd3da;border-top:0;font-size:12px;color:var(--muted)}
+.mock-chat{gap:5px}
+.mock-chat .msg{font-size:15px;max-width:85%}
+.makers{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin-top:20px}
+.maker{padding:28px}
+.maker h3{font-size:20px;margin-bottom:8px}
+.maker p{margin:0;font-size:15px;color:var(--muted)}
+@media (max-width:1040px){.uses{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:700px){.uses,.makers{grid-template-columns:1fr}.standins ul{grid-template-columns:repeat(2,minmax(0,1fr))}.standins{margin-bottom:36px}}
+
+/* phones: same page as desktop, just narrower. Left-aligned first screen, buttons side by side, chats right below. */
+@media (max-width:900px){
+  .hero{padding-top:28px;gap:28px}
+  .hero-copy{max-width:620px;margin:0;text-align:left;min-height:0;display:block}
+  .hero .actions{justify-content:flex-start;flex-wrap:nowrap}
+  .hero-chats{max-width:620px;margin:0}
+}
+@media (max-width:520px){
+  .hero .actions .btn{flex:none}
+  .hero .actions .btn-sign{flex:1 1 auto;min-width:0}
+  .hero .actions .btn-quiet{padding:0 22px}
+  .sec-head{text-align:left}
+  .sec-head h2{font-size:34px}
+  .note,.warn,.caption{text-align:left}
+  .closer{text-align:left;padding-left:20px;padding-right:20px}
+  .closer .actions{justify-content:flex-start}
+  .use{padding:16px 16px 20px}
+  .maker{padding:22px}
+}

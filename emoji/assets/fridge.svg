@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 740 840" role="img" aria-labelledby="title desc"><title id="title">A retro white refrigerator</title><desc id="desc">An illustrated two-door refrigerator with metallic handles and vibrant mint and orange comic bursts.</desc>
+<defs><linearGradient id="body" x1="0" x2="1" y1="0" y2=".4"><stop stop-color="#aabdda"/><stop offset=".21" stop-color="#f8fcff"/><stop offset=".73" stop-color="#e6efff"/><stop offset="1" stop-color="#b0c1e7"/></linearGradient><linearGradient id="side" x1="0" x2="1"><stop stop-color="#4a64ab"/><stop offset="1" stop-color="#9ab3e9"/></linearGradient><linearGradient id="handle" x1="0" x2="1"><stop stop-color="#243d77"/><stop offset=".42" stop-color="#b5d6ff"/><stop offset="1" stop-color="#233876"/></linearGradient><filter id="shadow"><feGaussianBlur stdDeviation="21"/></filter></defs>
+<ellipse cx="384" cy="766" rx="270" ry="45" fill="#020852" opacity=".5" filter="url(#shadow)"/>
+<g fill="none" stroke-linecap="round"><path d="M371 8v115M126 84l94 99M596 71l-89 98M20 320l137 42M722 318l-130 43" stroke="#a8ffcf" stroke-width="15"/><path d="M57 573l130-41M684 555l-118-48M166 721l70-85M607 708l-68-81" stroke="#ff8c36" stroke-width="14"/></g>
+<g transform="rotate(-4 360 425)">
+<path d="M179 119 264 94q21-6 36-3l246 27q35 4 35 47v540q0 34-34 43l-88 22-267-27q-28-3-28-36V161q0-33 15-42z" fill="url(#side)" stroke="#09184f" stroke-width="15"/>
+<path d="M194 132 486 131q31 0 31 32v535q0 34-31 34H194q-35 0-35-33V163q0-31 35-31z" fill="url(#body)" stroke="#09184f" stroke-width="15"/>
+<path d="M177 371h323" stroke="#09184f" stroke-width="19"/><path d="M183 374h315" stroke="#fff" stroke-width="5" opacity=".85"/>
+<path d="M207 157h258q22 0 22 22v169H185V178q0-21 22-21z" fill="#fff" opacity=".33"/>
+<path d="M213 405h257q16 0 16 16v272q0 20-23 20H207q-20 0-20-20V424q0-19 26-19z" fill="#fff" opacity=".28"/>
+<rect x="432" y="184" width="25" height="133" rx="12" fill="url(#handle)" stroke="#12285e" stroke-width="5"/><rect x="432" y="420" width="25" height="190" rx="12" fill="url(#handle)" stroke="#12285e" stroke-width="5"/>
+<path d="M206 154q-18 64-18 177m2 95q-4 113 1 233" stroke="#fff" stroke-width="11" opacity=".57" stroke-linecap="round"/>
+<path d="M184 739v25h44v-24m225 0v24h43v-31" fill="#12285e"/>
+</g>
+<g fill="#fff"><path d="m105 207 11 37 36 10-36 10-11 37-11-37-36-10 36-10z"/><path d="m613 155 8 29 29 8-29 8-8 29-8-29-29-8 29-8z"/><path d="m628 616 10 32 32 10-32 10-10 32-10-32-32-10 32-10z"/></g>
+<g stroke="#9df6ff" stroke-width="8" stroke-linecap="round" opacity=".85"><path d="M65 480h57m-28-28v56m-20-45 40 35m0-35-40 35M617 451h65m-32-32v65m-24-56 48 46m0-46-48 46"/></g></svg>

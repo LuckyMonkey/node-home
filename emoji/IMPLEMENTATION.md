@@ -13,6 +13,10 @@
 | **Windows or macOS** | Decode `FridgeEmoji-Regular.ttf.b64` and install using the native font manager | Same private-use/font-selection limits |
 | **Unknown app, chat, clipboard, messaging** | Plain `:fridge:` shortcode is the human-readable transport | Without integration it stays literal text |
 
+### Export for custom emoji platforms
+
+The live emoji lab includes **EXPORT EMOJI PNG**. The browser rasterizes the campaign SVG to a 256×256 transparent PNG entirely on the visitor’s device; no upload occurs. A server or group administrator can then manually add that file as a custom emoji/sticker where the service allows it. This is a separate app-specific convention, not cross-platform Unicode support.
+
 ## Shortcode / glyph contract
 
 - Canonical portable text: `:fridge:`

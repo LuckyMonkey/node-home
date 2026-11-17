@@ -18,6 +18,27 @@ function ready(){
  }
  document.getElementById("copy-shortcode")?.addEventListener("click",function(){copy(":fridge:","PORTABLE :FRIDGE: COPIED");});
  document.getElementById("copy-glyph")?.addEventListener("click",function(){copy("\uE900","PRIVATE-USE U+E900 COPIED (REQUIRES FONT)");});
+ document.getElementById("export-png")?.addEventListener("click",function(){
+   var img=new Image();
+   img.onload=function(){
+     var canvas=document.createElement("canvas");canvas.width=256;canvas.height=256;
+     var ctx=canvas.getContext("2d");
+     if(!ctx){notify("IMAGE EXPORT NOT SUPPORTED");return;}
+     ctx.clearRect(0,0,256,256);
+     ctx.drawImage(img,0,0,256,256);
+     canvas.toBlob(function(blob){
+       if(!blob){notify("IMAGE EXPORT FAILED");return;}
+       var url=URL.createObjectURL(blob),a=document.createElement("a");
+       a.href=url;a.download="fridge-emoji-unofficial.png";
+       document.body.appendChild(a);a.click();a.remove();
+       setTimeout(function(){URL.revokeObjectURL(url)},10000);
+       notify("256PX ICON EXPORTED");
+     },"image/png");
+   };
+   img.onerror=function(){notify("ICON FAILED TO LOAD");};
+   img.src="./assets/fridge-emoji.svg";
+ });
+
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",ready,{once:true});else ready();
 })();

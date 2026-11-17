@@ -46,14 +46,13 @@ Names are internal design tags only. A company can draw an entirely different fr
 
 When the design is locked, create one generic candidate suitable for a Unicode proposal with exact image dimensions required by the **then-current** Unicode emoji guidelines (the historical examples used 18×18 and 72×72, color and black-and-white). Convert the chosen vector to raster with deliberate pixel hinting; do not rely on arbitrary shrink-to-fit. Check design licensing, edit rights, and Unicode's agreement. The current 64px SVGs are **concept art, not a submitted/approved emoji**.
 
-## Future font project / Claude handoff
+## Font (built 2026-11-17)
 
-The font will be a **later** deliverable:
-1. Agree on the single base glyph.
-2. Create **separate** monochrome glyph paths that scale cleanly; build a test font with a deliberately scoped private-use mapping only after sign-off.
-3. Optionally export WOFF2, TTF, SVG, and PNG for browser/community usage.
-4. Document that **PUA characters are not universal Unicode emoji** and can collide with other fonts. Use `:fridge:` text for portable app integrations.
-5. Keep a future font builder and sources under `emoji/font/`, with a separate readme, reproducible build, tests and release tag.
-6. Later create platform-specific installers/user scripts only with explicit opt-in, no hijacking OS emoji fonts.
+The **Fridge Emoji** font is built from the classic reference only (never the Samsung-inspired variant): a monochrome
+glyph traced on the same 64-unit grid (`font/src/fridge-glyph.svg`), with 4-unit walls so the freezer seam and both
+right-side handles survive at 16 px. It maps one Private Use code point, **U+E900**, which is this project's
+convention and **not** a Unicode emoji; `:fridge:` text stays the portable form. Build, validation, install and licence
+details: `font/README.md`. The colour SVGs stay the reference artwork; a font glyph is one colour like text.
 
-**Do not auto-create or deploy a font merely because the SVG concepts exist.**
+Rules that still hold: no hijacking of OS emoji fonts, installers only with the user's explicit opt-in, no claim that
+U+E900 is universal, and a new design pass here before any change to the glyph.

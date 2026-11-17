@@ -1,7 +1,7 @@
 # Getting the Refrigerator Emoji campaign running
 ## Operator and Claude handoff / GitHub Pages / concept-only version
 
-**Project owner and credited organizer:** Charlie. **Site:** `https://fridge.run/emoji/`. **Repository:** `LuckyMonkey/node-home`. **Code directory:** `emoji/`. **Review branch:** `emoji-concept-only`. This page is a **concept gallery** and petition landing page, not a functioning Unicode emoji font.
+**Project owner and credited organizer:** Charlie. **Site:** `https://fridge.run/emoji/`. **Repository:** `LuckyMonkey/node-home`. **Code directory:** `emoji/`. **Review branch:** `emoji-concept-only`. This page is the campaign's concept gallery and petition landing page, plus a working **experimental** fridge: the Fridge Emoji font (U+E900, Private Use, not official Unicode) and an opt-in `:fridge:` shortcode.
 
 This guide is written to be executed by Charlie or an AI coding assistant on a machine with git and a browser. It is intentionally explicit to prevent accidental changes to the rest of Fridge.run.
 
@@ -65,6 +65,8 @@ Smoke checks:
 - [ ] Text states the designs are unofficial, **not** actually made by Apple/Microsoft/Google/Samsung.
 - [ ] A pending-petition message appears; **no fake Sign the Petition link**.
 - [ ] Share button copies a clean `https://fridge.run/emoji/` link (or opens native share UI).
+- [ ] *02 / Try it*: the font glyph shows as a fridge (caption says "Font loaded ✓"); typing `:fridge:` in the box renders a fridge; Copy, Copy U+E900 (with its warning) and Export PNG work.
+- [ ] `http://localhost:8080/emoji/tests/shim-test.html` ends with "… passed, 0 failed".
 - [ ] Page still contains meaningful content with JS disabled.
 - [ ] Mobile view works at ~320, 375, 390, 768 px; Firefox and Safari preferred.
 - [ ] Keyboard focus and contrast are acceptable; no page auto-play audio.
@@ -73,7 +75,9 @@ Smoke checks:
 Optional syntax/text checks, from repo root:
 
 ```bash
-node --check emoji/campaign.js
+node --check emoji/campaign.js emoji/fridge-emoji.js emoji/demo.js
+sh emoji/font/build.sh            # rebuilds the font and runs validate.py (must end "OK: 0 failure(s)")
+git status --short emoji/font     # a rebuild from unchanged source must not change the font files
 grep -RniE 'linearGradient|radialGradient|GE badge|<script[^>]+fridge-shim' emoji/index.html emoji/concepts || true
 git diff --check
 ```
@@ -86,7 +90,7 @@ All preparation lives on `emoji-concept-only` rather than on `main`. For review,
 
 Before merging:
 1. Review all changed files in the PR; confirm only `emoji/` paths are touched.
-2. Check that no removed font/installer links remain.
+2. Check that no links point at the *old* removed prototype files (`assets/FridgeEmoji-Regular.ttf.b64`, `fridge-shim.js`, `fridge-emoji.user.js`, `emoji/install-linux.sh`); the new font lives in `emoji/font/`.
 3. Check that `emoji/campaign.js` still has `PETITION_URL = ""` unless the actual petition exists.
 4. Double-check that default Pages branch and root have not been changed.
 5. Merge using GitHub only when ready.
@@ -101,6 +105,8 @@ After merge, open **https://fridge.run/emoji/** from an incognito mobile browser
 curl -I https://fridge.run/emoji/
 curl -I https://fridge.run/emoji/style.css
 curl -I https://fridge.run/emoji/concepts/classic-base.svg
+curl -I https://fridge.run/emoji/font/FridgeEmoji-Regular.woff2   # 200, content-type font/woff2
+curl -I https://fridge.run/emoji/fridge-emoji.js
 ```
 
 Expect HTTP 200 (some redirects are normal if they resolve to HTTPS and `/emoji/`). If a file 404s, check whether the correct `main` commit was published and whether the URL's case matches the filename.
@@ -140,28 +146,19 @@ Follow current submission guidelines: https://www.unicode.org/emoji/proposals.ht
 
 A Change.org petition is a public-awareness tool, **not** part of the technical usage-evidence standard. Build a separate empirical research dossier, choose one generic, unbranded reference drawing, and produce the image dimensions and licenses required **at time of submission**. Credit Charlie as organizer and proposer if Charlie writes/submits it. Do not present this site's OS-inspired illustrations as official platform artwork.
 
-## Phase G — LATER: actual emoji font and compatibility shims (Claude task)
+## Phase G — The font and the `:fridge:` shortcode (built 2026-11-17)
 
-**NOT IN SCOPE FOR THIS BRANCH. No font should be generated during concept review.**
+Implemented on branch `emoji-font`, all under `emoji/`:
 
-Once Charlie approves the shape, open a **new branch** such as `emoji-font-prototype` and create a nested folder `emoji/font/` (keep this subproject isolated).
+- `emoji/font/`: glyph source, `build.py` (fontTools), `validate.py` (OTS, cmap, metrics, FreeType renders at 16/18/24/72),
+  `build.sh`, `install-linux.sh` (per-user, no root), `FridgeEmoji-Regular.ttf` + `.woff2`, `OFL.txt`, `README.md`.
+- `emoji/fridge-emoji.css` (`@font-face` limited to U+E900) and `emoji/fridge-emoji.js` (opt-in renderer; skips form
+  fields, contenteditable, code; DOM nodes only, never HTML parsing).
+- `emoji/index.html` section *02 / Try it* + `emoji/demo.js`; `emoji/tests/shim-test.html`.
 
-The future Claude handoff should implement the following in order:
-
-1. Read `emoji/DESIGN.md` and pick the final base concept. Make small-pixel optical adjustments at 16, 18, 24 and 72 px.
-2. Define license, source provenance and font build pipeline first; commit actual generator/source files.
-3. Make a monochrome single glyph in a TTF using an appropriate font builder. Use a **private-use area** codepoint solely for opt-in demos, and record why it **isn't** universal or officially assigned.
-4. Optionally generate WOFF2 if dependency/runtime constraints justify it; test with fontTools/`ots-sanitize` or equivalent. Never store arbitrary unverified base64 blobs as the sole source of truth.
-5. Create a *separate* full-color SVG/PNG rendering for the website. Do not promise that a basic monochrome TTF becomes a color emoji on every OS.
-6. Add a simple opt-in `:fridge:` shortcode renderer in a new isolated module, transforming only rendered text nodes, not text users type into forms. No global monkeypatching or intercepting private data.
-7. Add automated checks for missing glyph, collisions, CSS loading, and fallback when the font is absent.
-8. Consider platform-specific integrations only with explicit user installation; iOS/Android native emoji pickers cannot be universally modified by shipping an HTML page or ordinary font.
-9. Keep all experimental files under `emoji/font/` and version them independently; do not auto-edit the parent website's `main` branch.
-10. Re-review accessibility, licensing, CSP, privacy, and deployment before merging any font work.
-
-### Definition of done for the LATER font project
-
-A reproducible build, readable glyph at 18px, screenshots on at least 2 desktop browsers and a mobile browser, clear limitations, tested fallback, portable `:fridge:` convention, and written rollback steps. Then and only then replace the current **concept-only** language on `/emoji/` with accurate functional claims.
+To change the glyph: edit `emoji/font/src/fridge-glyph.svg`, run `sh emoji/font/build.sh`, look at
+`emoji/font/build/previews/`, commit source + fonts together, then go through Phases A–C. Untested platforms are listed
+in `emoji/font/README.md`; do not claim support beyond that table.
 
 ## Phase H — Rollback
 
@@ -177,7 +174,8 @@ This subproject does not modify the main site's infrastructure. If the **future 
 | Share button does nothing | Verify HTTPS/localhost clipboard permission or native share support; fallback shows a prompt. |
 | Petition button hidden | This is intentional while `PETITION_URL = ""`. |
 | QR scan works but cannot sign | Petition is not live or petition URL is wrong; stop sticker distribution. |
-| A font/installer link returns 404 | Correct: the concept-only branch deliberately **removed** premature font artifacts. |
+| A font link returns 404 | The new font is `emoji/font/FridgeEmoji-Regular.(ttf|woff2)`; the old `assets/*.b64` prototype is gone on purpose. |
+| U+E900 shows a box in Firefox on Ubuntu | Snap Firefox ignores `~/.local/share/fonts`; pages must load the web font (fridge.run/emoji does). See `font/README.md`. |
 | Non-emoji SVG appears on other websites | Their pages must independently support/render it; it is not an encoded Unicode emoji. |
 
-**Immediate next action:** Review `emoji/concepts/classic-base.svg` and gallery; give Charlie final say on the silhouette before any font work.
+**Immediate next action:** Create the Change.org petition, then set `PETITION_URL` (Phase D).

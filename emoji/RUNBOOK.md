@@ -3,7 +3,7 @@
 
 **Owner and public credit:** Charlie. **Public home:** https://fridge.run/emoji/  
 **Hosting:** GitHub Pages, repository `LuckyMonkey/node-home`, `main` branch, root publishing directory.  
-**Campaign status:** Concept review, 17 November 2026. The revised design exists on the `emoji-concept-only` branch **and is not published until merge to main**. The Change.org petition has **not** been created; do not present a signature count or functioning sign button until then.  
+**Campaign status:** Design approved 17 November 2026; the campaign page, with the experimental Fridge Emoji font demo, publishes from `main` to fridge.run/emoji. The Change.org petition has **not** been created; do not present a signature count or functioning sign button until then.  
 **Objective:** Build a credible, cheerful, high-visibility campaign to propose a **generic, unbranded refrigerator emoji** for Unicode. The campaign must survive even if the proposal fails.
 **Working budget:** $0–$100 initial out-of-pocket, prioritizing existing equipment, free distribution, and permission-based placements.
 
@@ -82,7 +82,7 @@ Campaign code lives in `node-home/emoji/`. This path is independent from the hom
 
 ## PHASE 1A — Flat refrigerator concept review (CURRENT STAGE)
 
-**Current status:** The old custom font, PUA glyph, browser shim, scripts and OS installer were experimental premature artifacts. **They are removed from the review branch.** We are selecting the visual concept before implementing any of that.
+**Current status (2026-11-17):** The design is approved (classic white top-freezer). An **experimental** font (Fridge Emoji, U+E900, Private Use) and an opt-in `:fridge:` shortcode are built and demonstrated at fridge.run/emoji (*Try it*). Talk about them as a demo of the missing emoji, never as an official emoji or a Unicode encoding.
 
 - [x] Classic reference: white top-freezer fridge, black handles **on the right**.
 - [x] Remove GE logo, any other branding, gradients and decorative sticky notes.
@@ -92,7 +92,7 @@ Campaign code lives in `node-home/emoji/`. This path is independent from the hom
 - [x] Add `emoji/DESIGN.md`, `emoji/README.md` and `emoji/DEPLOYMENT.md` for a later Claude handoff.
 - [ ] Charlie reviews and chooses the reference shape.
 - [ ] Merge into `main` only when Charlie explicitly wants the public site changed.
-- [ ] Build any actual font, PUA mapping or opt-in shim **later, on a separate branch**, after design approval.
+- [x] Experimental font, PUA mapping and opt-in shim built after design approval (`emoji/font/`, `fridge-emoji.js`).
 
 **Important:** Unicode defines characters, not vendor appearance. Apple, Microsoft and other vendors may draw wholly different images if a refrigerator emoji is ever approved. No standard emoji is promised or available today.
 

@@ -69,3 +69,37 @@ footer a{color:var(--mint)}
 @media(max-width:850px){.hero{grid-template-columns:1fr}.hero-copy{padding:44px 24px 23px}.hero-art{min-height:350px}.hero-frame{min-height:295px;max-width:315px}.hero-frame img{width:145px}.hero h1{font-size:clamp(46px,9vw,80px)}.block{grid-template-columns:1fr;gap:12px;padding:65px 24px}.steps{grid-template-columns:1fr}}
 @media(max-width:530px){.topline{font-size:9px;letter-spacing:.04em}.topline span:first-child{display:none}.hero h1{font-size:clamp(40px,11vw,60px)}.concept-grid{grid-template-columns:1fr 1fr;gap:12px}.concept-card{padding:12px}.concept-card>img{width:77px}.concept-card h3{font-size:16px}.concept-card p{font-size:12px;min-height:55px}.sizes{gap:5px}.sizes span{flex-basis:100%}.hero-star{font-size:60px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.btn{transition:none}}
+/* 02 / TRY IT: the working experimental fridge (font, shortcode, PNG). */
+.try code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.92em;background:#eef0f7;padding:.05em .3em;border:1px solid #d7d8dc}
+.compare{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:0 0 22px}
+.compare figure{margin:0;background:#fff;border:3px solid var(--ink);box-shadow:5px 5px 0 var(--ink);padding:14px;display:flex;flex-direction:column;gap:10px}
+.cmp-art{height:96px;display:grid;place-items:center;border-bottom:2px solid #d7d8dc}
+.cmp-art img{width:72px;height:72px}
+.cmp-art .fridge-glyph{font-size:72px;color:var(--ink)}
+.cmp-art .cmp-code{font-size:22px;font-weight:900}
+.cmp-fallback{font:72px/1 Georgia,"Times New Roman",serif;color:var(--ink)}
+.compare figcaption{font-size:13px;line-height:1.45}
+.compare figcaption b{display:block;font-size:11px;letter-spacing:.08em;color:var(--blue);margin-bottom:3px}
+.ladder{display:grid;gap:8px;background:#fff;border:3px solid var(--ink);padding:14px 16px;margin:0 0 22px;max-width:520px}
+.ladder>div{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap}
+.ladder b{width:44px;font-size:11px;letter-spacing:.08em;color:var(--blue)}
+.rung{display:inline-flex;flex-direction:column;align-items:center;gap:2px}
+.rung small{font-size:10px;font-weight:900;color:#414755}
+.rung .fridge-glyph{color:var(--ink)}
+.play{display:grid;gap:10px;max-width:760px;margin:0 0 18px}
+.play>label,.play-mode legend{font-size:12px;font-weight:900;letter-spacing:.08em}
+.play textarea{font:18px/1.45 Arial,Helvetica,sans-serif;padding:12px;border:3px solid var(--ink);resize:vertical;width:100%;background:#fff;color:var(--ink)}
+.play-mode{border:0;margin:0;padding:0;display:flex;gap:18px;flex-wrap:wrap;align-items:center}
+.play-mode legend{float:left;margin-right:12px}
+.play-out{margin:0;min-height:58px;font-size:20px;line-height:1.5;background:#e9fff3;border:3px solid var(--ink);padding:12px 14px;overflow-wrap:anywhere}
+.tools{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin:4px 0 14px}
+.btn-white{background:#fff;color:var(--ink)}
+.png-pick{display:inline-flex;align-items:center;gap:8px;font-weight:900;font-size:12px}
+.png-pick select{font:inherit;font-size:15px;padding:12px 8px;border:3px solid var(--ink);background:#fff;color:var(--ink);min-height:50px}
+.warn{font-size:13px;line-height:1.6;max-width:860px;background:#fff1e7;border-left:5px solid var(--orange);padding:10px 14px;margin:0 0 22px}
+.get details{margin-top:8px;max-width:860px}
+.get summary{cursor:pointer;font-weight:900;font-size:13px;letter-spacing:.06em}
+.get pre{overflow-x:auto;background:var(--dark);color:#f5f6ff;padding:14px;font-size:12px;line-height:1.5}
+.get pre code{background:none;border:0;padding:0;color:inherit}
+@media(max-width:1200px){.compare{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:530px){.compare{gap:10px}.compare figure{padding:10px}.cmp-art{height:84px}.ladder>div{gap:10px}.tools .btn{flex:1 1 100%}.png-pick{flex:1 1 100%}.png-pick .btn{flex:1}}

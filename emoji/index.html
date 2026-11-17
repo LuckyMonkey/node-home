@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#f7f6f2">
+<meta name="theme-color" content="#ffffff">
 <meta name="description" content="There's a fax machine emoji but no refrigerator. Charlie's campaign for a fridge emoji, with concept art and a working experimental fridge glyph you can try today.">
 <link rel="canonical" href="https://fridge.run/emoji/">
 <link rel="icon" type="image/svg+xml" href="./concepts/classic-base.svg">
@@ -17,44 +17,34 @@
 <meta property="og:image:alt" content="A simple white top-freezer refrigerator next to the words: Where's our fridge emoji?">
 <meta name="twitter:card" content="summary_large_image">
 <title>Where's our fridge emoji? · Charlie's campaign</title>
-<link rel="stylesheet" href="./style.css">
-<link rel="stylesheet" href="./fridge-emoji.css">
-<script src="./campaign.js" defer></script>
-<script src="./fridge-emoji.js" defer></script>
-<script src="./demo.js" defer></script>
+<link rel="stylesheet" href="./style.css?v=20261117c">
+<link rel="stylesheet" href="./fridge-emoji.css?v=20261117c">
+<script src="./campaign.js?v=20261117c" defer></script>
+<script src="./fridge-emoji.js?v=20261117c" defer></script>
+<script src="./demo.js?v=20261117c" defer></script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to the campaign</a>
 <header class="bar">
   <a class="brand" href="./"><img src="./concepts/classic-base.svg" width="26" height="26" alt=""><span>Refrigerator Emoji Initiative</span></a>
-  <nav aria-label="Sections"><a href="#concepts">Concepts</a><a href="#try">Try it</a><a href="#campaign">The plan</a><a class="home" href="/">fridge.run</a></nav>
+  <nav aria-label="Sections"><a href="#before-after">Before &amp; after</a><a href="#concepts">Concepts</a><a href="#try">Try it</a><a href="#campaign">The plan</a><a class="home" href="/">fridge.run</a></nav>
 </header>
 <main id="main">
   <section class="hero">
-    <div class="hero-copy">
-      <p class="kicker">A small, ridiculously reasonable request</p>
-      <h1>Where's our <span class="cold">fridge</span> emoji?</h1>
-      <p class="lede">There's a <span aria-hidden="true">📠</span> fax machine emoji. There's a <span aria-hidden="true">🪠</span> plunger. There is still no refrigerator, the one appliance in nearly every kitchen. Let's fix that.</p>
-      <div class="actions">
-        <a class="btn btn-sign" id="sign" href="#" target="_blank" rel="noopener noreferrer" hidden>Sign the petition <span aria-hidden="true">↗</span></a>
-        <p id="pending" class="pending">The petition opens soon. Share the campaign in the meantime.</p>
-        <button id="share" class="btn btn-quiet" type="button">Share the campaign</button>
-      </div>
-      <p class="slogan">It's free. It's cool. Takes a second.</p>
+    <div class="app-icon" aria-hidden="true"><img src="./concepts/classic-base.svg" width="72" height="72" alt=""></div>
+    <p class="kicker">A small, ridiculously reasonable request</p>
+    <h1>Where's our fridge&nbsp;emoji?</h1>
+    <p class="lede">There's a fax machine emoji. There's a plunger. There is still no refrigerator, the one appliance in nearly every kitchen.</p>
+    <div class="actions center">
+      <a class="btn btn-sign" id="sign" href="#" target="_blank" rel="noopener noreferrer" hidden>Sign the petition</a>
+      <p id="pending" class="pending">The petition opens soon. Share the campaign in the meantime.</p>
+      <button id="share" class="btn btn-quiet" type="button">Share</button>
     </div>
-    <figure class="hero-art">
-      <div class="frost">
-        <img src="./concepts/classic-base.svg" alt="Concept art: a plain white top-freezer refrigerator with two black handles on the right, no logo" width="240" height="240">
-      </div>
-      <figcaption><span class="tag">Concept</span> White · top freezer · handles on the right · not yet Unicode</figcaption>
-    </figure>
+    <p class="slogan">It's free. It's cool. Takes a second.</p>
   </section>
 
-  <section class="sec chats" id="before-after" aria-labelledby="ba-heading">
-    <header class="sec-head">
-      <p class="kicker">01 · The problem, in one text</p>
-      <h2 id="ba-heading">Try telling someone where the leftovers are.</h2>
-    </header>
+  <section class="showcase" id="before-after" aria-labelledby="ba-heading">
+    <h2 id="ba-heading" class="visually-hidden">Before and after: telling someone where the leftovers are</h2>
     <div class="phones">
       <figure class="phone before">
         <figcaption class="phone-label">Today</figcaption>
@@ -77,12 +67,12 @@
         </div>
       </figure>
     </div>
-    <p class="note">Mockups for illustration, not screenshots of a real app. The fridge on the right is this campaign's concept art; a real emoji would be drawn by each platform.</p>
+    <p class="caption">Mockups, not screenshots of a real app. A real emoji would be drawn by each platform.</p>
   </section>
 
   <section class="sec" id="concepts" aria-labelledby="concept-heading">
     <header class="sec-head">
-      <p class="kicker">02 · One object, many drawings</p>
+      <p class="kicker">One object, many drawings</p>
       <h2 id="concept-heading">It should look like a fridge.</h2>
       <p class="intro">Unicode would standardize the refrigerator as a <em>character</em>, not one illustration: Apple, Microsoft, Google, Samsung and others would each draw their own. These are <strong>our own unofficial explorations</strong>, not previews from those companies.</p>
     </header>
@@ -117,7 +107,7 @@
 
   <section class="sec try" id="try" aria-labelledby="try-heading">
     <header class="sec-head">
-      <p class="kicker">03 · An experimental fridge that works today</p>
+      <p class="kicker">Works today, experimentally</p>
       <h2 id="try-heading">Type a fridge right now.</h2>
       <p class="intro">Until Unicode encodes a refrigerator, here's a working stand-in: <strong>Fridge Emoji</strong>, a tiny font with one fridge at <strong>U+E900</strong>, and a <code>:fridge:</code> shortcode any website can choose to support. U+E900 is a Private Use code point, <strong>our own convention, not an official emoji</strong>, so it only works where the font is.</p>
     </header>
@@ -162,7 +152,7 @@
 
   <section class="sec" id="campaign" aria-labelledby="campaign-heading">
     <header class="sec-head">
-      <p class="kicker">04 · The plan</p>
+      <p class="kicker">The plan</p>
       <h2 id="campaign-heading">Get it on the keyboard.</h2>
       <p class="intro">Petition signatures build awareness; Unicode doesn't count them as usage evidence, so the technical proposal is prepared separately, under Unicode's own rules.</p>
     </header>
@@ -186,10 +176,9 @@
   </section>
 
   <section class="closer">
-    <img src="./concepts/classic-base.svg" width="88" height="88" alt="">
     <h2>One small appliance.<br>One global keyboard.</h2>
     <div class="actions center">
-      <a id="sign-bottom" class="btn btn-sign" href="#" target="_blank" rel="noopener noreferrer" hidden>Sign the petition <span aria-hidden="true">↗</span></a>
+      <a id="sign-bottom" class="btn btn-sign" href="#" target="_blank" rel="noopener noreferrer" hidden>Sign the petition</a>
       <button id="share-bottom" class="btn btn-quiet" type="button">Tell someone</button>
     </div>
     <p class="slogan">Free. Cool. Takes a second.</p>

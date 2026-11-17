@@ -115,17 +115,23 @@ Use the browser devtools Network panel to ensure **no external runtime dependenc
 
 Check mobile social shares. An `og:image` PNG is intentionally **not** supplied until a final approved campaign image exists. A future social raster should be saved under `emoji/assets/` and linked with an absolute URL so LinkedIn/Facebook scrapers can retrieve it.
 
-## Phase D — Connect Change.org LATER (only after creation)
+## Phase D — Change.org petition link (configured)
 
-The petition does not exist yet. Once Charlie creates it, edit exactly this line in **`emoji/campaign.js`**:
+On 17 November 2026 Charlie supplied the petition short link:
+
+`https://c.org/wL4PCmNc9s`
+
+`emoji/campaign.js` now contains:
 
 ```js
-const PETITION_URL = "https://www.change.org/p/your-real-petition-slug";
+const PETITION_URL = "https://c.org/wL4PCmNc9s";
 ```
 
-The script currently accepts `https://www.change.org/` URLs; confirm the actual destination and update the validator only if Change.org supplies a different legitimate hostname. Do not use the previous **closed** petition. Sign buttons automatically unhide, and the pending banner hides.
+The validator allows the official `c.org` Change.org short-link host and normal Change.org URLs. Both Sign buttons become visible and the "coming soon" banner hides when JavaScript runs.
 
-**Before changing live site:** open new Change.org link in a private browser; check the campaign title, Charlie attribution, status and ability to sign. Test both buttons after deploy. Do not invent a signature count.
+**Verification still required:** Open the link in a private browser and confirm it reaches Charlie's **active refrigerator emoji** petition, permits signing, and contains the intended campaign attribution. The redirect could not be independently fetched in the assistant environment. Do not claim a signature count from this configuration alone.
+
+If the petition link changes or closes, edit `PETITION_URL` and recheck both buttons. Keep print QR labels pointing to the permanent `https://fridge.run/emoji/` landing page, not to the short link.
 
 ## Phase E — QR sticker pilot AFTER petition works
 

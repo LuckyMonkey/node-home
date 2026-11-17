@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title">
+<title id="title">Refrigerator — unofficial experimental emoji</title>
+<defs><linearGradient id="steel" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#8bace4"/><stop offset=".24" stop-color="#f7fcff"/><stop offset=".73" stop-color="#d2e3ff"/><stop offset="1" stop-color="#8aa8df"/></linearGradient><linearGradient id="door" x1="0" x2="1" y1=".2" y2="1"><stop stop-color="#fff"/><stop offset=".42" stop-color="#d1e6ff"/><stop offset=".8" stop-color="#eef8ff"/><stop offset="1" stop-color="#9fc4ef"/></linearGradient><linearGradient id="handle" x1="0" x2="1"><stop stop-color="#0b1a3c"/><stop offset=".45" stop-color="#5278ac"/><stop offset="1" stop-color="#19254d"/></linearGradient></defs>
+<g stroke="#142342" stroke-linejoin="round">
+<path d="M29 108h13v14H29zm57 0h13v14H86z" fill="#243b63" stroke-width="3"/>
+<rect x="13" y="4" width="102" height="112" rx="17" fill="url(#steel)" stroke-width="7"/>
+<rect x="20" y="11" width="88" height="41" rx="10" fill="url(#door)" stroke-width="3"/>
+<rect x="20" y="57" width="88" height="51" rx="10" fill="url(#door)" stroke-width="3"/>
+<rect x="29" y="21" width="9" height="23" rx="4.5" fill="url(#handle)" stroke-width="2"/>
+<rect x="29" y="64" width="9" height="34" rx="4.5" fill="url(#handle)" stroke-width="2"/>
+</g>
+<path d="M46 17h46" stroke="white" stroke-width="4" stroke-linecap="round" opacity=".8"/>
+<path d="M46 63h46" stroke="white" stroke-width="3" stroke-linecap="round" opacity=".55"/>
+</svg>

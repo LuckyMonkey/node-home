@@ -2,6 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 <url><loc>https://fridge.run/</loc></url>
 <url><loc>https://fridge.run/status/</loc></url>
+<url><loc>https://fridge.run/emoji/</loc></url>
 <url><loc>https://fridge.run/luckymonkey/</loc></url>
 <url><loc>https://go.fridge.run/certs/</loc></url>
 <url><loc>https://go.fridge.run/wiki/</loc></url>

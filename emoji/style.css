@@ -175,3 +175,12 @@ main{overflow:hidden}
   .actions .btn{flex:1 1 100%}.tools .btn{flex:1 1 auto}.png-pick{flex:1 1 100%}.png-pick .btn{flex:1}
 }
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.btn{transition:none}.typing span{animation:none}}
+
+/* big calls to action (hero + closer) */
+.hero .actions,.closer .actions{gap:16px}
+.hero .btn,.closer .btn{min-height:76px;padding:0 48px;font-size:22px;letter-spacing:-.015em}
+.hero .btn-sign,.closer .btn-sign{min-width:340px;font-weight:650;box-shadow:0 14px 32px -12px rgba(0,0,0,.55)}
+.hero .btn-sign:hover,.closer .btn-sign:hover{transform:translateY(-1px);box-shadow:0 18px 38px -12px rgba(0,0,0,.6)}
+.hero .btn-quiet,.closer .btn-quiet{min-width:180px}
+.hero .slogan,.closer .slogan{font-size:15px;margin-top:22px}
+@media (max-width:520px){.hero .btn,.closer .btn{min-height:66px;font-size:20px;min-width:0;padding:0 24px}}

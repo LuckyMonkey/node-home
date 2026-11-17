@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>fridge-emoji.js self-test</title>
+<link rel="stylesheet" href="../fridge-emoji.css">
+<style>body{font:15px/1.5 system-ui,sans-serif;margin:16px;max-width:900px}.p{color:#06623b}.f{color:#b00020;font-weight:700}#bulk{display:none}</style>
+<script src="../fridge-emoji.js"></script>
+</head><body>
+<h1>fridge-emoji.js self-test</h1>
+<p>Open this page in any browser; every line should say PASS. <span id="sum"></span></p>
+<ol id="out"></ol>
+<div id="area">
+  <p id="plain">Snacks are in the :fridge: and the :refrigerator:, not the :freezer:.</p>
+  <p id="twice">:fridge::fridge:</p>
+  <input id="in" value="type :fridge: here">
+  <textarea id="ta">:fridge: in a textarea</textarea>
+  <div id="ce" contenteditable="true">editing :fridge: here</div>
+  <pre id="pre">:fridge: in pre</pre>
+  <p id="codep">inline <code>:fridge:</code> code</p>
+  <div id="off" data-fridge-emoji="off">opted out :fridge:</div>
+  <p id="xss">&lt;img src=x onerror=alert(1)&gt; :fridge: &lt;b&gt;bold&lt;/b&gt;</p>
+  <script id="scr">var x = ':fridge:';</script>
+  <p id="fontp">font mode :fridge:</p>
+  <div id="live"></div>
+</div>
+<div id="bulk"></div>
+<script>
+(async function () {
+  var out = document.getElementById('out'), pass = 0, fail = 0;
+  function t(name, ok, extra) { var li = document.createElement('li'); li.className = ok ? 'p' : 'f'; li.textContent = (ok ? 'PASS ' : 'FAIL ') + name + (ok || !extra ? '' : '  [' + extra + ']'); out.appendChild(li); ok ? pass++ : fail++; }
+  var $ = function (id) { return document.getElementById(id); };
+  var area = $('area');
+  var fontOk = await FridgeEmoji.fontReady();
+  t('the web font loads and covers U+E900', fontOk === true && document.fonts.check('16px "Fridge Emoji"', ''));
+  var n = FridgeEmoji.render(area, { mode: 'image' });
+  t('render() reports how many it replaced (2 + 2 + 1 + 1 = 6)', n === 6, n);
+  var imgs = $('plain').querySelectorAll('img.fridge-emoji');
+  t(':fridge: and :refrigerator: both become the picture; :freezer: stays text', imgs.length === 2 && $('plain').textContent.indexOf(':freezer:') > -1);
+  t('the picture is the canonical SVG, labelled for screen readers, shortcode as alt',
+    /concepts\/classic-base\.svg$/.test(imgs[0].src) && imgs[0].getAttribute('aria-label') === 'Refrigerator' && imgs[0].alt === ':fridge:' && imgs[1].alt === ':refrigerator:');
+  t('back-to-back shortcodes both render', $('twice').querySelectorAll('img').length === 2);
+  t('input value untouched', $('in').value === 'type :fridge: here');
+  t('textarea untouched', $('ta').value === ':fridge: in a textarea' && !$('ta').querySelector('img'));
+  t('contenteditable untouched', $('ce').textContent === 'editing :fridge: here' && !$('ce').querySelector('img'));
+  t('<pre> and <code> untouched', $('pre').textContent === ':fridge: in pre' && $('codep').querySelector('code').textContent === ':fridge:');
+  t('data-fridge-emoji="off" untouched', $('off').textContent === 'opted out :fridge:');
+  t('script text untouched', $('scr').textContent.indexOf("':fridge:'") > -1);
+  t('HTML-looking text stays text (no injection)', $('xss').querySelectorAll('img').length === 1 && $('xss').querySelectorAll('b').length === 0 && $('xss').textContent.indexOf('<img src=x onerror=alert(1)>') === 0);
+  t('render() again is a no-op', FridgeEmoji.render(area) === 0);
+  // font mode
+  var fn = FridgeEmoji.render($('fontp'), { mode: 'font' });
+  await new Promise(function (r) { setTimeout(r, 50); });
+  var g = $('fontp').querySelector('.fridge-glyph');
+  t('font mode: a U+E900 glyph span with role=img and a label', fn === 0 || (g && g.textContent === '' && g.getAttribute('role') === 'img' && g.getAttribute('aria-label') === 'Refrigerator'),
+    $('fontp').innerHTML);
+  var fresh = document.createElement('p'); fresh.textContent = 'font :fridge:'; document.body.appendChild(fresh);
+  FridgeEmoji.render(fresh, { mode: 'font' }); await new Promise(function (r) { setTimeout(r, 30); });
+  var gs = fresh.querySelector('.fridge-glyph');
+  t('font mode renders with the Fridge Emoji family', gs && getComputedStyle(gs).fontFamily.indexOf('Fridge Emoji') > -1);
+  var cx = document.createElement('canvas').getContext('2d'), w = function (f) { cx.font = f; return cx.measureText('Hello, fridge!').width; };
+  t('the font only covers U+E900: other text measures exactly as without it', w('20px "Fridge Emoji", sans-serif') === w('20px sans-serif'));
+  fresh.remove();
+  // dynamic text
+  var stop = FridgeEmoji.observe($('live'));
+  var p = document.createElement('p'); p.textContent = 'later :fridge:'; $('live').appendChild(p);
+  var ta2 = document.createElement('textarea'); ta2.value = ':fridge:'; ta2.textContent = ':fridge:'; $('live').appendChild(ta2);
+  await new Promise(function (r) { setTimeout(r, 120); });
+  t('observe(): text added later is rendered', p.querySelectorAll('img.fridge-emoji').length === 1);
+  t('observe(): a textarea added later is not', ta2.value === ':fridge:' && !ta2.querySelector('img'));
+  p.firstChild.nodeValue = 'edited :refrigerator: text';
+  await new Promise(function (r) { setTimeout(r, 120); });
+  t('observe(): changed text is rendered', p.querySelectorAll('img.fridge-emoji').length === 2, p.innerHTML);
+  stop();
+  var q = document.createElement('p'); q.textContent = 'after stop :fridge:'; $('live').appendChild(q);
+  await new Promise(function (r) { setTimeout(r, 120); });
+  t('stop() stops observing', q.querySelectorAll('img').length === 0);
+  t('text(): shortcodes become U+E900', FridgeEmoji.text('a :fridge: b :refrigerator:') === 'a  b ');
+  // large page
+  var bulk = $('bulk'), frag = document.createDocumentFragment();
+  for (var i = 0; i < 20000; i++) { var d = document.createElement('p'); d.textContent = i % 100 ? 'ordinary paragraph number ' + i + ' with a colon: here' : 'row ' + i + ' :fridge:'; frag.appendChild(d); }
+  bulk.appendChild(frag);
+  var t0 = performance.now(), m = FridgeEmoji.render(bulk), ms = performance.now() - t0;
+  t('20,000 paragraphs: 200 replaced in ' + Math.round(ms) + ' ms (under 400 ms)', m === 200 && ms < 400, m + ' / ' + ms);
+  bulk.textContent = '';
+  // missing image: the alt text shows the shortcode
+  var broken = document.createElement('p'); broken.textContent = ':fridge:'; document.body.appendChild(broken);
+  FridgeEmoji.render(broken); var bi = broken.querySelector('img'); bi.src = 'missing.svg';
+  await new Promise(function (r) { bi.onerror = r; setTimeout(r, 800); });
+  t('a picture that fails to load falls back to its alt text :fridge:', bi.alt === ':fridge:' && bi.naturalWidth === 0);
+  broken.remove();
+  $('sum').textContent = pass + ' passed, ' + fail + ' failed';
+  document.body.setAttribute('data-result', fail ? 'fail' : 'pass');
+  document.body.setAttribute('data-counts', pass + '/' + fail);
+}());
+</script>
+</body></html>

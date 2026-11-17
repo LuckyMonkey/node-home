@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="256" height="256">
+  <!--
+    Fridge Emoji, monochrome glyph source (U+E900). Traced from ../../concepts/classic-base.svg:
+    white top-freezer refrigerator, smaller freezer on top, both handles on the RIGHT, two feet.
+
+    Editing rules (build.py reads exactly this):
+      * Only <rect> elements: x, y, width, height, optional rx. Units are this 64x64 grid (y down).
+      * class="fill" draws ink; class="hole" cuts a window out of the fill around it.
+      * Keep strokes at 4 units or more: at 16 px one unit is a quarter of a pixel.
+      * The build maps grid y=52 to the baseline and scales 64 units to the 1000-unit em.
+    Open it in any browser or Inkscape to see it; holes show as white here.
+  -->
+  <style>.fill{fill:#202225}.hole{fill:#fff}</style>
+  <rect class="fill" id="body"         x="13" y="3"  width="38" height="56" rx="5"/>
+  <rect class="hole" id="freezer"      x="17" y="7"  width="30" height="17" rx="2"/>
+  <rect class="hole" id="fresh"        x="17" y="28" width="30" height="27" rx="2"/>
+  <rect class="fill" id="freezer-grip" x="39" y="11" width="5"  height="9"  rx="1.5"/>
+  <rect class="fill" id="fresh-grip"   x="39" y="32" width="5"  height="15" rx="1.5"/>
+  <rect class="fill" id="foot-left"    x="16" y="59" width="5"  height="3"  rx="1"/>
+  <rect class="fill" id="foot-right"   x="43" y="59" width="5"  height="3"  rx="1"/>
+</svg>

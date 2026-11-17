@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Fridge Emoji v0.1 — opt-in local font installation for Linux/fontconfig.
+# Fridge Emoji v0.2 — opt-in local font installation for Linux/fontconfig.
 # This is NOT a system emoji replacement. A program must use "Fridge Emoji"
 # to display the experimental private-use codepoint U+E900.
 set -euo pipefail
 URL="https://fridge.run/emoji/assets/FridgeEmoji-Regular.ttf.b64"
-EXPECTED_SHA="f7958830a28b2f50da10d6a3d1592d489196d6f6db22205ddc4c99745d8866f2"
+EXPECTED_SHA="13d21b2983c151c2b991bdfab0cb500560da88d916e1ba8dbe1c0a2661703414"
 TARGET="${XDG_DATA_HOME:-$HOME/.local/share}/fonts/FridgeEmoji-Regular.ttf"
 command -v curl >/dev/null || { echo "curl is required" >&2; exit 1; }
 command -v base64 >/dev/null || { echo "base64 is required" >&2; exit 1; }

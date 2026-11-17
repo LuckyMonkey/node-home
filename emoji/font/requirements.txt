@@ -1,0 +1,5 @@
+# Build and validation tools only; the website itself needs none of this.
+fonttools==4.65.0
+brotli==1.2.1
+opentype-sanitizer==9.2.0
+freetype-py==2.5.1

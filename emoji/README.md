@@ -4,7 +4,7 @@
 **Host when approved:** https://fridge.run/emoji/  
 **Repository:** `LuckyMonkey/node-home`  
 **Branches:** `emoji-concept-only` (artwork review, PR #3) → `emoji-font` (working font + shortcode). GitHub Pages publishes `main`.  
-**Status:** PRE-LAUNCH — no Unicode approval and no live Change.org petition. An **experimental** font (one glyph at Private Use code point U+E900) and an opt-in `:fridge:` shortcode exist and work; neither is an official emoji.
+**Status:** Campaign petition link supplied by Charlie and connected to the site's signing CTA on 17 November 2026: https://c.org/wL4PCmNc9s. The destination's live signing status still needs an independent browser test. No Unicode approval. An **experimental** font (one glyph at Private Use code point U+E900) and an opt-in `:fridge:` shortcode exist and work; neither is an official emoji.
 
 ## The point
 
@@ -12,7 +12,7 @@ The world has a fax machine emoji and no standard refrigerator emoji. Charlie is
 
 This folder is intentionally independent of the home server. It is a static website built from ordinary HTML/CSS/JavaScript and local SVG artwork. No Node build, React, PHP, Docker, identity provider, tunnel, analytics, or API is needed to publish it.
 
-**Do not deploy this branch until Charlie is ready.** The repo currently publishes `main` at the root via GitHub Pages. A merge/push to `main` deploys the `emoji/` folder automatically.
+**Deployment:** The campaign is published from `main` at the repository root through GitHub Pages. Keep future changes isolated under `emoji/`.
 
 ## Current deliverables
 

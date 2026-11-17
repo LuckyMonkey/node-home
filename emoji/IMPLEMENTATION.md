@@ -1,4 +1,4 @@
-# Fridge Emoji v0.1 — local implementation and compatibility
+# Fridge Emoji v0.2 — local implementation and compatibility
 
 **Initiated by Charlie at fridge.run.** This is an **unofficial experimental emoji implementation**, released to show a missing concept before Unicode acceptance. It is not a new Unicode character, not an official emoji, not a new system keyboard key, and not a claim to have invented the refrigerator emoji concept. All first-party components are static on GitHub Pages.
 
@@ -121,12 +121,12 @@ document.head.append(s);
 
 ## Source / build provenance
 
-The original glyph was authored specifically for this initiative using FontTools from self-drawn geometric outlines, not copied from any existing commercial font. Source geometry: a refrigerator outer silhouette, two door apertures, two handles, and feet. The original font has a single U+E900 mapped glyph. The CSS embeds WOFF2 data; the optional OS file derives from the TrueType data archive.
+The current glyph depicts a classic white top-freezer refrigerator with two black handles on the **right**, no logo or sticky note. The original glyph was authored specifically for this initiative using FontTools from self-drawn geometric outlines, not copied from any existing commercial font. Source geometry: a refrigerator outer silhouette, two door apertures, two handles, and feet. The original font has a single U+E900 mapped glyph. The CSS embeds WOFF2 data; the optional OS file derives from the TrueType data archive.
 
 SHA-256 of decoded TTF:
 
 ```
-f7958830a28b2f50da10d6a3d1592d489196d6f6db22205ddc4c99745d8866f2  FridgeEmoji-Regular.ttf
+13d21b2983c151c2b991bdfab0cb500560da88d916e1ba8dbe1c0a2661703414  FridgeEmoji-Regular.ttf
 ```
 
 Both the original color icon and the font are unofficial campaign artwork, not Unicode-authorized sample images.

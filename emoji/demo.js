@@ -46,9 +46,9 @@
     draw();
 
     $('tools').hidden = false;
-    $('copy-code').addEventListener('click', function () { copy(':fridge:', 'COPIED :fridge:'); });
+    $('copy-code').addEventListener('click', function () { copy(':fridge:', 'Copied :fridge:'); });
     $('copy-pua').addEventListener('click', function () {
-      copy('', 'COPIED U+E900. IT ONLY SHOWS AS A FRIDGE WHERE THE FONT IS.');
+      copy('', 'Copied U+E900. It only shows as a fridge where the font is.');
     });
     $('png').addEventListener('click', function () {
       var size = parseInt($('png-size').value, 10) || 128;
@@ -58,8 +58,8 @@
         a.download = 'fridge-emoji-' + size + '.png';
         document.body.appendChild(a); a.click(); a.remove();
         setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
-        notify('PNG SAVED (' + size + '×' + size + ', TRANSPARENT)');
-      }, function (e) { notify(String(e.message || e).toUpperCase()); });
+        notify('PNG saved (' + size + '×' + size + ', transparent)');
+      }, function (e) { notify(String(e.message || e)); });
     });
     if (window.FridgeEmoji) window.FridgeEmoji.fontReady().then(function (ok) {
       $('font-status').textContent = ok ? 'Font loaded ✓' : 'The font didn\'t load here, so you may see a box.';

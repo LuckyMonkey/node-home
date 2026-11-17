@@ -3,15 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#1421b8">
-<meta name="description" content="Help Charlie campaign for a refrigerator emoji. Concept artwork: a classic white top-freezer fridge with black right-side handles.">
+<meta name="theme-color" content="#f7f6f2">
+<meta name="description" content="There's a fax machine emoji but no refrigerator. Charlie's campaign for a fridge emoji, with concept art and a working experimental fridge glyph you can try today.">
 <link rel="canonical" href="https://fridge.run/emoji/">
 <link rel="icon" type="image/svg+xml" href="./concepts/classic-base.svg">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Where is our refrigerator emoji?">
-<meta property="og:description" content="It's free. It's cool. Takes a second. Charlie's campaign for a fridge emoji.">
+<meta property="og:title" content="Where's our fridge emoji?">
+<meta property="og:description" content="There's a fax machine emoji. There's no refrigerator. It's free, it's cool, takes a second.">
 <meta property="og:url" content="https://fridge.run/emoji/">
-<title>Where's our fridge emoji? — Charlie's campaign</title>
+<meta property="og:image" content="https://fridge.run/emoji/assets/og-card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="A simple white top-freezer refrigerator next to the words: Where's our fridge emoji?">
+<meta name="twitter:card" content="summary_large_image">
+<title>Where's our fridge emoji? · Charlie's campaign</title>
 <link rel="stylesheet" href="./style.css">
 <link rel="stylesheet" href="./fridge-emoji.css">
 <script src="./campaign.js" defer></script>
@@ -19,146 +24,180 @@
 <script src="./demo.js" defer></script>
 </head>
 <body>
-<a class="skip" href="#main">Skip to campaign</a>
-<header class="topline"><span aria-hidden="true">✳ ✳ ✳</span><span>THE REFRIGERATOR EMOJI INITIATIVE</span><a href="/">FRIDGE.RUN ↗</a></header>
+<a class="skip" href="#main">Skip to the campaign</a>
+<header class="bar">
+  <a class="brand" href="./"><img src="./concepts/classic-base.svg" width="26" height="26" alt=""><span>Refrigerator Emoji Initiative</span></a>
+  <nav aria-label="Sections"><a href="#concepts">Concepts</a><a href="#try">Try it</a><a href="#campaign">The plan</a><a class="home" href="/">fridge.run</a></nav>
+</header>
 <main id="main">
   <section class="hero">
     <div class="hero-copy">
-      <div class="eyebrow">A SMALL, RIDICULOUSLY REASONABLE REQUEST</div>
-      <h1>WHERE'S OUR<br><em>FRIDGE</em> EMOJI<span class="punct">?</span></h1>
-      <p class="lede">There is a 📠 fax machine emoji. There is a 🪠 plunger emoji. But there is still no standard refrigerator emoji. Let's fix that.</p>
-      <p class="slogan">IT'S FREE. IT'S COOL. TAKES A SECOND.</p>
+      <p class="kicker">A small, ridiculously reasonable request</p>
+      <h1>Where's our <span class="cold">fridge</span> emoji?</h1>
+      <p class="lede">There's a <span aria-hidden="true">📠</span> fax machine emoji. There's a <span aria-hidden="true">🪠</span> plunger. There is still no refrigerator, the one appliance in nearly every kitchen. Let's fix that.</p>
       <div class="actions">
-        <a class="btn btn-orange" id="sign" href="#" target="_blank" rel="noopener noreferrer" hidden>SIGN THE PETITION ↗</a>
-        <p id="pending" class="pending">THE NEW PETITION IS COMING SOON. <strong>SHARE THE CAMPAIGN IN THE MEANTIME.</strong></p>
-        <button id="share" class="btn btn-mint" type="button">SHARE THE CAMPAIGN ↗</button>
+        <a class="btn btn-sign" id="sign" href="#" target="_blank" rel="noopener noreferrer" hidden>Sign the petition <span aria-hidden="true">↗</span></a>
+        <p id="pending" class="pending">The petition opens soon. Share the campaign in the meantime.</p>
+        <button id="share" class="btn btn-quiet" type="button">Share the campaign</button>
       </div>
+      <p class="slogan">It's free. It's cool. Takes a second.</p>
     </div>
-    <div class="hero-art" aria-label="An original concept drawing of a classic white refrigerator">
-      <div class="hero-frame">
-        <div class="hero-frame-label">CONCEPT / NOT YET UNICODE</div>
-        <img src="./concepts/classic-base.svg" alt="Minimal white top-freezer refrigerator with two black handles on the right, no logo" width="192" height="192">
-        <div class="hero-frame-caption">WHITE • TOP FREEZER • RIGHT HANDLES</div>
+    <figure class="hero-art">
+      <div class="frost">
+        <img src="./concepts/classic-base.svg" alt="Concept art: a plain white top-freezer refrigerator with two black handles on the right, no logo" width="240" height="240">
       </div>
-      <span class="hero-star star-one" aria-hidden="true">✳</span><span class="hero-star star-two" aria-hidden="true">✳</span>
-    </div>
+      <figcaption><span class="tag">Concept</span> White · top freezer · handles on the right · not yet Unicode</figcaption>
+    </figure>
   </section>
-  <div class="marquee" aria-hidden="true">FREE ✳ COOL ✳ TAKES A SECOND ✳ FREE ✳ COOL ✳ TAKES A SECOND ✳</div>
-  <section class="block variants" id="concepts" aria-labelledby="concept-heading">
-    <div class="section-tag">01 / CONCEPTS</div>
-    <div class="block-content">
-      <p class="eyebrow ink">ONE OBJECT, MANY POSSIBLE DRAWINGS</p>
-      <h2 id="concept-heading">IT SHOULD LOOK LIKE A <em>FRIDGE.</em></h2>
-      <p class="bodycopy">Unicode would standardize the refrigerator as a character—not dictate one illustration. Apple, Microsoft, Google, Samsung, and others would choose their own artwork. These are <strong>our independent, unofficial explorations</strong>, not previews from those companies.</p>
-      <div class="concept-grid">
-        <article class="concept-card">
-          <div class="concept-card-top"><span>01</span><span>SOFT / ROUNDED</span></div>
-          <img src="./concepts/ios-inspired.svg" alt="Unofficial softly rounded white fridge concept with right-side black handles" width="128" height="128">
-          <h3>iOS-inspired</h3>
-          <p>Rounded enamel, softer silhouette.</p>
-          <div class="sizes"><img src="./concepts/ios-inspired.svg" width="32" height="32" alt=""><img src="./concepts/ios-inspired.svg" width="24" height="24" alt=""><img src="./concepts/ios-inspired.svg" width="18" height="18" alt=""><span>32 / 24 / 18px</span></div>
-        </article>
-        <article class="concept-card">
-          <div class="concept-card-top"><span>02</span><span>GEOMETRIC / FLAT</span></div>
-          <img src="./concepts/windows-inspired.svg" alt="Unofficial angular flat white fridge concept with right-side black handles" width="128" height="128">
-          <h3>Windows-inspired</h3>
-          <p>Square form, precise dark contours.</p>
-          <div class="sizes"><img src="./concepts/windows-inspired.svg" width="32" height="32" alt=""><img src="./concepts/windows-inspired.svg" width="24" height="24" alt=""><img src="./concepts/windows-inspired.svg" width="18" height="18" alt=""><span>32 / 24 / 18px</span></div>
-        </article>
-        <article class="concept-card">
-          <div class="concept-card-top"><span>03</span><span>BOLD / FRIENDLY</span></div>
-          <img src="./concepts/android-inspired.svg" alt="Unofficial bold rounded white fridge concept with right-side black handles" width="128" height="128">
-          <h3>Android-inspired</h3>
-          <p>High-contrast, readable at tiny sizes.</p>
-          <div class="sizes"><img src="./concepts/android-inspired.svg" width="32" height="32" alt=""><img src="./concepts/android-inspired.svg" width="24" height="24" alt=""><img src="./concepts/android-inspired.svg" width="18" height="18" alt=""><span>32 / 24 / 18px</span></div>
-        </article>
-        <article class="concept-card">
-          <div class="concept-card-top"><span>04</span><span>STAINLESS / SPLIT</span></div>
-          <img src="./concepts/samsung-inspired.svg" alt="Unofficial stainless French-door refrigerator with two vertical handles and a bottom freezer drawer" width="128" height="128">
-          <h3>Samsung-inspired</h3>
-          <p>Stainless French doors and a bottom freezer drawer.</p>
-          <div class="sizes"><img src="./concepts/samsung-inspired.svg" width="32" height="32" alt=""><img src="./concepts/samsung-inspired.svg" width="24" height="24" alt=""><img src="./concepts/samsung-inspired.svg" width="18" height="18" alt=""><span>32 / 24 / 18px</span></div>
-        </article>
-      </div>
-      <p class="footnote">All drawings are unbranded original concepts. The classic reference is white with right-side handles; Samsung-inspired explores a different stainless French-door arrangement. No gradients, badging, sticky notes, or claims of vendor affiliation. The 18px previews are readability tests; the Fridge Emoji font below is drawn from the classic reference.</p>
+
+  <section class="sec chats" id="before-after" aria-labelledby="ba-heading">
+    <header class="sec-head">
+      <p class="kicker">01 · The problem, in one text</p>
+      <h2 id="ba-heading">Try telling someone where the leftovers are.</h2>
+    </header>
+    <div class="phones">
+      <figure class="phone before">
+        <figcaption class="phone-label">Today</figcaption>
+        <div class="screen" role="img" aria-label="Mock chat. Them: where'd you put the leftovers? Me: in the ice cube box emoji. Them: the ice box?? Me: the door snowflake thing. Them: the freezer? Me: THE FRIDGE.">
+          <p class="msg them">where'd you put the leftovers?</p>
+          <p class="msg me">in the 🧊📦</p>
+          <p class="msg them">the ice box??</p>
+          <p class="msg me">the 🚪❄️ thing</p>
+          <p class="msg them">the freezer?</p>
+          <p class="msg me shout">THE FRIDGE</p>
+        </div>
+      </figure>
+      <figure class="phone after">
+        <figcaption class="phone-label">With a fridge emoji</figcaption>
+        <div class="screen" role="img" aria-label="Mock chat. Them: where'd you put the leftovers? Me: in the refrigerator emoji. Them: perfect, thumbs up.">
+          <p class="msg them">where'd you put the leftovers?</p>
+          <p class="msg me">in the <img class="fridge-emoji" src="./concepts/classic-base.svg" alt=":fridge:" aria-label="Refrigerator" width="30" height="30"></p>
+          <p class="msg them">perfect 👌</p>
+          <p class="typing" aria-hidden="true"><span></span><span></span><span></span></p>
+        </div>
+      </figure>
     </div>
+    <p class="note">Mockups for illustration, not screenshots of a real app. The fridge on the right is this campaign's concept art; a real emoji would be drawn by each platform.</p>
   </section>
-  <section class="block try" id="try" aria-labelledby="try-heading">
-    <div class="section-tag">02 / TRY IT</div>
-    <div class="block-content">
-      <p class="eyebrow ink">AN EXPERIMENTAL FRIDGE THAT WORKS TODAY</p>
-      <h2 id="try-heading">TYPE A <em>FRIDGE</em> RIGHT NOW.</h2>
-      <p class="bodycopy">Until Unicode encodes a refrigerator, here's a working stand-in: <strong>Fridge Emoji</strong>, a tiny font with one fridge at <strong>U+E900</strong>, and a <code>:fridge:</code> shortcode any website can choose to support. U+E900 is a Private Use code point, <strong>our own convention, not an official emoji</strong>, so it only works where the font is.</p>
-      <div class="compare">
-        <figure><div class="cmp-art"><img src="./concepts/classic-base.svg" width="72" height="72" alt="Refrigerator picture (full-colour SVG)"></div><figcaption><b>1 · PICTURE</b>Full-colour SVG. Works anywhere an image does.</figcaption></figure>
-        <figure><div class="cmp-art"><span class="fridge-glyph" role="img" aria-label="Refrigerator, drawn by the Fridge Emoji font at U+E900">&#xE900;</span></div><figcaption><b>2 · FONT</b>Fridge Emoji at U+E900. One colour, like text. <span id="font-status"></span></figcaption></figure>
-        <figure><div class="cmp-art"><code class="cmp-code">:fridge:</code></div><figcaption><b>3 · SHORTCODE</b>Plain text. Portable everywhere; becomes a fridge where supported.</figcaption></figure>
-        <figure><div class="cmp-art"><span class="cmp-fallback" role="img" aria-label="U+E900 in an ordinary font">&#xE900;</span></div><figcaption><b>4 · WITHOUT THE FONT</b>The same character in an ordinary font: usually an empty box or nothing, sometimes another font's private symbol. (If you installed Fridge Emoji, your device may still find the fridge.)</figcaption></figure>
-      </div>
-      <div class="ladder" aria-label="Legibility test at 16, 18, 24 and 72 pixels">
-        <div><b>SVG</b><span class="rung"><img src="./concepts/classic-base.svg" width="16" height="16" alt=""><small>16</small></span><span class="rung"><img src="./concepts/classic-base.svg" width="18" height="18" alt=""><small>18</small></span><span class="rung"><img src="./concepts/classic-base.svg" width="24" height="24" alt=""><small>24</small></span><span class="rung"><img src="./concepts/classic-base.svg" width="72" height="72" alt=""><small>72</small></span></div>
-        <div><b>FONT</b><span class="rung"><span class="fridge-glyph" style="font-size:16px" aria-hidden="true">&#xE900;</span><small>16</small></span><span class="rung"><span class="fridge-glyph" style="font-size:18px" aria-hidden="true">&#xE900;</span><small>18</small></span><span class="rung"><span class="fridge-glyph" style="font-size:24px" aria-hidden="true">&#xE900;</span><small>24</small></span><span class="rung"><span class="fridge-glyph" style="font-size:72px" aria-hidden="true">&#xE900;</span><small>72</small></span></div>
-      </div>
-      <div class="play">
-        <label for="play-in">TYPE A MESSAGE WITH <code>:fridge:</code> OR <code>:refrigerator:</code></label>
+
+  <section class="sec" id="concepts" aria-labelledby="concept-heading">
+    <header class="sec-head">
+      <p class="kicker">02 · One object, many drawings</p>
+      <h2 id="concept-heading">It should look like a fridge.</h2>
+      <p class="intro">Unicode would standardize the refrigerator as a <em>character</em>, not one illustration: Apple, Microsoft, Google, Samsung and others would each draw their own. These are <strong>our own unofficial explorations</strong>, not previews from those companies.</p>
+    </header>
+    <div class="concept-grid">
+      <article class="card concept">
+        <img class="concept-art" src="./concepts/ios-inspired.svg" alt="Unofficial softly rounded white fridge concept with right-side black handles" width="112" height="112">
+        <h3>iOS-inspired</h3>
+        <p>Rounded enamel, softer silhouette.</p>
+        <div class="sizes" aria-label="Shown at 32, 24 and 18 pixels"><img src="./concepts/ios-inspired.svg" width="32" height="32" alt=""><img src="./concepts/ios-inspired.svg" width="24" height="24" alt=""><img src="./concepts/ios-inspired.svg" width="18" height="18" alt=""><span>32 · 24 · 18 px</span></div>
+      </article>
+      <article class="card concept">
+        <img class="concept-art" src="./concepts/windows-inspired.svg" alt="Unofficial angular flat white fridge concept with right-side black handles" width="112" height="112">
+        <h3>Windows-inspired</h3>
+        <p>Square form, precise dark contours.</p>
+        <div class="sizes" aria-label="Shown at 32, 24 and 18 pixels"><img src="./concepts/windows-inspired.svg" width="32" height="32" alt=""><img src="./concepts/windows-inspired.svg" width="24" height="24" alt=""><img src="./concepts/windows-inspired.svg" width="18" height="18" alt=""><span>32 · 24 · 18 px</span></div>
+      </article>
+      <article class="card concept">
+        <img class="concept-art" src="./concepts/android-inspired.svg" alt="Unofficial bold rounded white fridge concept with right-side black handles" width="112" height="112">
+        <h3>Android-inspired</h3>
+        <p>High contrast, readable at tiny sizes.</p>
+        <div class="sizes" aria-label="Shown at 32, 24 and 18 pixels"><img src="./concepts/android-inspired.svg" width="32" height="32" alt=""><img src="./concepts/android-inspired.svg" width="24" height="24" alt=""><img src="./concepts/android-inspired.svg" width="18" height="18" alt=""><span>32 · 24 · 18 px</span></div>
+      </article>
+      <article class="card concept">
+        <img class="concept-art" src="./concepts/samsung-inspired.svg" alt="Unofficial stainless French-door refrigerator with two vertical handles and a bottom freezer drawer" width="112" height="112">
+        <h3>Samsung-inspired</h3>
+        <p>Stainless French doors over a freezer drawer.</p>
+        <div class="sizes" aria-label="Shown at 32, 24 and 18 pixels"><img src="./concepts/samsung-inspired.svg" width="32" height="32" alt=""><img src="./concepts/samsung-inspired.svg" width="24" height="24" alt=""><img src="./concepts/samsung-inspired.svg" width="18" height="18" alt=""><span>32 · 24 · 18 px</span></div>
+      </article>
+    </div>
+    <p class="note">All drawings are unbranded originals: no gradients, badges, sticky notes or claims of vendor affiliation. The classic white top-freezer is the reference; the Samsung-inspired card explores a different door layout. The Fridge Emoji font below is drawn from the classic reference.</p>
+  </section>
+
+  <section class="sec try" id="try" aria-labelledby="try-heading">
+    <header class="sec-head">
+      <p class="kicker">03 · An experimental fridge that works today</p>
+      <h2 id="try-heading">Type a fridge right now.</h2>
+      <p class="intro">Until Unicode encodes a refrigerator, here's a working stand-in: <strong>Fridge Emoji</strong>, a tiny font with one fridge at <strong>U+E900</strong>, and a <code>:fridge:</code> shortcode any website can choose to support. U+E900 is a Private Use code point, <strong>our own convention, not an official emoji</strong>, so it only works where the font is.</p>
+    </header>
+    <div class="compare">
+      <figure class="card"><div class="cmp-art"><img src="./concepts/classic-base.svg" width="72" height="72" alt="Refrigerator picture (full-colour SVG)"></div><figcaption><b>Picture</b>Full-colour SVG. Works anywhere an image does.</figcaption></figure>
+      <figure class="card"><div class="cmp-art"><span class="fridge-glyph" role="img" aria-label="Refrigerator, drawn by the Fridge Emoji font at U+E900">&#xE900;</span></div><figcaption><b>Font</b>Fridge Emoji at U+E900. One colour, like text. <span id="font-status"></span></figcaption></figure>
+      <figure class="card"><div class="cmp-art"><code class="cmp-code">:fridge:</code></div><figcaption><b>Shortcode</b>Plain text. Portable everywhere; becomes a fridge where supported.</figcaption></figure>
+      <figure class="card"><div class="cmp-art"><span class="cmp-fallback" role="img" aria-label="U+E900 in an ordinary font">&#xE900;</span></div><figcaption><b>Without the font</b>Usually an empty box, sometimes another font's private symbol.</figcaption></figure>
+    </div>
+    <div class="try-grid">
+      <div class="card play">
+        <label for="play-in">Type a message with <code>:fridge:</code> or <code>:refrigerator:</code></label>
         <textarea id="play-in" rows="2" maxlength="280" spellcheck="false">Who left the leftovers in the :fridge: again?</textarea>
-        <fieldset class="play-mode" id="play-mode" hidden><legend>SHOW IT AS</legend>
+        <fieldset class="play-mode" id="play-mode" hidden><legend>Show it as</legend>
           <label><input type="radio" name="play-mode" value="image" checked> Picture</label>
           <label><input type="radio" name="play-mode" value="font"> Font glyph</label>
         </fieldset>
         <p class="play-out" id="play-out" aria-live="polite">Who left the leftovers in the <img class="fridge-emoji" src="./concepts/classic-base.svg" alt=":fridge:" aria-label="Refrigerator" width="20" height="20"> again?</p>
+        <div class="tools" id="tools" hidden>
+          <button class="btn btn-cold" type="button" id="copy-code">Copy :fridge:</button>
+          <button class="btn btn-quiet" type="button" id="copy-pua">Copy U+E900 *</button>
+          <span class="png-pick"><label for="png-size">PNG</label><select id="png-size"><option>72</option><option selected>128</option><option>256</option><option>512</option></select><button class="btn btn-quiet" type="button" id="png">Export PNG</button></span>
+        </div>
       </div>
-      <div class="tools" id="tools" hidden>
-        <button class="btn btn-mint" type="button" id="copy-code">COPY :fridge:</button>
-        <button class="btn btn-white" type="button" id="copy-pua">COPY U+E900 *</button>
-        <span class="png-pick"><label for="png-size">PNG</label><select id="png-size"><option>72</option><option selected>128</option><option>256</option><option>512</option></select><button class="btn btn-orange" type="button" id="png">EXPORT PNG ↓</button></span>
+      <div class="card ladder" aria-label="Legibility at 16, 18, 24 and 72 pixels">
+        <p class="ladder-title">Legible at every size</p>
+        <div class="rungs"><b>SVG</b><span class="rung"><img src="./concepts/classic-base.svg" width="16" height="16" alt=""><small>16</small></span><span class="rung"><img src="./concepts/classic-base.svg" width="18" height="18" alt=""><small>18</small></span><span class="rung"><img src="./concepts/classic-base.svg" width="24" height="24" alt=""><small>24</small></span><span class="rung"><img src="./concepts/classic-base.svg" width="72" height="72" alt=""><small>72</small></span></div>
+        <div class="rungs"><b>Font</b><span class="rung"><span class="fridge-glyph" style="font-size:16px" aria-hidden="true">&#xE900;</span><small>16</small></span><span class="rung"><span class="fridge-glyph" style="font-size:18px" aria-hidden="true">&#xE900;</span><small>18</small></span><span class="rung"><span class="fridge-glyph" style="font-size:24px" aria-hidden="true">&#xE900;</span><small>24</small></span><span class="rung"><span class="fridge-glyph" style="font-size:72px" aria-hidden="true">&#xE900;</span><small>72</small></span></div>
       </div>
-      <p class="warn">* U+E900 only looks like a fridge where the Fridge Emoji font is installed or loaded by the page. Everywhere else it can be an empty box or a different symbol, because other fonts use the Private Use Area for their own icons. For chats and posts, <code>:fridge:</code> is the portable choice; for Slack, Discord and other custom-emoji uploads, use the transparent PNG.</p>
-      <div class="get">
-        <a class="doclink" href="./font/FridgeEmoji-Regular.ttf" download>DOWNLOAD THE FONT (.TTF) ↓</a>
-        <a class="doclink" href="./font/README.md">FONT NOTES ↗</a>
-        <details><summary>Use it on your own website</summary>
+    </div>
+    <p class="warn">* U+E900 only looks like a fridge where the Fridge Emoji font is installed or loaded by the page. Elsewhere it can be an empty box or a different symbol, because other fonts use the Private Use Area for their own icons. For chats and posts, <code>:fridge:</code> is the portable choice; for Slack, Discord and other custom-emoji uploads, use the transparent PNG.</p>
+    <div class="get">
+      <a class="textlink" href="./font/FridgeEmoji-Regular.ttf" download>Download the font (.ttf)</a>
+      <a class="textlink" href="./font/README.md">Install &amp; developer notes</a>
+      <details><summary>Use it on your own website</summary>
 <pre><code>&lt;link rel="stylesheet" href="https://fridge.run/emoji/fridge-emoji.css"&gt;
 &lt;script src="https://fridge.run/emoji/fridge-emoji.js"&gt;&lt;/script&gt;
 &lt;script&gt;FridgeEmoji.render(document.querySelector("#comments"));&lt;/script&gt;</code></pre>
 <p>Only the parts you pass in are changed; form fields, editable text and code stay as typed. Add <code>data-fridge-emoji="auto"</code> to the script tag to cover the whole page. No cookies, no tracking.</p></details>
+    </div>
+  </section>
+
+  <section class="sec" id="campaign" aria-labelledby="campaign-heading">
+    <header class="sec-head">
+      <p class="kicker">04 · The plan</p>
+      <h2 id="campaign-heading">Get it on the keyboard.</h2>
+      <p class="intro">Petition signatures build awareness; Unicode doesn't count them as usage evidence, so the technical proposal is prepared separately, under Unicode's own rules.</p>
+    </header>
+    <ol class="steps">
+      <li class="card"><span class="num">1</span><h3>Spread the word</h3><p>Sign, share the link, scan a sticker. Every share helps.</p></li>
+      <li class="card"><span class="num">2</span><h3>Make the case</h3><p>Document how people talk about fridges online and what existing emoji miss.</p></li>
+      <li class="card"><span class="num">3</span><h3>Propose it</h3><p>Submit one generic, unbranded refrigerator to Unicode when the window opens.</p></li>
+    </ol>
+    <div class="card beat">
+      <div>
+        <h3>Surely we can beat 80 signatures.</h3>
+        <p>An earlier refrigerator emoji petition closed with 80 supporters. Let's make this one bigger, funnier and technically credible. Stores and businesses can share the campaign or display a poster, with no sponsorship or exclusivity.</p>
+        <p class="small">Ask permission before putting up QR stickers. No company is a partner unless it explicitly agrees.</p>
+      </div>
+      <div class="beat-links">
+        <a class="textlink" href="./RUNBOOK.md">Campaign runbook</a>
+        <a class="textlink" href="./DEPLOYMENT.md">Build &amp; deploy runbook</a>
       </div>
     </div>
+    <p class="note">There is still no official refrigerator emoji and no operating-system patch. What exists is experimental: the Fridge Emoji font (one glyph at Private Use code point U+E900) and a <code>:fridge:</code> shortcode for pages that opt in.</p>
   </section>
-  <section class="block" id="campaign" aria-labelledby="campaign-heading">
-    <div class="section-tag">03 / THE CAMPAIGN</div>
-    <div class="block-content">
-      <h2 id="campaign-heading">GET IT ON <em>THE KEYBOARD.</em></h2>
-      <p class="bodycopy">Our plan is simple: publish a petition, recruit grocery stores and appliance companies to share it, gather real-world support, and separately prepare a technical Unicode submission. Petition signatures build awareness; they do not count as Unicode usage evidence.</p>
-      <div class="steps">
-        <div><span>01</span><h3>SPREAD THE WORD</h3><p>Scan a QR label, share the link, sign when the new petition opens.</p></div>
-        <div><span>02</span><h3>MAKE THE CASE</h3><p>Document refrigerator use cases, compare existing emoji coverage, and prepare the evidence.</p></div>
-        <div><span>03</span><h3>PROPOSE IT</h3><p>Submit a generic fridge emoji candidate when eligible under Unicode's rules.</p></div>
-      </div>
-      <p class="fineprint">There is still no official refrigerator emoji and no operating-system patch. What exists is experimental: the Fridge Emoji font (one glyph at Private Use code point U+E900) and a <code>:fridge:</code> shortcode for pages that opt in. Neither replaces a real Unicode character.</p>
+
+  <section class="closer">
+    <img src="./concepts/classic-base.svg" width="88" height="88" alt="">
+    <h2>One small appliance.<br>One global keyboard.</h2>
+    <div class="actions center">
+      <a id="sign-bottom" class="btn btn-sign" href="#" target="_blank" rel="noopener noreferrer" hidden>Sign the petition <span aria-hidden="true">↗</span></a>
+      <button id="share-bottom" class="btn btn-quiet" type="button">Tell someone</button>
     </div>
-  </section>
-  <section class="block involvement" aria-labelledby="participate-heading">
-    <div class="section-tag">04 / PARTICIPATE</div>
-    <div class="block-content">
-      <h2 id="participate-heading">SURELY WE CAN BEAT <em>80 SIGNATURES.</em></h2>
-      <p class="bodycopy">A previous public refrigerator emoji petition drew 80 supporters. Let's build something bigger, funnier, and technically credible. Stores and businesses can volunteer to share the campaign, display a poster, or help with outreach—without sponsorship or exclusivity.</p>
-      <p class="fineprint">Ask permission before displaying QR stickers or labeling bags. No company is a campaign partner unless it explicitly agrees.</p>
-      <a class="doclink" href="./RUNBOOK.md">READ THE CAMPAIGN RUNBOOK ↗</a>
-      <a class="doclink" href="./DEPLOYMENT.md">READ THE BUILD & DEPLOY RUNBOOK ↗</a>
-    </div>
-  </section>
-  <section class="final-cta">
-    <p>ONE SMALL APPLIANCE. ONE GLOBAL KEYBOARD.</p>
-    <h2>LET'S GET<br>THE <em>FRIDGE.</em></h2>
-    <a id="sign-bottom" class="btn btn-orange" href="#" target="_blank" rel="noopener noreferrer" hidden>SIGN THE PETITION ↗</a>
-    <button id="share-bottom" class="btn btn-mint" type="button">TELL SOMEONE ↗</button>
-    <p>FREE. COOL. TAKES A SECOND.</p>
+    <p class="slogan">Free. Cool. Takes a second.</p>
   </section>
 </main>
-<footer>
-  <div><strong>AN INITIATIVE ORGANIZED BY CHARLIE.</strong><a href="/">FRIDGE.RUN ↗</a></div>
-  <p>Independent campaign. Not affiliated with Unicode, Apple, Microsoft, Google, Samsung, or any appliance manufacturer. Platform names describe general design directions only. <a href="https://www.unicode.org/emoji/proposals.html">Official Unicode emoji proposal guidance ↗</a></p>
+<footer class="foot">
+  <p><strong>An initiative organized by Charlie.</strong> <a href="/">fridge.run</a></p>
+  <p>Independent campaign. Not affiliated with Unicode, Apple, Microsoft, Google, Samsung or any appliance manufacturer; platform names describe general design directions only. <a href="https://www.unicode.org/emoji/proposals.html">Unicode's emoji proposal guidance</a></p>
   <p><a href="./README.md">Project README</a> · <a href="./DESIGN.md">Design brief</a> · <a href="./font/README.md">Font &amp; shortcode</a> · <a href="./DEPLOYMENT.md">Deployment runbook</a></p>
 </footer>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>

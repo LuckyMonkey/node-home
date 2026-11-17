@@ -13,7 +13,7 @@ const CAMPAIGN_URL = "https://fridge.run/emoji/";
  async function share(){
    const data={title:"Let's get a refrigerator emoji!",text:"It's free. It's cool. Takes a second. 🧊",url:CAMPAIGN_URL};
    if(navigator.share){try{await navigator.share(data);return;}catch(e){if(e.name==="AbortError")return;}}
-   try{await navigator.clipboard.writeText(CAMPAIGN_URL);notify("LINK COPIED!");}
+   try{await navigator.clipboard.writeText(CAMPAIGN_URL);notify("Link copied!");}
    catch(e){window.prompt("Copy the campaign link:",CAMPAIGN_URL);}
  }
  for(const id of ["share","share-bottom"]){document.getElementById(id)?.addEventListener("click",share);}

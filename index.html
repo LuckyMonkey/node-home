@@ -139,9 +139,47 @@
       .gm-test .btn { width: 100%; justify-content: center; }
     }
     .fine { margin: 16px 0 0; font-size: 14px; line-height: 1.5; font-weight: 600; color: #c3c6cd; text-align: center; letter-spacing: .02em; text-shadow: 0 1px 6px rgba(0, 0, 0, .8); }
+
+    /* ---- fridge emoji campaign star (fridge.run/emoji) ----------------------------
+       A sticker pinned to the side of the wall: noticeable, one tap to the campaign.
+       Desktop: right edge, middle. Phones: small, bottom-right, clear of the panel. */
+    .fe-star { position: fixed; right: clamp(16px, 3vw, 48px); top: 50%; z-index: 4; width: 172px; height: 172px; margin-top: -86px;
+      display: block; text-decoration: none; color: #1d1d1f; filter: drop-shadow(0 14px 22px rgba(0,0,0,.45));
+      transform: rotate(8deg); transition: transform .2s cubic-bezier(.2,1.4,.4,1); animation: fe-wobble 7s ease-in-out 2s infinite; }
+    .fe-star:hover, .fe-star:focus-visible { transform: rotate(0deg) scale(1.1); animation: none; }
+    .fe-star:focus-visible { outline: 3px solid #fff; outline-offset: 6px; border-radius: 50%; }
+    .fe-burst { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+      background: #ffd60a; clip-path: polygon(50.0% 0.0%, 55.6% 7.4%, 62.9% 1.7%, 66.5% 10.3%, 75.0% 6.7%, 76.2% 15.9%, 85.4% 14.6%, 84.1% 23.8%, 93.3% 25.0%, 89.7% 33.5%, 98.3% 37.1%, 92.6% 44.4%, 100.0% 50.0%, 92.6% 55.6%, 98.3% 62.9%, 89.7% 66.5%, 93.3% 75.0%, 84.1% 76.2%, 85.4% 85.4%, 76.2% 84.1%, 75.0% 93.3%, 66.5% 89.7%, 62.9% 98.3%, 55.6% 92.6%, 50.0% 100.0%, 44.4% 92.6%, 37.1% 98.3%, 33.5% 89.7%, 25.0% 93.3%, 23.8% 84.1%, 14.6% 85.4%, 15.9% 76.2%, 6.7% 75.0%, 10.3% 66.5%, 1.7% 62.9%, 7.4% 55.6%, 0.0% 50.0%, 7.4% 44.4%, 1.7% 37.1%, 10.3% 33.5%, 6.7% 25.0%, 15.9% 23.8%, 14.6% 14.6%, 23.8% 15.9%, 25.0% 6.7%, 33.5% 10.3%, 37.1% 1.7%, 44.4% 7.4%); text-align: center; padding: 18px; }
+    .fe-burst img { width: 46px; height: 46px; display: block; background: #fff; border-radius: 12px; padding: 4px; box-shadow: 0 2px 6px rgba(0,0,0,.18); }
+    .fe-burst b { font: 800 17px/1.05 -apple-system, "Segoe UI", Roboto, Arial, sans-serif; letter-spacing: -.02em; margin-top: 4px; }
+    .fe-burst small { font: 700 12px/1.1 -apple-system, "Segoe UI", Roboto, Arial, sans-serif; background: #1d1d1f; color: #ffd60a; padding: 4px 9px; border-radius: 999px; margin-top: 2px; }
+    .fe-pin { position: absolute; top: -6px; left: 50%; width: 18px; height: 18px; margin-left: -9px; border-radius: 50%; z-index: 1;
+      background: radial-gradient(circle at 35% 35%, #ff8a80, #e53935 60%, #9b1c1c); box-shadow: 0 3px 5px rgba(0,0,0,.4); }
+    @keyframes fe-wobble { 0%, 86%, 100% { transform: rotate(8deg); } 89% { transform: rotate(-4deg) scale(1.06); } 92% { transform: rotate(12deg) scale(1.06); } 95% { transform: rotate(4deg); } }
+    /* phones have no side space: a diagonal corner ribbon across the top-right corner instead (only the band takes taps) */
+    @media (max-width: 760px) {
+      .fe-star { top: 0; right: 0; margin: 0; width: 160px; height: 160px; overflow: hidden; pointer-events: none; transform: none; animation: none; filter: none; }
+      .fe-star:hover, .fe-star:focus-visible { transform: none; }
+      .fe-pin { display: none; }
+      .fe-burst { inset: auto; top: 44px; right: -53px; width: 230px; height: auto; padding: 7px 0; flex-direction: row; gap: 6px; clip-path: none;
+        transform: rotate(45deg); pointer-events: auto; box-shadow: 0 4px 12px rgba(0,0,0,.45); border-top: 2px dashed rgba(29,29,31,.25); border-bottom: 2px dashed rgba(29,29,31,.25); }
+      .fe-burst img { width: 20px; height: 20px; border-radius: 5px; padding: 2px; box-shadow: none; }
+      .fe-burst b { font-size: 12.5px; margin: 0; }
+      .fe-burst small { font-size: 10.5px; padding: 3px 7px; margin: 0; }
+      .fe-burst small::before { content: ""; }
+    }
+    @media (prefers-reduced-motion: reduce) { .fe-star { animation: none; transition: none; } }
+    @media print { .fe-star { display: none; } }
+    .fe-short { display: none; }
+    @media (max-width: 760px) { .fe-long { display: none; } .fe-short { display: inline; } }
   </style>
 </head>
 <body>
+  <!-- Fridge emoji campaign: a pinned star sticker that links to fridge.run/emoji -->
+  <a class="fe-star" href="./emoji/" aria-label="Help get a refrigerator emoji: see the campaign and sign the petition">
+    <span class="fe-pin" aria-hidden="true"></span>
+    <span class="fe-burst"><img src="./emoji/concepts/classic-base.svg" alt=""><b>Fridge emoji?</b><small><span class="fe-long">Sign the petition</span><span class="fe-short">Sign</span> ›</small></span>
+  </a>
   <div class="wall" id="wall" aria-hidden="true"></div>
   <div class="shade" aria-hidden="true"></div>
   <div class="wait" aria-hidden="true"><img src="./logo.png" alt=""></div>

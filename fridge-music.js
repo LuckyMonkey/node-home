@@ -4,7 +4,7 @@
  * Each song is a few step patterns (16 steps a bar) for synthesized instruments - bongos, congas, djembe and
  * jungle toms, shaker, clave, kalimba, marimba, bass, pad; a rock kit (snare, hats, crash) and synth bass, horn and
  * brass for darker songs; boom, crack, distorted lead, didgeridoo drone and gulls for industrial ones; harpsichord, guzheng,
- * koto, taiko, boop, FM bell, cyber pad and a fridge hum for the cyber-ambient ones - and a seed. A small Web Audio sequencer plays them
+ * koto, taiko, boop, FM bell, cyber pad, pulse arp and a fridge hum for the cyber-ambient ones - and a seed. A small Web Audio sequencer plays them
  * with seeded variations and a fill every fourth bar; parts named smp_<id> play short samples (see 'samples' below) (song.mix sets a part's volume, song.echo sends parts to one shared tempo echo), so a song never repeats exactly. No audio files.
  *
  *   <script src="https://fridge.run/fridge-music.js" defer></script>        off until you turn it on (go.fridge.run)
@@ -555,6 +555,17 @@
     wl.frequency.value = 0.09; wlg.gain.value = f * 0.6; wl.connect(wlg); wlg.connect(w.frequency); w.connect(wg); wg.connect(g); w.start(t); wl.start(t); w.stop(stop); wl.stop(stop);
     lp.connect(g); g.connect(out());
   }
+  // Pulse arp: the analog sequence of a tense hacker-thriller score - a saw and a narrow pulse a few cents apart,
+  // plucked through a resonant low-pass that snaps open and shuts within ~150 ms, so a line of 16ths ticks like a
+  // machine thinking. Each note's filter opens a little differently (by pitch), so a held pattern breathes. Melodic.
+  function pulseArp(t, freq, peak) {
+    var lp = filt('lowpass', 300, 6), g = ctx.createGain(), top = 1800 + (freq % 7) * 260;
+    lp.frequency.setValueAtTime(top, t); lp.frequency.exponentialRampToValueAtTime(260, t + 0.15);
+    env(g, t, peak, 0.003, 0.26);
+    [['sawtooth', 1, 1], ['square', 1.005, 0.45], ['sine', 0.5, 0.5]].forEach(function (o) {
+      var x = ctx.createOscillator(), xg = ctx.createGain(); x.type = o[0]; x.frequency.value = freq * o[1]; xg.gain.value = o[2]; x.connect(xg); xg.connect(lp); x.start(t); x.stop(t + 0.32); });
+    lp.connect(g); g.connect(out());
+  }
   // Music box: a plucked steel tine - a pure fundamental, a quiet octave and a short, slightly inharmonic shimmer,
   // a tiny click, and a long ringing decay (the toy-box / celesta sound of gothic synth rock).
   function musicBox(t, freq, peak) {
@@ -715,6 +726,7 @@
     boop: {label: 'Boop', melodic: true, oct: 1, play: function (t, v, f) { boop(t, f * 2, 0.3 * v); }},
     fm_bell: {label: 'FM bell', melodic: true, oct: 1, play: function (t, v, f) { fmBell(t, f * 2, 0.11 * v); }},
     cyber_pad: {label: 'Cyber pad', melodic: true, held: true, play: function (t, v, f, len) { cyberPad(t, f, 0.045 * v, len); }},
+    pulse_arp: {label: 'Pulse arp', melodic: true, play: function (t, v, f) { pulseArp(t, f, 0.16 * v); }},
     fridge_hum: {label: 'Fridge hum', melodic: true, held: true, oct: -2, play: function (t, v, f, len) { fridgeHum(t, f, 0.075 * v, len); }},
     // Lucky Monkey's own voices, exactly as the game synthesized them (louder by the engine's master ratio):
     lm_bongo_hi: {label: 'Bongo high (Lucky Monkey)', play: function (t, v) { drum(t, 420, 300, 0.18, 0.31 * v, 'sine', [2500, 0.16 * v, 0.03]); }},

@@ -16,6 +16,9 @@
     // One-time drop link: a page that takes one file, then evaporates.
     var d = /[?&]d=([A-Za-z0-9_-]{43})(?:&|$)/.exec(location.search);
     if (d) { location.replace('https://go.fridge.run/drop/' + d[1]); }
+    // A word: fridge.run?w=hungry opens it in WORD (go.fridge.run/?w= hands it to go.fridge.run/word).
+    var w = /[?&]w=([^&#]{1,80})/.exec(location.search);
+    if (w) { location.replace('https://go.fridge.run/?w=' + w[1]); }
   })();
   </script>
   <title>fridge.run</title>

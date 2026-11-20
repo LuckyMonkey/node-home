@@ -3,7 +3,8 @@
  *
  * Each song is a few step patterns (16 steps a bar) for synthesized instruments - bongos, congas, djembe and
  * jungle toms, shaker, clave, kalimba, marimba, bass, pad; a rock kit (snare, hats, crash) and synth bass, horn and
- * brass for darker songs; boom, crack, distorted lead, didgeridoo drone and gulls for industrial ones - and a seed. A small Web Audio sequencer plays them
+ * brass for darker songs; boom, crack, distorted lead, didgeridoo drone and gulls for industrial ones; harpsichord, guzheng,
+ * koto, taiko, boop, FM bell, cyber pad and a fridge hum for the cyber-ambient ones - and a seed. A small Web Audio sequencer plays them
  * with seeded variations and a fill every fourth bar; parts named smp_<id> play short samples (see 'samples' below) (song.mix sets a part's volume, song.echo sends parts to one shared tempo echo), so a song never repeats exactly. No audio files.
  *
  *   <script src="https://fridge.run/fridge-music.js" defer></script>        off until you turn it on (go.fridge.run)
@@ -398,15 +399,25 @@
   // second 9 ms late - the chorused, washed tone of a lo-fi guitar loop - plus a quiet sine on the fundamental for body,
   // through a gentle top cut and a low-mid bump. Not held: notes ring over each other like a picked arpeggio.
   var plucks = [];
-  function pluckBuf(freq) {
-    var sr = ctx.sampleRate, key = Math.round(freq * 8) + '@' + sr;
+  // String kinds (pluckBuf's second argument): how bright the pick is (0-1, a low-pass on the noise burst), where along
+  // the string it is plucked, how fast the highs die (the loop filter's side taps: 0.25 dark ... 0.06 bright), how long
+  // the low strings ring (t60 = ring / freq, clamped) and the buffer's length. The guitar is the original voicing.
+  var STRINGS = {
+    guitar: {pick: 0.11, at: 0.2, taps: 0.25, ring: 300, lo: 1.2, hi: 3.6, len: 2.4},
+    harpsichord: {pick: 0.75, at: 0.07, taps: 0.09, ring: 240, lo: 0.9, hi: 2.4, len: 2.4},
+    guzheng: {pick: 0.5, at: 0.12, taps: 0.14, ring: 560, lo: 1.6, hi: 3.4, len: 3.4},
+    koto: {pick: 0.38, at: 0.23, taps: 0.17, ring: 330, lo: 1.0, hi: 2.6, len: 2.6}
+  };
+  function pluckBuf(freq, kind) {
+    var S = STRINGS[kind] || STRINGS.guitar, sr = ctx.sampleRate, key = (kind || 'guitar') + Math.round(freq * 8) + '@' + sr;
     for (var i = 0; i < plucks.length; i++) if (plucks[i].k === key) { var hit = plucks.splice(i, 1)[0]; plucks.push(hit); return hit.b; }
-    var n = Math.floor(sr * 2.4), buf = ctx.createBuffer(1, n, sr), d = new Float32Array(n), L = Math.max(3, Math.round(sr / freq));
-    var t60 = Math.max(1.2, Math.min(3.6, 300 / freq)), rho = Math.pow(0.001, L / (sr * t60)), lp = 0, pick = Math.floor(L * 0.2);
+    var n = Math.floor(sr * S.len), buf = ctx.createBuffer(1, n, sr), d = new Float32Array(n), L = Math.max(3, Math.round(sr / freq));
+    var t60 = Math.max(S.lo, Math.min(S.hi, S.ring / freq)), rho = Math.pow(0.001, L / (sr * t60)), lp = 0, pick = Math.max(1, Math.floor(L * S.at));
     var seed = Math.round(freq * 1000) % 2147483647 || 1, rnd = function () { seed = seed * 16807 % 2147483647; return seed / 2147483647 * 2 - 1; };
-    var ex = new Float32Array(L); for (i = 0; i < L; i++) { lp += 0.11 * (rnd() - lp); ex[i] = lp; }    // a soft, dark pick
+    var ex = new Float32Array(L); for (i = 0; i < L; i++) { lp += S.pick * (rnd() - lp); ex[i] = lp; }  // the pick: soft and dark ... a sharp quill
     for (i = L - 1; i >= pick; i--) ex[i] -= ex[i - pick];                                                  // where it's picked (a comb)
-    for (i = 0; i < n; i++) d[i] = i < L + 1 ? (i < L ? ex[i] : 0) : rho * (0.25 * d[i - L - 1] + 0.5 * d[i - L] + 0.25 * d[i - L + 1]);
+    var ta = S.taps, tb = 1 - 2 * ta;
+    for (i = 0; i < n; i++) d[i] = i < L + 1 ? (i < L ? ex[i] : 0) : rho * (ta * d[i - L - 1] + tb * d[i - L] + ta * d[i - L + 1]);
     var m = 0; for (i = 0; i < L * 4 && i < n; i++) m = Math.max(m, Math.abs(d[i])); if (m) for (i = 0; i < n; i++) d[i] /= m;
     buf.copyToChannel(d, 0);   // copyToChannel, not writes into getChannelData: some Web Audio implementations copy that array
     plucks.push({k: key, b: buf}); if (plucks.length > 16) plucks.shift();
@@ -444,6 +455,106 @@
   }
   // Clap: three quick band-passed noise bursts, then a short tail - the trap clap.
   function clap(t, peak) { for (var i = 0; i < 3; i++) noise(t + i * 0.011, 1150, peak * 0.75, 0.012, 'bandpass'); noise(t + 0.033, 1250, peak, 0.17, 'bandpass'); }
+  // Plucked strings from pluckBuf (see STRINGS): play a computed string through a gain envelope into a chain of
+  // filters. copies: [[rate, delay s, gain], ...] (two copies a few cents apart chorus it). Returns the sources, so a
+  // voice can bend or vibrate their pitch (playbackRate).
+  function strike(t, buf, peak, end, copies, chain) {
+    var g = ctx.createGain(), srcs = [], first = chain[0], last = chain[chain.length - 1];
+    for (var i = 0; i < chain.length - 1; i++) chain[i].connect(chain[i + 1]);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.003); g.gain.setValueAtTime(peak, end - 0.25); g.gain.exponentialRampToValueAtTime(0.0001, end);
+    copies.forEach(function (c) { var s = ctx.createBufferSource(), sg = ctx.createGain(); s.buffer = buf; s.playbackRate.value = c[0]; sg.gain.value = c[2];
+      s.connect(sg); sg.connect(first); s.start(t + c[1]); s.stop(end); srcs.push(s); });
+    last.connect(g); g.connect(out()); return srcs;
+  }
+  function filt(type, f, q, gain) { var b = ctx.createBiquadFilter(); b.type = type; b.frequency.value = f; if (q != null) b.Q.value = q; if (gain != null) b.gain.value = gain; return b; }
+  // Harpsichord: a quill snaps the string near its end - a bright, nasal pluck whose highs ring on, two 8' strings a
+  // few cents apart and a quieter 4' (the octave) above them, a dry click of the jack, a thin wooden body. Not held:
+  // notes ring over each other (the buffer is the instrument's natural decay).
+  function harpsichord(t, freq, peak) {
+    var end = t + Math.min(2.3, 0.6 + 260 / freq);
+    strike(t, pluckBuf(freq, 'harpsichord'), peak, end, [[0.9988, 0, 0.5], [1.0012, 0.004, 0.42]], [filt('highpass', 110), filt('peaking', 2600, 1.1, 4), filt('lowpass', 9000, 0.5)]);
+    strike(t + 0.006, pluckBuf(freq * 2, 'harpsichord'), peak * 0.26, end - 0.3, [[1, 0, 1]], [filt('highpass', 300), filt('lowpass', 8000, 0.5)]);
+    noise(t, 3500, peak * 0.07, 0.007);
+  }
+  // Guzheng: the Chinese zither - a bright nylon-steel pluck that rings for seconds; a held note (two steps or more)
+  // gets the left hand's vibrato (yao zhi), growing after the attack. Its slide twin starts a whole tone low and is
+  // pressed up into the note.
+  function guzheng(t, freq, peak, len, slide) {
+    var end = t + Math.min(3.3, Math.max(1.2, len + 1.6));
+    var srcs = strike(t, pluckBuf(freq, 'guzheng'), peak, end, [[0.9993, 0, 0.6], [1.0007, 0.007, 0.4]], [filt('highpass', 90), filt('peaking', 1900, 1, 3), filt('lowpass', 7500, 0.6)]);
+    srcs.forEach(function (s) {
+      if (slide) { var r = s.playbackRate.value; s.playbackRate.setValueAtTime(r * 0.8909, t); s.playbackRate.setValueAtTime(r * 0.8909, t + 0.05); s.playbackRate.exponentialRampToValueAtTime(r, t + 0.19); }
+      if (len >= stepDur * 1.8 || slide) {
+        var lfo = ctx.createOscillator(), dg = ctx.createGain(); lfo.frequency.value = 5.2; dg.gain.setValueAtTime(0, t);
+        dg.gain.setValueAtTime(0, t + 0.22); dg.gain.linearRampToValueAtTime(s.playbackRate.value * 0.007, t + 0.7);
+        lfo.connect(dg); dg.connect(s.playbackRate); lfo.start(t); lfo.stop(end);
+      }
+    });
+    noise(t, 4200, peak * 0.05, 0.005);
+  }
+  // Koto: the Japanese zither - a woodier, shorter pluck with the twang of a silk string settling (it starts a little
+  // sharp and falls into tune in 50 ms), a quick knock of the pick (tsume) and a hollow body.
+  function koto(t, freq, peak) {
+    var end = t + Math.min(2.5, 0.7 + 300 / freq);
+    var srcs = strike(t, pluckBuf(freq, 'koto'), peak, end, [[1, 0, 0.62], [1.0016, 0.005, 0.38]], [filt('highpass', 100), filt('peaking', 420, 1.2, 4), filt('peaking', 3000, 1.4, 2), filt('lowpass', 6500, 0.6)]);
+    srcs.forEach(function (s) { var r = s.playbackRate.value; s.playbackRate.setValueAtTime(r * 1.012, t); s.playbackRate.exponentialRampToValueAtTime(r, t + 0.05); });
+    noise(t, 2500, peak * 0.09, 0.006, 'bandpass');
+  }
+  // Taiko: a huge barrel drum - a deep skin that falls in pitch and rings, a second, higher mode, the slap of the
+  // stick (bachi) and the air of the hall. Rim (kara): the stick on the wooden body - a dry, bright knock.
+  function taiko(t, peak) {
+    [[92, 52, 0.95, 1], [158, 96, 0.4, 0.42]].forEach(function (m) {
+      var o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.setValueAtTime(m[0], t); o.frequency.exponentialRampToValueAtTime(m[1], t + m[2] * 0.5);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak * m[3], t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + m[2]);
+      o.connect(g); g.connect(out()); o.start(t); o.stop(t + m[2] + 0.05);
+    });
+    noise(t, 900, peak * 0.55, 0.07, 'lowpass'); noise(t, 2200, peak * 0.18, 0.02, 'bandpass');
+  }
+  function taikoRim(t, peak) { tone(t, 1750, peak * 0.5, 0.035, 'triangle'); tone(t, 2730, peak * 0.25, 0.02, 'sine'); noise(t, 3200, peak * 0.3, 0.015, 'bandpass'); }
+  // Boop: a soft round "pon" - a sine that drops into its pitch in 25 ms with a quiet fifth above it; the bubbly,
+  // game-like note of Japanese ambient pop. Melodic.
+  function boop(t, freq, peak) {
+    var o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.setValueAtTime(freq * 1.5, t); o.frequency.exponentialRampToValueAtTime(freq, t + 0.025);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.005); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.34);
+    o.connect(g); g.connect(out()); o.start(t); o.stop(t + 0.4);
+    tone(t, freq * 3, peak * 0.08, 0.09, 'sine');
+  }
+  // FM bell: two-operator FM (the late-80s/90s digital bell) - a carrier with a modulator at 3.5x whose depth falls
+  // fast, so the clangy, glassy strike melts into a pure tone; a second pair at 1:1 gives it body. Melodic.
+  function fmBell(t, freq, peak) {
+    [[3.5, 5.5, 1.6, 1], [1, 1.6, 0.9, 0.45]].forEach(function (p) {
+      var c = ctx.createOscillator(), m = ctx.createOscillator(), mg = ctx.createGain(), g = ctx.createGain(), dec = Math.min(2.4, p[2] * (0.6 + 300 / freq));
+      c.frequency.value = freq; m.frequency.value = freq * p[0];
+      mg.gain.setValueAtTime(freq * p[1], t); mg.gain.exponentialRampToValueAtTime(freq * 0.08, t + dec * 0.5);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak * p[3], t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + dec);
+      m.connect(mg); mg.connect(c.frequency); c.connect(g); g.connect(out()); m.start(t); c.start(t); m.stop(t + dec + 0.05); c.stop(t + dec + 0.05);
+    });
+  }
+  // Cyber pad: three detuned saws and a square an octave down through a resonant low-pass that slowly sweeps open and
+  // closed (a 7 s LFO) - the humming, wavering pad of a 90s computer world. Held.
+  function cyberPad(t, freq, peak, len) {
+    var end = t + Math.max(0.3, len), lp = filt('lowpass', 900, 5), g = ctx.createGain(), lfo = ctx.createOscillator(), lg = ctx.createGain();
+    lfo.frequency.value = 0.14; lg.gain.value = 650; lfo.connect(lg); lg.connect(lp.frequency); lfo.start(t); lfo.stop(end + 1.3);
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(peak, t + Math.min(1.4, len * 0.4)); g.gain.setValueAtTime(peak, Math.max(t + Math.min(1.4, len * 0.4), end - 0.05)); g.gain.linearRampToValueAtTime(0.0001, end + 1.2);
+    [[1, 'sawtooth', 1], [1.006, 'sawtooth', 0.8], [0.994, 'sawtooth', 0.8], [0.5, 'square', 0.35]].forEach(function (o) {
+      var x = ctx.createOscillator(), xg = ctx.createGain(); x.type = o[1]; x.frequency.value = freq * o[0]; xg.gain.value = o[2]; x.connect(xg); xg.connect(lp); x.start(t); x.stop(end + 1.3); });
+    lp.connect(g); g.connect(out());
+  }
+  // Fridge hum: the compressor in the kitchen at night - the motor's low hum (the note folded into 45-70 Hz, with its
+  // strong second and a buzzy third), the fan's airy whoosh, a faint whine that wanders. Fades in and out slowly and
+  // runs a second past its note, so a hum held to the end of the pattern and started again joins up. Held.
+  function fridgeHum(t, freq, peak, len) {
+    var f = freq; while (f > 70) f /= 2; while (f < 45) f *= 2;
+    var end = t + Math.max(0.5, len), g = ctx.createGain(), lp = filt('lowpass', 700, 0.7), stop = end + 1.3;
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(peak, t + 1.1); g.gain.setValueAtTime(peak, Math.max(t + 1.1, end - 0.05)); g.gain.linearRampToValueAtTime(0.0001, end + 1.1);
+    [[1, 'sine', 0.55], [2, 'sine', 1], [3, 'triangle', 0.3], [4.003, 'sine', 0.14], [6, 'sine', 0.06]].forEach(function (h) {
+      var o = ctx.createOscillator(), og = ctx.createGain(); o.type = h[1]; o.frequency.value = f * h[0]; og.gain.value = h[2]; o.connect(og); og.connect(lp); o.start(t); o.stop(stop); });
+    var n = ctx.createBufferSource(), nf = filt('bandpass', 380, 0.6), ng = ctx.createGain(); n.buffer = noiseBuf; n.loop = true; ng.gain.value = 0.5;
+    n.connect(nf); nf.connect(ng); ng.connect(g); n.start(t, Math.random() * 0.5); n.stop(stop);
+    var w = ctx.createOscillator(), wg = ctx.createGain(), wl = ctx.createOscillator(), wlg = ctx.createGain(); w.frequency.value = f * 37; wg.gain.value = 0.012;
+    wl.frequency.value = 0.09; wlg.gain.value = f * 0.6; wl.connect(wlg); wlg.connect(w.frequency); w.connect(wg); wg.connect(g); w.start(t); wl.start(t); w.stop(stop); wl.stop(stop);
+    lp.connect(g); g.connect(out());
+  }
   // Music box: a plucked steel tine - a pure fundamental, a quiet octave and a short, slightly inharmonic shimmer,
   // a tiny click, and a long ringing decay (the toy-box / celesta sound of gothic synth rock).
   function musicBox(t, freq, peak) {
@@ -595,6 +706,16 @@
     cuica: {label: 'Cuica', play: function (t, v) { cuica(t, 0.17 * v); }},
     cuica_wail: {label: 'Cuica wail', play: function (t, v) { cuicaWail(t, 1.3 * v); }},
     birds: {label: 'Birds', chance: 0.45, play: function (t, v) { birds(t, 0.09 * v); }},
+    harpsichord: {label: 'Harpsichord', melodic: true, play: function (t, v, f) { harpsichord(t, f, 0.5 * v); }},
+    guzheng: {label: 'Guzheng', melodic: true, held: true, play: function (t, v, f, len) { guzheng(t, f, 0.42 * v, len); }},
+    guzheng_slide: {label: 'Guzheng (slide up)', melodic: true, held: true, play: function (t, v, f, len) { guzheng(t, f, 0.42 * v, len, true); }},
+    koto: {label: 'Koto', melodic: true, play: function (t, v, f) { koto(t, f, 0.45 * v); }},
+    taiko: {label: 'Taiko', play: function (t, v) { taiko(t, 0.42 * v); }},
+    taiko_rim: {label: 'Taiko rim', play: function (t, v) { taikoRim(t, 1.3 * v); }},
+    boop: {label: 'Boop', melodic: true, oct: 1, play: function (t, v, f) { boop(t, f * 2, 0.3 * v); }},
+    fm_bell: {label: 'FM bell', melodic: true, oct: 1, play: function (t, v, f) { fmBell(t, f * 2, 0.11 * v); }},
+    cyber_pad: {label: 'Cyber pad', melodic: true, held: true, play: function (t, v, f, len) { cyberPad(t, f, 0.045 * v, len); }},
+    fridge_hum: {label: 'Fridge hum', melodic: true, held: true, oct: -2, play: function (t, v, f, len) { fridgeHum(t, f, 0.075 * v, len); }},
     // Lucky Monkey's own voices, exactly as the game synthesized them (louder by the engine's master ratio):
     lm_bongo_hi: {label: 'Bongo high (Lucky Monkey)', play: function (t, v) { drum(t, 420, 300, 0.18, 0.31 * v, 'sine', [2500, 0.16 * v, 0.03]); }},
     lm_bongo_lo: {label: 'Bongo low (Lucky Monkey)', play: function (t, v) { drum(t, 280, 190, 0.18, 0.31 * v, 'sine', [1500, 0.16 * v, 0.03]); }},
@@ -828,7 +949,7 @@
       });
     });
   }
-  var SAMPLE_PATH = /^\/assets\/samples\/[a-z0-9_.-]+\.(opus|ogg|webm|mp3|m4a)$/;   // bundled samples: this site's own folder only
+  var SAMPLE_PATH = /^\/assets\/samples\/[a-z0-9_.-]+\.(opus|ogg|webm|mp3|m4a|wav)$/;   // bundled samples: this site's own folder only
   var sampleCat = {}, sbuf = {}, voicesNow = [], fetchQ = [], fetching = 0, cacheBytes = 0, sampleFns = [], seenManifest = null;
   function sampleNote(id, state, msg) { sampleFns.forEach(function (fn) { try { fn(id, state, msg || ''); } catch (e) {} }); }
   function addSample(e) {
